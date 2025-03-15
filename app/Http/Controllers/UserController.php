@@ -14,12 +14,13 @@ class UserController extends Controller
      */
     public function index()
     {
-        return Inertia::render('users/index',[
-            'users' => User::with('roles')->get(),
+        $users = User::with('roles')->get();
+        // dd($users);
+        return Inertia::render('users/index', [
+            'users' => $users, // Use the already retrieved users variable
             'roles' => Role::all(), // Pass roles to the frontend
         ]);
     }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -32,6 +33,7 @@ class UserController extends Controller
             'role' => 'required', // Ensure a valid role is selected
             'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Validate the profile picture
         ]);
+
 
         $user = User::create($validated);
         $user->assignRole($request->role); // Assign the selected role to the user
@@ -48,17 +50,15 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request,  User $user)
+    public function update(Request $request, User $user)
     {
         // Validate the input data
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|exists:roles,id', // Ensure a valid role is selected
             'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Validate the profile picture
             'password' => 'nullable|string|min:6', // Make password optional, but validate if provided
         ]);
-
         // Update basic user details
         $user->update($validated);
         $user->syncRoles($request->role); // Update the user's role

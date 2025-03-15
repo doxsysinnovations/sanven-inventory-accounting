@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Users } from 'lucide-react';
+import { BookOpen, Boxes, Contact2Icon, Folder, LayoutGrid, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 import { usePage } from '@inertiajs/react';
 
@@ -18,6 +18,16 @@ const mainNavItems: NavItem[] = [
         title: 'Manage Users',
         url: '/users',
         icon: Users,
+    },
+    {
+        title: 'Manage Inventories',
+        url: '/products',
+        icon: Boxes,
+    },
+    {
+        title: 'Suppliers',
+        url: '/suppliers',
+        icon: Contact2Icon,
     },
 ];
 
