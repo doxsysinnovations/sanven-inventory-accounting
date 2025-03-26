@@ -2,33 +2,31 @@
 
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
-use App\Models\Category;
+use App\Models\Supplier;
 use Livewire\Attributes\Title;
-use Illuminate\Support\Str;
 
 new class extends Component {
     use WithPagination;
 
     public $search = '';
     public $showModal = false;
-    public $category;
+    public $supplier;
     public $isEditing = false;
     public $confirmingDelete = false;
-    public $categoryToDelete;
+    public $supplierToDelete;
     public $name = '';
-    public $slug = '';
+    public $contact_number = '';
+    public $address = '';
+    public $email = '';
 
     public function rules()
     {
         return [
             'name' => 'required|string|max:255',
-            'slug' => $this->isEditing ? 'required|string|unique:categories,slug,' . $this->category->id : 'required|string|unique:categories,slug',
+            'contact_number' => 'required|string|max:20',
+            'address' => 'nullable|string|max:500',
+            'email' => $this->isEditing ? 'required|email|unique:suppliers,email,' . $this->supplier->id : 'required|email|unique:suppliers,email',
         ];
-    }
-
-    public function updatedName($value)
-    {
-        $this->slug = Str::slug($value);
     }
 
     public function create()
@@ -38,11 +36,13 @@ new class extends Component {
         $this->showModal = true;
     }
 
-    public function edit(Category $category)
+    public function edit(Supplier $supplier)
     {
-        $this->category = $category;
-        $this->name = $category->name;
-        $this->slug = $category->slug;
+        $this->supplier = $supplier;
+        $this->name = $supplier->name;
+        $this->contact_number = $supplier->contact_number;
+        $this->address = $supplier->address;
+        $this->email = $supplier->email;
         $this->isEditing = true;
         $this->showModal = true;
     }
@@ -52,60 +52,67 @@ new class extends Component {
         $this->validate();
 
         if ($this->isEditing) {
-            $this->category->update([
-                'name' => strtoupper($this->name),
-                'slug' => strtolower($this->slug)
+            $this->supplier->update([
+                'name' => $this->name,
+                'contact_number' => $this->contact_number,
+                'address' => $this->address,
+                'email' => $this->email
             ]);
-            flash()->success('Category updated successfully!');
+            flash()->success('Supplier updated successfully!');
         } else {
-            Category::create([
-                'name' => strtoupper($this->name),
-                'slug' => strtolower($this->slug)
+            Supplier::create([
+                'name' => $this->name,
+                'contact_number' => $this->contact_number,
+                'address' => $this->address,
+                'email' => $this->email
             ]);
-            flash()->success('Category created successfully!');
+            flash()->success('Supplier created successfully!');
         }
 
         $this->showModal = false;
         $this->resetForm();
     }
 
-    public function confirmDelete($categoryId)
+    public function confirmDelete($supplierId)
     {
-        $this->categoryToDelete = $categoryId;
+        $this->supplierToDelete = $supplierId;
         $this->confirmingDelete = true;
     }
 
     public function delete()
     {
-        $category = Category::find($this->categoryToDelete);
-        if ($category) {
-            $category->delete();
-            flash()->success('Category deleted successfully!');
+        $supplier = Supplier::find($this->supplierToDelete);
+        if ($supplier) {
+            $supplier->delete();
+            flash()->success('Supplier deleted successfully!');
         }
         $this->confirmingDelete = false;
-        $this->categoryToDelete = null;
+        $this->supplierToDelete = null;
     }
 
     private function resetForm()
     {
         $this->name = '';
-        $this->slug = '';
-        $this->category = null;
+        $this->contact_number = '';
+        $this->address = '';
+        $this->email = '';
+        $this->supplier = null;
         $this->resetValidation();
     }
 
-    #[Title('Categories')]
+    #[Title('Suppliers')]
     public function with(): array
     {
         return [
-            'categories' => $this->categories,
+            'suppliers' => $this->suppliers,
         ];
     }
 
-    public function getCategoriesProperty()
+    public function getSuppliersProperty()
     {
-        return Category::query()
+        return Supplier::query()
             ->where('name', 'like', '%' . $this->search . '%')
+            ->orWhere('email', 'like', '%' . $this->search . '%')
             ->paginate(10);
     }
 };
@@ -129,7 +136,7 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Categories</span>
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Suppliers</span>
                     </div>
                 </li>
             </ol>
@@ -139,19 +146,19 @@ new class extends Component {
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
         <div class="flex items-center justify-between">
             <div class="w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search categories..."
+                <input wire:model.live="search" type="search" placeholder="Search suppliers..."
                     class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
             </div>
         </div>
-        @if ($categories->isEmpty())
+        @if ($suppliers->isEmpty())
             <div class="flex flex-col items-center justify-center p-8">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">No categories found</p>
-                @can('categories.create')
+                <p class="mb-4 text-gray-500 dark:text-gray-400">No suppliers found</p>
+                @can('suppliers.create')
                     <button wire:click="create"
                         class="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white transition-all duration-200 ease-in-out hover:bg-green-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 active:bg-green-800 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="my-auto mr-2 h-5 w-5" viewBox="0 0 20 20"
@@ -160,13 +167,13 @@ new class extends Component {
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Add Category
+                        Add Supplier
                     </button>
                 @endcan
             </div>
         @else
             <div class="flex justify-end">
-                @can('categories.create')
+                @can('suppliers.create')
                     <button wire:click="create"
                         class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
@@ -175,7 +182,7 @@ new class extends Component {
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Add Category
+                        Add Supplier
                     </button>
                 @endcan
 
@@ -184,29 +191,32 @@ new class extends Component {
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Name</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Slug</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Contact Number</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Address</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                        @foreach ($categories as $category)
-                            <tr class="dark:hover:bg-gray-800" wire:key="category-{{ $category->id ?? uniqid() }}">
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $category->name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $category->slug }}</td>
+                        @foreach ($suppliers as $supplier)
+                            <tr class="dark:hover:bg-gray-800" wire:key="supplier-{{ $supplier->id ?? uniqid() }}">
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->name }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->contact_number }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->email }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->address }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 space-x-2">
-                                    @can('categories.edit')
-                                        <button wire:click="edit({{ $category->id }})"
+                                    @can('suppliers.edit')
+                                        <button wire:click="edit({{ $supplier->id }})"
                                             class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
                                     @endcan
-                                    @can('categories.delete')
-                                        <button wire:click="confirmDelete({{ $category->id }})"
+                                    @can('suppliers.delete')
+                                        <button wire:click="confirmDelete({{ $supplier->id }})"
                                             class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
                                     @endcan
                                 </td>
@@ -216,7 +226,7 @@ new class extends Component {
                 </table>
             </div>
             <div class="mt-4">
-                {{ $categories->links() }}
+                {{ $suppliers->links() }}
             </div>
         @endif
     </div>
@@ -233,11 +243,19 @@ new class extends Component {
                         <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
 
                             <div class="mb-4">
-                                <flux:input wire:model.live="name" :label="__('Name')" type="text"
+                                <flux:input wire:model="name" :label="__('Name')" type="text"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                             </div>
                             <div class="mb-4">
-                                <flux:input wire:model="slug" :label="__('Slug')" type="text" readonly
+                                <flux:input wire:model="contact_number" :label="__('Contact Number')" type="text"
+                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                            </div>
+                            <div class="mb-4">
+                                <flux:input wire:model="email" :label="__('Email')" type="email"
+                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                            </div>
+                            <div class="mb-4">
+                                <flux:textarea wire:model="address" :label="__('Address')"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                             </div>
                         </div>
@@ -269,11 +287,11 @@ new class extends Component {
                         <div class="sm:flex sm:items-start">
                             <div class="mt-3 text-center sm:mt-0 sm:text-left">
                                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Category
+                                    Delete Supplier
                                 </h3>
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this category? This action cannot be undone.
+                                        Are you sure you want to delete this supplier? This action cannot be undone.
                                     </p>
                                 </div>
                             </div>

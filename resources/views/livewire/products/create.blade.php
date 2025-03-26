@@ -6,6 +6,8 @@ use App\Models\Category;
 use Livewire\Attributes\Title;
 
 new class extends Component {
+    use Livewire\WithFileUploads;
+
     public $currentTab = 'product_information';
 
     // Form Fields
@@ -23,6 +25,24 @@ new class extends Component {
     public $selectedBrand = '';
     public $selectedCategory = '';
     public $selectedSubCategory = '';
+
+    public function nextTab()
+    {
+        if ($this->currentTab === 'product_information') {
+            $this->currentTab = 'price_quantity';
+        } elseif ($this->currentTab === 'price_quantity') {
+            $this->currentTab = 'images';
+        }
+    }
+
+    public function previousTab()
+    {
+        if ($this->currentTab === 'images') {
+            $this->currentTab = 'price_quantity';
+        } elseif ($this->currentTab === 'price_quantity') {
+            $this->currentTab = 'product_information';
+        }
+    }
 
     public function save()
     {
@@ -66,7 +86,7 @@ new class extends Component {
 
 <div>
     <div class="mb-4">
-        <nav class="flex justify-end" aria-label="Breadcrumb">
+        <nav class="flex items-center justify-between" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li class="inline-flex items-center">
                     <a href="{{ route('dashboard') }}"
@@ -96,23 +116,25 @@ new class extends Component {
                     </div>
                 </li>
             </ol>
+            <flux:button href="{{ route('products') }}" variant="primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+                Back
+            </flux:button>
         </nav>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <!-- Tab Navigation -->
-        <div x-data="{ tab: $wire.entangle('currentTab') }">
+        <div x-data="{ tab: $wire.currentTab }">
             <div class="flex border-b border-gray-200 dark:border-gray-700">
                 <button @click="tab = 'product_information'"
                     :class="{ 'border-b-2 border-blue-500 text-blue-500': tab === 'product_information' }"
                     class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
                     Product Information
-                </button>
-
-                <button @click="tab = 'images'"
-                    :class="{ 'border-b-2 border-blue-500 text-blue-500': tab === 'images' }"
-                    class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
-                    Images
                 </button>
 
                 <button @click="tab = 'price_quantity'"
@@ -121,10 +143,10 @@ new class extends Component {
                     Price & Quantity
                 </button>
 
-                <button @click="tab = 'others'"
-                    :class="{ 'border-b-2 border-blue-500 text-blue-500': tab === 'others' }"
+                <button @click="tab = 'images'"
+                    :class="{ 'border-b-2 border-blue-500 text-blue-500': tab === 'images' }"
                     class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
-                    Others
+                    Images
                 </button>
             </div>
 
@@ -165,7 +187,7 @@ new class extends Component {
                             </flux:select>
                         </div>
                         <div>
-                            <flux:select wire:model.live="selectedSubCategory" :label="__('Sub Category')"
+                            <flux:select wire:model.live="selectedSubCategory" :label="__('Sub Category (optional)')"
                                 size="md" placeholder="Choose sub category...">
                                 @foreach ($subCategories as $category)
                                     <flux:select.option value="{{ $category->id }}">{{ $category->name }}
@@ -177,22 +199,6 @@ new class extends Component {
                     <div class="grid grid-cols-1">
                         <flux:textarea label="Description" placeholder="type description..." />
                     </div>
-                </div>
-
-                <!-- Images Tab -->
-                <div x-show="tab === 'images'" class="p-4">
-                    <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Images</h2>
-
-                    <input type="file" wire:model="images" multiple
-                        class="block w-full p-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
-
-                    @if ($images)
-                        <div class="mt-4 grid grid-cols-3 gap-4">
-                            @foreach ($images as $image)
-                                <img src="{{ $image->temporaryUrl() }}" class="w-full h-32 object-cover rounded-md">
-                            @endforeach
-                        </div>
-                    @endif
                 </div>
 
                 <!-- Price & Quantity Tab -->
@@ -226,40 +232,31 @@ new class extends Component {
                     </div>
                 </div>
 
-                <!-- Others Tab -->
-                <div x-show="tab === 'others'" class="p-4">
-                    <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Other Information</h2>
+                <!-- Images Tab -->
+                <div x-show="tab === 'images'" class="p-4">
+                    <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Images</h2>
 
-                    <label class="block mb-2 text-gray-700 dark:text-gray-300">SKU</label>
-                    <input type="text" wire:model="sku" placeholder="Enter SKU"
-                        class="w-full p-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+                    <input type="file" wire:model="images" multiple
+                        class="block w-full p-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
 
-                    <label class="block mt-4 mb-2 text-gray-700 dark:text-gray-300">Category</label>
-                    <input type="text" wire:model="category" placeholder="Enter category"
-                        class="w-full p-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
-
-                    <label class="block mt-4 mb-2 text-gray-700 dark:text-gray-300">Status</label>
-                    <select wire:model="status"
-                        class="w-full p-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
+                    @if ($images)
+                        <div class="mt-4 grid grid-cols-3 gap-4">
+                            @foreach ($images as $image)
+                                <img src="{{ $image->temporaryUrl() }}" class="w-full h-32 object-cover rounded-md">
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
 
-        <!-- Save Button -->
-        <div class="mt-6 p-4 border-t border-gray-200 dark:border-gray-700">
-            <button wire:click="save"
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">
-                Save Product
-            </button>
-
-            @if (session()->has('success'))
-                <div class="mt-4 text-green-500 dark:text-green-400">
-                    {{ session('success') }}
-                </div>
-            @endif
+        <!-- Navigation Buttons -->
+        <div class="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+            <div class="flex justify-end">
+                <button wire:click="save" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Submit
+                </button>
+            </div>
         </div>
     </div>
 </div>
