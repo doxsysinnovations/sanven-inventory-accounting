@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Product extends Model implements HasMedia
 {
@@ -18,14 +20,66 @@ class Product extends Model implements HasMedia
         'slug',
         'description',
         'brand_id',
+        'unit_id',
         'category_id',
         'subcategory_id',
         'capital_price',
         'selling_price',
         'discount',
         'discount_price',
-        'quantity'
+        'quantity',
+        'low_stock_alert'
     ];
+
+    /**
+     * Get the unit that owns the Product
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id', 'id');
+    }
+
+    /**
+     * Get the brand that owns the Product
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class, 'brand_id', 'id');
+    }
+
+    /**
+     * Get the category that owns the Product
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id', 'id');
+    }
+
+    /**
+     * Get the sub_category that owns the Product
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function sub_category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'sub_category_id', 'id');
+    }
+
+    /**
+     * Get all of the stocks for the Product
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function stocks(): HasMany
+    {
+        return $this->hasMany(Stock::class, 'product_id', 'id');
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -36,13 +90,15 @@ class Product extends Model implements HasMedia
                 'slug',
                 'description',
                 'brand_id',
+                'unit_id',
                 'category_id',
                 'subcategory_id',
                 'capital_price',
                 'selling_price',
                 'discount',
                 'discount_price',
-                'quantity'
+                'quantity',
+                'low_stock_alert'
             ])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();

@@ -33,6 +33,13 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('products', 'products.index')->name('products');
     Volt::route('products/create', 'products.create')->name('products.create');
 
+    //Suppliers
+    Volt::route('suppliers', 'suppliers.index')->name('suppliers');
+
+    //Stocks
+    Volt::route('stocks', 'stocks.index')->name('stocks');
+    Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
+
 
 });
 
