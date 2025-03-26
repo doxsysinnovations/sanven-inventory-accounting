@@ -1,18 +1,43 @@
 <?php
 
+use Livewire\Volt\Volt;
+use App\Livewire\TwoFactorVerify;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect()->route('login');
 })->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+Route::view('dashboard', 'dashboard')
+    ->middleware(['auth','check.active', 'verified','2fa'])
+    ->name('dashboard');
+
+Route::middleware(['auth','check.active','2fa'])->group(function () {
+    Route::redirect('settings', 'settings/profile');
+
+    Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
+    Volt::route('settings/password', 'settings.password')->name('settings.password');
+    Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+    Volt::route('settings/2fa-config', 'settings.two-factor-authentication')->name('settings.2fa-config');
+
+    Volt::route('users', 'users.index')->name('users');
+    Volt::route('roles', 'roles.index')->name('roles');
+
+    //Brands
+    Volt::route('brands', 'brands.index')->name('brands');
+    //Categories
+    Volt::route('categories', 'categories.index')->name('categories');
+    //Units
+    Volt::route('units', 'units.index')->name('units');
+    //Products
+    Volt::route('products', 'products.index')->name('products');
+    Volt::route('products/create', 'products.create')->name('products.create');
+
+
 });
 
-require __DIR__.'/settings.php';
+Route::middleware(['auth'])->group(function () {
+    Volt::route('2fa/verify', 'auth.two-factor-verify')->name('2fa.verify');
+});
+
 require __DIR__.'/auth.php';
-require __DIR__.'/admin.php';

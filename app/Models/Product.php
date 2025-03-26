@@ -2,22 +2,49 @@
 
 namespace App\Models;
 
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Product extends Model
+class Product extends Model implements HasMedia
 {
-    //this is for Medical materials like drugs etc
+    use SoftDeletes, LogsActivity, InteractsWithMedia;
     protected $fillable = [
-        'code',
+        'product_code',
         'name',
+        'slug',
         'description',
-        'price',
-        'stock',
-        'category_id',
         'brand_id',
-        'unit_id',
-        'is_active',
-        'created_by',
-        'updated_by',
+        'category_id',
+        'subcategory_id',
+        'capital_price',
+        'selling_price',
+        'discount',
+        'discount_price',
+        'quantity'
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'product_code',
+                'name',
+                'slug',
+                'description',
+                'brand_id',
+                'category_id',
+                'subcategory_id',
+                'capital_price',
+                'selling_price',
+                'discount',
+                'discount_price',
+                'quantity'
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 }
