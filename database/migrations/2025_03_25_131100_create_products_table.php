@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug');
             $table->text('description')->nullable();
+            $table->foreignId('unit_id')->nullable()->constrained('units')->onDelete('set null');
             $table->foreignId('brand_id')->nullable()->constrained('brands')->onDelete('set null');
             $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('set null');
             $table->foreignId('subcategory_id')->nullable()->constrained('categories')->onDelete('set null');
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->decimal('discount', 5, 2)->nullable();
             $table->decimal('discount_price', 10, 2)->nullable();
             $table->integer('quantity')->nullable();
+            $table->integer('low_stock_alert')->default(10);
             $table->timestamps();
             $table->softDeletes();
         });

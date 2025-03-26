@@ -21,45 +21,69 @@ new class extends Component {
                         'icon' => 'home',
                         'route' => 'dashboard',
                         'label' => 'Dashboard',
-                        'permission' => null,
+                        'permission' => 'dashboard.view',
+                    ],
+                ],
+            ],
+            [
+                'heading' => 'Stock Adjustment',
+                'permission' => 'stocks.view',
+                'items' => [
+                    [
+                        'icon' => 'plus',
+                        'route' => 'stocks.create',
+                        'label' => 'Add Stocks',
+                        'permission' => 'stocks.create',
                     ],
                 ],
             ],
             [
                 'heading' => 'Products Management',
-                'permission' => null,
+                'permission' => 'products.view',
                 'items' => [
                     [
                         'icon' => 'bolt',
                         'route' => 'products',
                         'label' => 'Products',
-                        'permission' => null,
+                        'permission' => 'products.view',
                     ],
                     [
                         'icon' => 'plus',
                         'route' => 'products.create',
                         'label' => 'Add New',
-                        'permission' => null,
+                        'permission' => 'products.create',
                     ],
                     [
                         'icon' => 'tag',
                         'route' => 'brands',
                         'label' => 'Brands',
-                        'permission' => null,
+                        'permission' => 'brands.view',
                     ],
                     [
                         'icon' => 'folder',
                         'route' => 'categories',
                         'label' => 'Categories',
-                        'permission' => null,
+                        'permission' => 'categories.view',
                     ],
                     [
                         'icon' => 'scale',
                         'route' => 'units',
                         'label' => 'Units',
-                        'permission' => null,
+                        'permission' => 'units.view',
                     ],
 
+                ],
+            ],
+            [
+                'heading' => 'Supplier Management',
+                'permission' => 'suppliers.view',
+                'items' => [
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'suppliers',
+                        'label' => 'Suppliers',
+                        'permission' => 'suppliers.view',
+                    ],
                 ],
             ],
             [
@@ -70,7 +94,7 @@ new class extends Component {
                         'icon' => 'user-group',
                         'route' => 'users',
                         'label' => 'Users',
-                        'permission' => null,
+                        'permission' => 'users.view',
                     ],
                     [
                         'icon' => 'shield-check',
