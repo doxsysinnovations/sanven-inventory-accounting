@@ -22,6 +22,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     Volt::route('users', 'users.index')->name('users');
     Volt::route('roles', 'roles.index')->name('roles');
+    Volt::route('audit-trail', 'audittrail.index')->name('audittrail');
 
     //Brands
     Volt::route('brands', 'brands.index')->name('brands');

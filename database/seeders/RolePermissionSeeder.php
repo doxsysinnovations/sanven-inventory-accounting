@@ -32,6 +32,9 @@ class RolePermissionSeeder extends Seeder
             'roles.edit',
             'roles.delete',
 
+            //Audit Trail
+            'audittrail.view',
+
             //Products
             'products.view',
             'products.create',
