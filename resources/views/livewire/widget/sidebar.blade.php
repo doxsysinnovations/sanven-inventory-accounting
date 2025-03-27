@@ -102,6 +102,12 @@ new class extends Component {
                         'label' => 'Roles',
                         'permission' => 'roles.view',
                     ],
+                    [
+                        'icon' => 'clipboard-document-list',
+                        'route' => 'audittrail',
+                        'label' => 'Audit Trail',
+                        'permission' => 'audittrail.view',
+                    ],
                 ],
             ],
         ];

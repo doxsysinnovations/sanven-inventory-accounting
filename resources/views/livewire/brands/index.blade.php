@@ -39,6 +39,7 @@ new class extends Component {
 
     public function edit(Brand $brand)
     {
+        $this->resetValidation();
         $this->brand = $brand;
         $this->name = $brand->name;
         $this->slug = $brand->slug;
@@ -241,10 +242,9 @@ new class extends Component {
                             </div>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                            <button type="submit"
-                                class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 sm:ml-3 sm:w-auto sm:text-sm">
+                            <flux:button type="submit" class="sm:ml-3 sm:w-auto sm:text-sm" variant="primary">
                                 {{ $isEditing ? 'Update' : 'Create' }}
-                            </button>
+                            </flux:button>
                             <button type="button" wire:click="$set('showModal', false)"
                                 class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                 Cancel
