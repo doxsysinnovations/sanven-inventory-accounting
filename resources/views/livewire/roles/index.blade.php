@@ -19,10 +19,7 @@ new class extends Component {
     public $selectedPermissions = [];
     public $selectAll = false;
 
-    public $form = [
-        'name' => '',
-        'description' => '',
-    ];
+    public $name;
 
     public function mount()
     {
@@ -32,7 +29,7 @@ new class extends Component {
     public function rules()
     {
         return [
-            'form.name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'selectedPermissions' => 'required|array',
         ];
     }
@@ -46,10 +43,9 @@ new class extends Component {
 
     public function edit(Role $role)
     {
+        $this->resetValidation();
         $this->role = $role;
-        $this->form = [
-            'name' => $role->name,
-        ];
+        $this->name = $role->name;
         $this->selectedPermissions = $role->permissions->pluck('id')->toArray();
         $this->isEditing = true;
         $this->showModal = true;
@@ -64,14 +60,14 @@ new class extends Component {
 
         if ($this->isEditing) {
             try {
-                $this->role->update($this->form);
+                $this->role->update(['name' => $this->name]);
                 $this->role->syncPermissions($this->selectedPermissions);
                 flash()->success('Role updated successfully!');
             } catch (\Exception $e) {
                 flash()->error('Error updating role: ' . $e->getMessage());
             }
         } else {
-            $role = Role::create($this->form);
+            $role = Role::create(['name' => $this->name]);
             $role->syncPermissions($this->selectedPermissions);
             flash()->success('Role created successfully!');
         }
@@ -107,12 +103,11 @@ new class extends Component {
 
     private function resetForm()
     {
-        $this->form = [
-            'name' => '',
-        ];
+        $this->name = '';
         $this->selectedPermissions = [];
         $this->role = null;
         $this->selectAll = false;
+        $this->resetValidation();
     }
 
     #[Title('Roles')]
@@ -218,11 +213,8 @@ new class extends Component {
                         <form wire:submit="save">
                             <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div class="mb-4">
-                                    <flux:input wire:model="form.name" :label="__('Name')" type="text" required
+                                    <flux:input wire:model="name" :label="__('Name')" type="text"
                                         class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                                    @error('form.name')
-                                        <span class="text-red-500 dark:text-red-400 text-xs">{{ $message }}</span>
-                                    @enderror
                                 </div>
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -265,10 +257,9 @@ new class extends Component {
                             </div>
                             <div
                                 class="bg-gray-50 dark:bg-gray-800 px-4 py-3 flex flex-col-reverse sm:flex-row-reverse sm:px-6 gap-2">
-                                <button type="submit"
-                                    class="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 sm:ml-3 sm:text-sm">
+                                <flux:button type="submit" class="sm:ml-3 sm:w-auto sm:text-sm" variant="primary">
                                     {{ $isEditing ? 'Update' : 'Create' }}
-                                </button>
+                                </flux:button>
                                 <button type="button" wire:click="$set('showModal', false)"
                                     class="w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:text-sm">
                                     Cancel
