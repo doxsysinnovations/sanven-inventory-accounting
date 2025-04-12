@@ -30,6 +30,11 @@ class CategorySeeder extends Seeder
                 'name' => 'MEDICAL SUPPLIES',
                 'slug' => 'medical-supplies',
             ],
+            [
+                'name' => 'REGULATED PRODUCTS',
+                'slug' => 'regulated-products',
+            ],
+
         ];
 
         foreach($categories as $category) {

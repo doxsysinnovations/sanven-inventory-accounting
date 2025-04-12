@@ -47,6 +47,12 @@ class RolePermissionSeeder extends Seeder
             'brands.edit',
             'brands.delete',
 
+            //Types
+            'types.view',
+            'types.create',
+            'types.edit',
+            'types.delete',
+
             //Categories
             'categories.view',
             'categories.create',

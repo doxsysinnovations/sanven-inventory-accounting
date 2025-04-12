@@ -123,29 +123,46 @@ new class extends Component {
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Image</th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Code</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Capital Price</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Selling Price</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Stocks</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
                         @foreach ($products as $product)
                             <tr class="dark:hover:bg-gray-800" wire:key="product-{{ $product->id ?? uniqid() }}">
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $product->code }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                    <img src="{{ $product->getFirstMediaUrl('product-image') }}"
+                                        alt="{{ $product->name }}" class="w-[75px] h-[75px] object-cover rounded-lg">
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $product->product_code }}
+                                </td>
                                 <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $product->name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ number_format($product->capital_price, 2) }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ number_format($product->selling_price, 2) }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300 {{ $product->stocks <= $product->low_stock_alert ? 'text-red-600 dark:text-red-400' : '' }}">
-                                    {{ $product->stocks }}
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                    {{ number_format($product->capital_price, 2) }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                    {{ number_format($product->selling_price, 2) }}</td>
+                                <td
+                                    class="whitespace-nowrap px-6 py-4 dark:text-gray-300 {{ $product->stocks <= $product->low_stock_alert ? 'text-red-600 dark:text-red-400' : '' }}">
+                                    {{ $product->stock_value }}
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 space-x-2">
                                     @can('products.edit')
@@ -203,7 +220,8 @@ new class extends Component {
                             </div>
 
                             <div class="mb-4">
-                                <flux:input wire:model="form.capital_price" :label="__('Capital Price')" type="number" step="0.01"
+                                <flux:input wire:model="form.capital_price" :label="__('Capital Price')"
+                                    type="number" step="0.01"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                                 @error('form.capital_price')
                                     <span class="text-red-500 dark:text-red-400 text-xs">{{ $message }}</span>
@@ -211,7 +229,8 @@ new class extends Component {
                             </div>
 
                             <div class="mb-4">
-                                <flux:input wire:model="form.selling_price" :label="__('Selling Price')" type="number" step="0.01"
+                                <flux:input wire:model="form.selling_price" :label="__('Selling Price')"
+                                    type="number" step="0.01"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                                 @error('form.selling_price')
                                     <span class="text-red-500 dark:text-red-400 text-xs">{{ $message }}</span>
@@ -227,8 +246,8 @@ new class extends Component {
                             </div>
 
                             <div class="mb-4">
-                                <flux:input wire:model="form.low_stock_alert" :label="__('Low Stock Alert')" type="number"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                                <flux:input wire:model="form.low_stock_alert" :label="__('Low Stock Alert')"
+                                    type="number" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                                 @error('form.low_stock_alert')
                                     <span class="text-red-500 dark:text-red-400 text-xs">{{ $message }}</span>
                                 @enderror

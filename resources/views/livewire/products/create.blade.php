@@ -1,88 +1,96 @@
 <?php
 
 use Livewire\Volt\Component;
-use App\Models\Brand;
-use App\Models\Category;
-use Livewire\Attributes\Title;
 
 new class extends Component {
     use Livewire\WithFileUploads;
 
-    public $currentTab = 'product_information';
+    public $product_code;
+    public $name;
+    public $description;
+    public $supplier;
+    public $capital_price;
+    public $selling_price;
+    public $expiration_date;
+    public $quantity;
+    public $product_type;
+    public $unit;
+    public $brand;
+    public $category;
+    public $quantity_per_piece = 1;
+    public $low_stock_value = 10;
+    public $image;
 
-    // Form Fields
-    public $code = '';
-    public $name = '';
-    public $description = '';
-    public $images = [];
-    public $price = '';
-    public $quantity = '';
-    public $sku = '';
-    public $category = '';
-    public $status = 'active';
+    public $productTypes = [];
+    public $units = [];
+    public $brands = [];
+    public $categories = [];
+    public $types = [];
+    public $suppliers = [];
 
-    public $subCategories = [];
-    public $selectedBrand = '';
-    public $selectedCategory = '';
-    public $selectedSubCategory = '';
-
-    public function nextTab()
+    public function mount()
     {
-        if ($this->currentTab === 'product_information') {
-            $this->currentTab = 'price_quantity';
-        } elseif ($this->currentTab === 'price_quantity') {
-            $this->currentTab = 'images';
-        }
+        $this->productTypes = \App\Models\ProductType::all();
+        $this->units = \App\Models\Unit::all();
+        $this->brands = \App\Models\Brand::orderBy('name')->get();
+        $this->categories = \App\Models\Category::orderBy('name')->get();
+        $this->types = \App\Models\ProductType::orderBy('name')->get();
+        $this->suppliers = \App\Models\Supplier::orderBy('name')->get();
     }
 
-    public function previousTab()
+    private function generateStockNumber()
     {
-        if ($this->currentTab === 'images') {
-            $this->currentTab = 'price_quantity';
-        } elseif ($this->currentTab === 'price_quantity') {
-            $this->currentTab = 'product_information';
+        $yearPrefix = date('Y');
+        $lastProduct = \App\Models\Stock::orderBy('id', 'desc')->first();
+        if ($lastProduct) {
+            $lastStockNumber = intval(substr($lastProduct->stock_number, -6));
+            $newStockNumber = $lastStockNumber + 1;
+        } else {
+            $newStockNumber = 1; // Start from 1 if no products exist
         }
+        return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
     }
 
-    public function save()
+    public function save($createAnother = false)
     {
-        $this->validate([
-            'code' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'images' => 'array',
-            'price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:1',
-            'sku' => 'required|string|max:100',
-            'category' => 'required|string|max:100',
-            'status' => 'required|in:active,inactive',
+        $validated = $this->validate([
+            'product_code' => 'required|unique:products',
+            'name' => 'required',
+            'description' => 'nullable',
+            'product_type' => 'required|exists:product_types,id',
+            'unit' => 'required|exists:units,id',
+            'brand' => 'required|exists:brands,id',
+            'category' => 'required|exists:categories,id',
+            'quantity_per_piece' => 'required|integer|min:1',
+            'low_stock_value' => 'required|integer|min:0',
         ]);
 
-        // Save logic here (e.g., database insertion)
-        session()->flash('success', 'Product saved successfully!');
-    }
+        $validated['stock_value'] = $this->quantity;
+        $validated['capital_price'] = $this->capital_price;
+        $validated['selling_price'] = $this->selling_price;
 
-    public function getSubCategoriesProperty()
-    {
-        return Category::where('is_active', true)->where('is_parent', true)->get();
-    }
+        $product = \App\Models\Product::create($validated);
+        if ($this->image) {
+            $product->addMedia($this->image)->toMediaCollection('product-image');
+        }
 
-    public function updatingSelectedCategory($id)
-    {
-        $this->subCategories = Category::where('parent_id', $id)->get();
+        $product->stocks()->create([
+            'stock_number' => $this->generateStockNumber(),
+            'supplier_id' => $this->supplier,
+            'quantity' => $this->quantity,
+            'capital_price' => $this->capital_price,
+            'selling_price' => $this->selling_price,
+            'expiration_date' => $this->expiration_date,
+        ]);
+
+        $this->reset();
+        flash()->success('Product created successfully!');
+
+        if (!$createAnother) {
+            return redirect()->route('products');
+        }
     }
-    #[Title('Create Product')]
-    public function with()
-    {
-        $brands = Brand::where('is_active', true)->get();
-        $categories = Category::where('is_active', true)->get();
-        return [
-            'brands' => $brands,
-            'categories' => $categories,
-        ];
-    }
-};
-?>
+}; ?>
 
 <div>
     <div class="mb-4">
@@ -126,136 +134,166 @@ new class extends Component {
             </flux:button>
         </nav>
     </div>
-
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <!-- Tab Navigation -->
-        <div x-data="{ tab: $wire.currentTab }">
-            <div class="flex border-b border-gray-200 dark:border-gray-700">
-                <button @click="tab = 'product_information'"
-                    :class="{ 'border-b-2 border-blue-500 text-blue-500': tab === 'product_information' }"
-                    class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
-                    Product Information
-                </button>
+        <!-- Previous code remains the same until the buttons section -->
 
-                <button @click="tab = 'price_quantity'"
-                    :class="{ 'border-b-2 border-blue-500 text-blue-500': tab === 'price_quantity' }"
-                    class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
-                    Price & Quantity
-                </button>
+        <div class="p-4">
 
-                <button @click="tab = 'images'"
-                    :class="{ 'border-b-2 border-blue-500 text-blue-500': tab === 'images' }"
-                    class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
-                    Images
-                </button>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <flux:input wire:model="product_code" :label="__('Product Code')" type="text"
+                        placeholder="ex 123123" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                </div>
+                <div>
+                    <flux:input wire:model="name" :label="__('Product Name')" type="text" placeholder="ex Product 1"
+                        class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                </div>
             </div>
+            <div class="grid grid-cols-4 gap-4 mb-4">
+                <div>
+                    <flux:select wire:model.live="brand" :label="__('Brand')" size="md">
+                        <flux:select.option value="">Choose brand...</flux:select.option>
+                        @foreach ($brands as $brand)
+                            <flux:select.option value="{{ $brand->id }}">{{ $brand->name }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+                <div>
+                    <flux:select wire:model.live="category" :label="__('Category')" size="md">
+                        <flux:select.option value="">Choose category...</flux:select.option>
+                        @foreach ($categories as $category)
+                            <flux:select.option value="{{ $category->id }}">{{ $category->name }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+                <div>
+                    <flux:select wire:model.live="product_type" :label="__('Product Type')" size="md" searchable>
+                        <flux:select.option value="">Choose product type...</flux:select.option>
+                        @foreach ($types as $type)
+                            <flux:select.option value="{{ $type->id }}">{{ $type->name }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+                <div>
+                    <flux:select wire:model.live="unit" :label="__('Unit')" size="md">
+                        <flux:select.option value="">Choose unit...</flux:select.option>
+                        @foreach ($units as $unit)
+                            <flux:select.option value="{{ $unit->id }}">{{ $unit->name }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <flux:input wire:model="quantity_per_piece" :label="__('Quantity Per Piece')" type="number"
+                        placeholder="ex 1" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                </div>
+                <div>
+                    <flux:input wire:model="low_stock_value" :label="__('Low Stock Value')" type="number"
+                        placeholder="ex 10" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 mb-4">
+                <flux:textarea wire:model="description" label="Description" placeholder="type description..." />
+            </div>
+            <div class="grid grid-cols-3 mb-4">
+                <div wire:ignore>
+                    <!-- File Input -->
+                    <flux:input x-ref="fileInput" wire:model="image" type="file" accept="image/*"
+                        class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+                        x-on:change="
+                            const file = $event.target.files[0];
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                $refs.preview.src = e.target.result;
+                                $refs.preview.classList.remove('hidden');
+                                $refs.placeholder.classList.add('hidden');
+                                $refs.removeButton.classList.remove('hidden');
+                            };
+                            reader.readAsDataURL(file);
+                        " />
 
-            <!-- Tab Panels -->
-            <div class="mt-4">
-                <!-- Product Information Tab -->
-                <div x-show="tab === 'product_information'" class="p-4">
+                    <!-- Image Display with Remove Button -->
+                    <div class="mt-2 relative w-32 h-32">
+                        <!-- Remove Button in top-right corner -->
+                        <button x-ref="removeButton"
+                            class="hidden absolute top-0 right-0 z-10 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            x-on:click="
+                                $refs.preview.src = '';
+                                $refs.preview.classList.add('hidden');
+                                $refs.placeholder.classList.remove('hidden');
+                                $refs.removeButton.classList.add('hidden');
+                                $refs.fileInput.value = '';
+                                $wire.set('image', null);
+                            ">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
 
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <flux:input wire:model="code" :label="__('Product Code')" type="text"
-                                placeholder="ex 123123"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                        <!-- Placeholder Icon -->
+                        <div x-ref="placeholder"
+                            class="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                            <svg class="w-12 h-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
                         </div>
-                        <div>
-                            <flux:input wire:model="name" :label="__('Product Name')" type="text"
-                                placeholder="ex Product 1"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <flux:select wire:model.live="selectedBrand" :label="__('Brand')" size="md"
-                                placeholder="Choose brand...">
-                                @foreach ($brands as $brand)
-                                    <flux:select.option value="{{ $brand->id }}">{{ $brand->name }}
-                                    </flux:select.option>
-                                @endforeach
-                            </flux:select>
-                        </div>
-                        <div>
-                            <flux:select wire:model.live="selectedCategory" :label="__('Category')" size="md"
-                                placeholder="Choose category...">
-                                @foreach ($categories as $category)
-                                    <flux:select.option value="{{ $category->id }}">{{ $category->name }}
-                                    </flux:select.option>
-                                @endforeach
-                            </flux:select>
-                        </div>
-                        <div>
-                            <flux:select wire:model.live="selectedSubCategory" :label="__('Sub Category (optional)')"
-                                size="md" placeholder="Choose sub category...">
-                                @foreach ($subCategories as $category)
-                                    <flux:select.option value="{{ $category->id }}">{{ $category->name }}
-                                    </flux:select.option>
-                                @endforeach
-                            </flux:select>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1">
-                        <flux:textarea label="Description" placeholder="type description..." />
+
+                        <!-- Image Preview -->
+                        <img x-ref="preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-lg" />
                     </div>
                 </div>
 
-                <!-- Price & Quantity Tab -->
-                <div x-show="tab === 'price_quantity'" class="p-4">
-
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <flux:input wire:model="capital_price" :label="__('Capital Price')" type="number"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                        </div>
-                        <div>
-                            <flux:input wire:model="selling_price" :label="__('Selling Price')" type="number"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                        </div>
+                <div class="col-span-2">
+                    <div class="mb-4">
+                        <flux:input wire:model="quantity" :label="__('Initial Stock')" type="number" min="0"
+                            placeholder="Enter initial stock"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                     </div>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <flux:input wire:model="discount" :label="__('Discount')" type="number"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                        </div>
-                        <div>
-                            <flux:input wire:model="discount_price" :label="__('Discount Price')" type="number"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                        </div>
+                    <div class="mb-4">
+                        <flux:input wire:model="capital_price" :label="__('Capital Price')" type="number"
+                            step="0.01" min="0" placeholder="Enter capital price"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                     </div>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <flux:input wire:model="quantity" :label="__('Quantity')" type="number"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                        </div>
+                    <div class="mb-4">
+                        <flux:input wire:model="selling_price" :label="__('Selling Price')" type="number"
+                            step="0.01" min="0" placeholder="Enter selling price"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                     </div>
-                </div>
-
-                <!-- Images Tab -->
-                <div x-show="tab === 'images'" class="p-4">
-                    <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Images</h2>
-
-                    <input type="file" wire:model="images" multiple
-                        class="block w-full p-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
-
-                    @if ($images)
-                        <div class="mt-4 grid grid-cols-3 gap-4">
-                            @foreach ($images as $image)
-                                <img src="{{ $image->temporaryUrl() }}" class="w-full h-32 object-cover rounded-md">
+                    <div class="mb-4">
+                        <flux:input wire:model="expiration_date" :label="__('Expiration Date')" type="date"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                    </div>
+                    <div class="mb-4">
+                        <flux:select wire:model="supplier" :label="__('Supplier')" size="md">
+                            <flux:select.option value="">Choose supplier...</flux:select.option>
+                            @foreach ($suppliers as $supplier)
+                                <flux:select.option value="{{ $supplier->id }}">{{ $supplier->name }}
+                                </flux:select.option>
                             @endforeach
-                        </div>
-                    @endif
+                        </flux:select>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Navigation Buttons -->
-        <div class="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
-            <div class="flex justify-end">
-                <button wire:click="save" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Submit
-                </button>
+            <!-- Navigation Buttons -->
+            <div class="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <div class="flex justify-end space-x-4">
+                    <flux:button variant="primary" wire:click="save">
+                        Save
+                    </flux:button>
+                    <flux:button wire:click="save(true)" variant="primary"
+                        class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                        Save & Create Another
+                    </flux:button>
+                </div>
             </div>
         </div>
     </div>

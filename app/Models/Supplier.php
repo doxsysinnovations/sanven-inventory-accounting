@@ -14,6 +14,8 @@ class Supplier extends Model implements HasMedia
     use SoftDeletes, LogsActivity, InteractsWithMedia;
     protected $fillable = [
         'name',
+        'trade_name',
+        'identification_number',
         'address',
         'contact_number',
         'email',
