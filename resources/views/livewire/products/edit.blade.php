@@ -1,10 +1,12 @@
 <?php
 
 use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
 
 new class extends Component {
-    use Livewire\WithFileUploads;
+    use WithFileUploads;
 
+    public $product;
     public $product_code;
     public $name;
     public $description;
@@ -13,10 +15,10 @@ new class extends Component {
     public $selling_price;
     public $expiration_date;
     public $quantity;
-    public $product_type;
-    public $unit;
-    public $brand;
-    public $category;
+    public $product_type_id;
+    public $unit_id;
+    public $brand_id;
+    public $category_id;
     public $quantity_per_piece = 1;
     public $low_stock_value = 10;
     public $image;
@@ -28,14 +30,82 @@ new class extends Component {
     public $types = [];
     public $suppliers = [];
 
-    public function mount()
+    public function mount($productId)
     {
-        $this->productTypes = \App\Models\ProductType::all();
-        $this->units = \App\Models\Unit::all();
+        $this->product = \App\Models\Product::with('stocks')->findOrFail($productId);
+
+        $this->product_code = $this->product->product_code;
+        $this->name = $this->product->name;
+        $this->description = $this->product->description;
+        $this->product_type_id = $this->product->product_type_id;
+        $this->unit_id = $this->product->unit_id;
+        $this->brand_id = $this->product->brand_id;
+        $this->category_id = $this->product->category_id;
+        $this->quantity_per_piece = $this->product->quantity_per_piece;
+        $this->low_stock_value = $this->product->low_stock_value;
+
+        // Fill additional details from first stock (optional)
+        $stock = $this->product->stocks->first();
+        if ($stock) {
+            $this->supplier = $stock->supplier_id;
+            $this->capital_price = $stock->capital_price;
+            $this->selling_price = $stock->selling_price;
+            $this->quantity = $stock->quantity;
+            $this->expiration_date = $stock->expiration_date;
+        }
+
+        $this->loadDropdownData();
+    }
+
+    private function loadDropdownData()
+    {
         $this->brands = \App\Models\Brand::orderBy('name')->get();
         $this->categories = \App\Models\Category::orderBy('name')->get();
+        $this->units = \App\Models\Unit::orderBy('name')->get();
         $this->types = \App\Models\ProductType::orderBy('name')->get();
         $this->suppliers = \App\Models\Supplier::orderBy('name')->get();
+    }
+
+    public function update()
+    {
+        $validated = $this->validate([
+            'product_code' => 'required|unique:products,product_code,' . $this->product->id,
+            'name' => 'required',
+            'description' => 'nullable',
+            'product_type_id' => 'required|exists:product_types,id',
+            'unit_id' => 'required|exists:units,id',
+            'brand_id' => 'required|exists:brands,id',
+            'category_id' => 'required|exists:categories,id',
+            'quantity_per_piece' => 'required|integer|min:1',
+            'low_stock_value' => 'required|integer|min:0',
+        ]);
+
+        $this->product->update(
+            array_merge($validated, [
+                'capital_price' => $this->capital_price,
+                'selling_price' => $this->selling_price,
+            ]),
+        );
+
+        if ($this->image) {
+            $this->product->clearMediaCollection('product-image');
+            $this->product->addMedia($this->image)->toMediaCollection('product-image');
+        }
+
+        $stock = $this->product->stocks()->firstOrNew([]);
+        $stock->fill([
+            'stock_number' => $stock->stock_number ?? $this->generateStockNumber(),
+            'supplier_id' => $this->supplier,
+            'quantity' => $this->quantity,
+            'capital_price' => $this->capital_price,
+            'selling_price' => $this->selling_price,
+            'expiration_date' => $this->expiration_date,
+        ]);
+        $stock->save();
+
+        flash()->success('Product updated successfully!');
+
+        return redirect()->route('products');
     }
 
     private function generateStockNumber()
@@ -46,51 +116,12 @@ new class extends Component {
             $lastStockNumber = intval(substr($lastProduct->stock_number, -6));
             $newStockNumber = $lastStockNumber + 1;
         } else {
-            $newStockNumber = 1; // Start from 1 if no products exist
+            $newStockNumber = 1;
         }
         return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
     }
-
-    public function save($createAnother = false)
-    {
-        $validated = $this->validate([
-            'product_code' => 'required|unique:products',
-            'name' => 'required',
-            'description' => 'nullable',
-            'product_type' => 'required|exists:product_types,id',
-            'unit' => 'required|exists:units,id',
-            'brand' => 'required|exists:brands,id',
-            'category' => 'required|exists:categories,id',
-            'quantity_per_piece' => 'required|integer|min:1',
-            'low_stock_value' => 'required|integer|min:0',
-        ]);
-
-        $validated['stock_value'] = $this->quantity;
-        $validated['capital_price'] = $this->capital_price;
-        $validated['selling_price'] = $this->selling_price;
-
-        $product = \App\Models\Product::create($validated);
-        if ($this->image) {
-            $product->addMedia($this->image)->toMediaCollection('product-image');
-        }
-
-        $product->stocks()->create([
-            'stock_number' => $this->generateStockNumber(),
-            'supplier_id' => $this->supplier,
-            'quantity' => $this->quantity,
-            'capital_price' => $this->capital_price,
-            'selling_price' => $this->selling_price,
-            'expiration_date' => $this->expiration_date,
-        ]);
-
-        $this->reset();
-        flash()->success('Product created successfully!');
-
-        if (!$createAnother) {
-            return redirect()->route('products');
-        }
-    }
-}; ?>
+};
+?>
 
 <div>
     <div class="mb-4">
@@ -151,38 +182,42 @@ new class extends Component {
             </div>
             <div class="grid grid-cols-4 gap-4 mb-4">
                 <div>
-                    <flux:select wire:model.live="brand" :label="__('Brand')" size="md">
-                        <flux:select.option value="">Choose brand...</flux:select.option>
+                    <flux:select wire:model.live="brand_id" :label="__('Brand')" size="md">
+                        <option value="">Choose brand...</option>
                         @foreach ($brands as $brand)
-                            <flux:select.option value="{{ $brand->id }}">{{ $brand->name }}
-                            </flux:select.option>
+                            <option value="{{ $brand->id }}" {{ $brand_id == $brand->id ? 'selected' : '' }}>
+                                {{ $brand->name }}
+                            </option>
                         @endforeach
                     </flux:select>
                 </div>
                 <div>
-                    <flux:select wire:model.live="category" :label="__('Category')" size="md">
-                        <flux:select.option value="">Choose category...</flux:select.option>
+                    <flux:select wire:model.live="category_id" :label="__('Category')" size="md">
+                        <option value="">Choose category...</option>
                         @foreach ($categories as $category)
-                            <flux:select.option value="{{ $category->id }}">{{ $category->name }}
-                            </flux:select.option>
+                            <option value="{{ $category->id }}"  {{ $category_id == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
                         @endforeach
                     </flux:select>
                 </div>
                 <div>
-                    <flux:select wire:model.live="product_type" :label="__('Product Type')" size="md" searchable>
-                        <flux:select.option value="">Choose product type...</flux:select.option>
+                    <flux:select wire:model.live="product_type_id" :label="__('Product Type')" size="md">
+                        <option value="">Choose product type...</option>
                         @foreach ($types as $type)
-                            <flux:select.option value="{{ $type->id }}">{{ $type->name }}
-                            </flux:select.option>
+                            <option value="{{ $type->id }}"  {{ $product_type_id == $type->id ? 'selected' : '' }}>
+                                {{ $type->name }}
+                            </option>
                         @endforeach
                     </flux:select>
                 </div>
                 <div>
-                    <flux:select wire:model.live="unit" :label="__('Unit')" size="md">
-                        <flux:select.option value="">Choose unit...</flux:select.option>
+                    <flux:select wire:model.live="unit_id" :label="__('Unit')" size="md">
+                        <option value="">Choose unit...</option>
                         @foreach ($units as $unit)
-                            <flux:select.option value="{{ $unit->id }}">{{ $unit->name }}
-                            </flux:select.option>
+                            <option value="{{ $unit->id }}" {{ $unit_id == $unit->id ? 'selected' : '' }}>
+                                {{ $unit->name }}
+                            </option>
                         @endforeach
                     </flux:select>
                 </div>
@@ -238,7 +273,7 @@ new class extends Component {
                         </button>
 
                         <!-- Placeholder Icon -->
-                        <div x-ref="placeholder"
+                        <div x-ref="placeholder" x-show="!$refs.preview.src"
                             class="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                             <svg class="w-12 h-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
@@ -248,7 +283,13 @@ new class extends Component {
                         </div>
 
                         <!-- Image Preview -->
-                        <img x-ref="preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-lg" />
+                        <img x-ref="preview" x-init="$refs.preview.src = '{{ optional($product)->getFirstMediaUrl('product-image') }}';
+                        if ($refs.preview.src) {
+                            $refs.preview.classList.remove('hidden');
+                            $refs.placeholder.classList.add('hidden');
+                            $refs.removeButton.classList.remove('hidden');
+                        }"
+                            class="hidden absolute inset-0 w-full h-full object-cover rounded-lg" />
                     </div>
                 </div>
 
@@ -272,15 +313,16 @@ new class extends Component {
                         <flux:input wire:model="expiration_date" :label="__('Expiration Date')" type="date"
                             class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                     </div>
-                    <div class="mb-4">
+                    {{-- <div class="mb-4">
                         <flux:select wire:model="supplier" :label="__('Supplier')" size="md">
-                            <flux:select.option value="">Choose supplier...</flux:select.option>
+                            <option value="">Choose supplier...</option>
                             @foreach ($suppliers as $supplier)
-                                <flux:select.option value="{{ $supplier->id }}">{{ $supplier->name }}
-                                </flux:select.option>
+                                <option value="{{ $supplier->id }}"  {{ $supplier == $supplier->id ? 'selected' : '' }}>
+                                    {{ $supplier->name }}
+                                </option>
                             @endforeach
                         </flux:select>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             <!-- Navigation Buttons -->

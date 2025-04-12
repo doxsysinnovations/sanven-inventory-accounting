@@ -30,4 +30,14 @@ class Category extends Model implements HasMedia
     {
         return $this->hasMany(Product::class, 'category_id', 'id');
     }
+
+    /**
+     * Get all of the types for the Category
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function types(): HasMany
+    {
+        return $this->hasMany(ProductType::class, 'category_id', 'id');
+    }
 }

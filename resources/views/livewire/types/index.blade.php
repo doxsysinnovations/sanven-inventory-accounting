@@ -1,35 +1,37 @@
 <?php
-
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
-use App\Models\Supplier;
+use App\Models\ProductType;
+use App\Models\Category;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 
 new class extends Component {
     use WithPagination;
-
+    #[Url]
     public $search = '';
+    #[Url]
+    public $selectedCategory = '';
     public $showModal = false;
-    public $supplier;
+    public $type;
     public $isEditing = false;
     public $confirmingDelete = false;
-    public $supplierToDelete;
+    public $typeToDelete;
     public $name = '';
-    public $contact_number = '';
-    public $address = '';
-    public $email = '';
-    public $trade_name = '';
-    public $identification_number = '';
+    public $description = '';
+    public $category_id = '';
+    public $categories = [];
+    public function mount()
+    {
+        $this->categories = Category::all();
+    }
 
     public function rules()
     {
         return [
             'name' => 'required|string|max:255',
-            'trade_name' => 'required|string|max:255',
-            'identification_number' => 'required|string|max:255',
-            'contact_number' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'email' => $this->isEditing ? 'nullable|email|unique:suppliers,email,' . $this->supplier->id : 'nullable|email|unique:suppliers,email',
+            'description' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
         ];
     }
 
@@ -40,23 +42,15 @@ new class extends Component {
         $this->showModal = true;
     }
 
-    public function edit(Supplier $supplier)
+    public function edit(ProductType $type)
     {
         $this->resetValidation();
-        $this->supplier = $supplier;
-        $this->name = $supplier->name;
-        $this->trade_name = $supplier->trade_name;
-        $this->identification_number = $supplier->identification_number;
-        $this->contact_number = $supplier->contact_number;
-        $this->address = $supplier->address;
-        $this->email = $supplier->email;
+        $this->type = $type;
+        $this->name = $type->name;
+        $this->description = $type->description;
+        $this->category_id = $type->category_id;
         $this->isEditing = true;
         $this->showModal = true;
-    }
-
-    public function updatingSearch()
-    {
-        $this->resetPage();
     }
 
     public function save()
@@ -64,75 +58,80 @@ new class extends Component {
         $this->validate();
 
         if ($this->isEditing) {
-            $this->supplier->update([
+            $this->type->update([
                 'name' => $this->name,
-                'trade_name' => $this->trade_name,
-                'identification_number' => $this->identification_number,
-                'contact_number' => $this->contact_number,
-                'address' => $this->address,
-                'email' => $this->email,
+                'description' => $this->description,
+                'category_id' => $this->category_id,
             ]);
-            flash()->success('Supplier updated successfully!');
+            flash()->success('Type updated successfully!');
         } else {
-            Supplier::create([
+            ProductType::create([
                 'name' => $this->name,
-                'trade_name' => $this->trade_name,
-                'identification_number' => $this->identification_number,
-                'contact_number' => $this->contact_number,
-                'address' => $this->address,
-                'email' => $this->email,
+                'description' => $this->description,
+                'category_id' => $this->category_id,
             ]);
-            flash()->success('Supplier created successfully!');
+            flash()->success('Type created successfully!');
         }
 
         $this->showModal = false;
         $this->resetForm();
     }
 
-    public function confirmDelete($supplierId)
+    public function confirmDelete($typeId)
     {
-        $this->supplierToDelete = $supplierId;
+        $this->typeToDelete = $typeId;
         $this->confirmingDelete = true;
     }
 
     public function delete()
     {
-        $supplier = Supplier::find($this->supplierToDelete);
-        if ($supplier) {
-            $supplier->delete();
-            flash()->success('Supplier deleted successfully!');
+        $type = ProductType::find($this->typeToDelete);
+        if ($type) {
+            $type->delete();
+            flash()->success('Type deleted successfully!');
         }
         $this->confirmingDelete = false;
-        $this->supplierToDelete = null;
+        $this->typeToDelete = null;
     }
 
     private function resetForm()
     {
         $this->name = '';
-        $this->trade_name = '';
-        $this->identification_number = '';
-        $this->contact_number = '';
-        $this->address = '';
-        $this->email = '';
-        $this->supplier = null;
+        $this->description = '';
+        $this->category_id = '';
+        $this->type = null;
         $this->resetValidation();
     }
 
-    #[Title('Suppliers')]
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSelectedCategory()
+    {
+        $this->resetPage();
+    }
+
+    #[Title('Types')]
     public function with(): array
     {
         return [
-            'suppliers' => $this->suppliers,
+            'types' => $this->types,
         ];
     }
 
-    public function getSuppliersProperty()
+    public function getTypesProperty()
     {
-        return Supplier::query()
-            ->where('identification_number', 'like', '%' . $this->search . '%')
-            ->orWhere('name', 'like', '%' . $this->search . '%')
-            ->orWhere('trade_name', 'like', '%' . $this->search . '%')
-            ->orWhere('email', 'like', '%' . $this->search . '%')
+        return ProductType::query()
+            ->with('category')
+            ->where('name', 'like', '%' . $this->search . '%')
+            ->when($this->search, function($query) {
+                $query->where('name', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->selectedCategory, function($query) {
+                $query->where('category_id', $this->selectedCategory);
+            })
             ->paginate(10);
     }
 };
@@ -156,7 +155,7 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Suppliers</span>
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Types</span>
                     </div>
                 </li>
             </ol>
@@ -166,19 +165,28 @@ new class extends Component {
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
         <div class="flex items-center justify-between">
             <div class="w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search suppliers..."
+                <input wire:model.live="search" type="search" placeholder="Search types..."
                     class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
             </div>
+            <div class="w-1/3">
+                <select wire:model.live="selectedCategory"
+                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
+                    <option value="">All Categories</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
-        @if ($suppliers->isEmpty())
+        @if ($types->isEmpty())
             <div class="flex flex-col items-center justify-center p-8">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">No suppliers found</p>
-                @can('suppliers.create')
+                <p class="mb-4 text-gray-500 dark:text-gray-400">No types found</p>
+                @can('types.create')
                     <button wire:click="create"
                         class="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white transition-all duration-200 ease-in-out hover:bg-green-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 active:bg-green-800 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="my-auto mr-2 h-5 w-5" viewBox="0 0 20 20"
@@ -187,13 +195,13 @@ new class extends Component {
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Add Supplier
+                        Add Type
                     </button>
                 @endcan
             </div>
         @else
             <div class="flex justify-end">
-                @can('suppliers.create')
+                @can('types.create')
                     <button wire:click="create"
                         class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
@@ -202,7 +210,7 @@ new class extends Component {
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Add Supplier
+                        Add Type
                     </button>
                 @endcan
 
@@ -213,44 +221,33 @@ new class extends Component {
                         <tr>
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                ID</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Name</th>
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Trade Name</th>
+                                Description</th>
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Contact Number</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Email</th>
-                            {{-- <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Address</th> --}}
+                                Category</th>
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                        @foreach ($suppliers as $supplier)
-                            <tr class="dark:hover:bg-gray-800" wire:key="supplier-{{ $supplier->id ?? uniqid() }}">
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->identification_number }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->trade_name }}</td>
+                        @foreach ($types as $type)
+                            <tr class="dark:hover:bg-gray-800" wire:key="type-{{ $type->id ?? uniqid() }}">
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $type->name }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $type->description }}
+                                </td>
                                 <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                    {{ $supplier->contact_number }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->email }}</td>
-                                {{-- <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->address }}</td> --}}
+                                    {{ $type->category->name ?? '' }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 space-x-2">
-                                    @can('suppliers.edit')
-                                        <button wire:click="edit({{ $supplier->id }})"
+                                    @can('types.edit')
+                                        <button wire:click="edit({{ $type->id }})"
                                             class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
                                     @endcan
-                                    @can('suppliers.delete')
-                                        <button wire:click="confirmDelete({{ $supplier->id }})"
+                                    @can('types.delete')
+                                        <button wire:click="confirmDelete({{ $type->id }})"
                                             class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
                                     @endcan
                                 </td>
@@ -260,7 +257,7 @@ new class extends Component {
                 </table>
             </div>
             <div class="mt-4">
-                {{ $suppliers->links() }}
+                {{ $types->links() }}
             </div>
         @endif
     </div>
@@ -281,24 +278,17 @@ new class extends Component {
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                             </div>
                             <div class="mb-4">
-                                <flux:input wire:model="trade_name" :label="__('Trade Name')" type="text"
+                                <flux:textarea wire:model="description" :label="__('Description')"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                             </div>
                             <div class="mb-4">
-                                <flux:input wire:model="identification_number" :label="__('Identification Number')"
-                                    type="text" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="contact_number" :label="__('Contact Number')" type="text"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="email" :label="__('Email')" type="email"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:textarea wire:model="address" :label="__('Address')"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                                <flux:select wire:model="category_id" :label="__('Category')"
+                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600">
+                                    <option value="">Select a category</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                </flux:select>
                             </div>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
@@ -328,11 +318,11 @@ new class extends Component {
                         <div class="sm:flex sm:items-start">
                             <div class="mt-3 text-center sm:mt-0 sm:text-left">
                                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Supplier
+                                    Delete Type
                                 </h3>
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this supplier? This action cannot be undone.
+                                        Are you sure you want to delete this type? This action cannot be undone.
                                     </p>
                                 </div>
                             </div>

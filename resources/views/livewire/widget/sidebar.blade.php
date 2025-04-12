@@ -66,6 +66,12 @@ new class extends Component {
                         'permission' => 'categories.view',
                     ],
                     [
+                        'icon' => 'cube',
+                        'route' => 'types',
+                        'label' => 'Types',
+                        'permission' => 'types.view',
+                    ],
+                    [
                         'icon' => 'scale',
                         'route' => 'units',
                         'label' => 'Units',

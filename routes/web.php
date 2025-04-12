@@ -26,6 +26,8 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Brands
     Volt::route('brands', 'brands.index')->name('brands');
+    //Types
+    Volt::route('types', 'types.index')->name('types');
     //Categories
     Volt::route('categories', 'categories.index')->name('categories');
     //Units
@@ -33,6 +35,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Products
     Volt::route('products', 'products.index')->name('products');
     Volt::route('products/create', 'products.create')->name('products.create');
+    Volt::route('products/{productId}/edit', 'products.edit')->name('products.edit');
 
     //Suppliers
     Volt::route('suppliers', 'suppliers.index')->name('suppliers');

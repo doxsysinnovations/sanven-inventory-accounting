@@ -25,9 +25,7 @@ class Product extends Model implements HasMedia
         'subcategory_id',
         'capital_price',
         'selling_price',
-        'discount',
-        'discount_price',
-        'quantity',
+        'stock_value',
         'low_stock_alert'
     ];
 
@@ -102,5 +100,15 @@ class Product extends Model implements HasMedia
             ])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    /**
+     * Get the type that owns the Product
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(ProductType::class, 'product_type_id', 'id');
     }
 }
