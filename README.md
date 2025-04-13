@@ -1,7 +1,7 @@
-# Installation Instructions for Sanven Laravel 12 Project
+# Installation Instructions for School Portal Laravel 12 Project
 
 ## Prerequisites
-- PHP 8.2 or higher
+- PHP 8.3 or higher
 - Composer
 - Node.js and npm
 - MySQL or another database supported by Laravel
@@ -11,8 +11,8 @@
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/doxsysinnovations/sanven-inventory-accounting.git sanven
-   cd sanven
+   git clone https://github.com/djgraphics28/school-portal.git school-portal
+   cd school-portal
    ```
 
 2. Install PHP dependencies
@@ -30,7 +30,8 @@
    ```bash
    php artisan key:generate
    ```
- ```bash
+5. Migrate and seed 
+   ```bash
    php artisan migrate --seed
    ```
 
