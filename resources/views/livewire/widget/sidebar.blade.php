@@ -23,6 +23,18 @@ new class extends Component {
                         'label' => 'Dashboard',
                         'permission' => 'dashboard.view',
                     ],
+                    [
+                        'icon' => 'shopping-cart',
+                        'route' => 'pos',
+                        'label' => 'POS',
+                        'permission' => 'orders.view',
+                    ],
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'quotations',
+                        'label' => 'Quotations',
+                        'permission' => 'quotations.view',
+                    ],
                 ],
             ],
             [
@@ -77,7 +89,6 @@ new class extends Component {
                         'label' => 'Units',
                         'permission' => 'units.view',
                     ],
-
                 ],
             ],
             [
@@ -122,21 +133,28 @@ new class extends Component {
         $filteredMenuItems = $this->filterMenuItems($this->menuItems, $this->search);
 
         return [
-            'menuItems' => $filteredMenuItems
+            'menuItems' => $filteredMenuItems,
         ];
     }
 
     protected function filterMenuItems($menuItems, $search)
     {
-        return collect($menuItems)->map(function ($group) use ($search) {
-            $filteredItems = collect($group['items'])->filter(function ($item) use ($search) {
-                return stripos($item['label'], $search) !== false;
-            })->values()->toArray();
+        return collect($menuItems)
+            ->map(function ($group) use ($search) {
+                $filteredItems = collect($group['items'])
+                    ->filter(function ($item) use ($search) {
+                        return stripos($item['label'], $search) !== false;
+                    })
+                    ->values()
+                    ->toArray();
 
-            return array_merge($group, ['items' => $filteredItems]);
-        })->filter(function ($group) {
-            return !empty($group['items']);
-        })->values()->toArray();
+                return array_merge($group, ['items' => $filteredItems]);
+            })
+            ->filter(function ($group) {
+                return !empty($group['items']);
+            })
+            ->values()
+            ->toArray();
     }
 }; ?>
 

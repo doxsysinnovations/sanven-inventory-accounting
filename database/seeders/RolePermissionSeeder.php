@@ -76,6 +76,36 @@ class RolePermissionSeeder extends Seeder
             'stocks.create',
             'stocks.edit',
             'stocks.delete',
+
+            //Orders/POS
+            'orders.view',
+            'orders.create',
+            'orders.edit',
+            'orders.delete',
+
+            //Quotations
+            'quotations.view',
+            'quotations.create',
+            'quotations.edit',
+            'quotations.delete',
+
+            //Purchases
+            'purchases.view',
+            'purchases.create',
+            'purchases.edit',
+            'purchases.delete',
+
+            //Expenses
+            'expenses.view',
+            'expenses.create',
+            'expenses.edit',
+            'expenses.delete',
+
+            //Reports
+            'reports.view',
+            'reports.create',
+            'reports.edit',
+            'reports.delete',
         ];
 
         foreach ($permissions as $permission) {
