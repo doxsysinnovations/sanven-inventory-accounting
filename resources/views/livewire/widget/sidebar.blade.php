@@ -32,8 +32,14 @@ new class extends Component {
                     [
                         'icon' => 'plus',
                         'route' => 'stocks.create',
-                        'label' => 'Add Stocks',
+                        'label' => 'Receive Stocks',
                         'permission' => 'stocks.create',
+                    ],
+                    [
+                        'icon' => 'list-bullet',
+                        'route' => 'stocks',
+                        'label' => 'Stocks List',
+                        'permission' => 'stocks.view',
                     ],
                 ],
             ],
