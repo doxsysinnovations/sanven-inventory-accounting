@@ -7,7 +7,12 @@ use App\Models\Supplier;
 use App\Models\Unit;
 
 new class extends Component {
+    public string $stock_number = '';
+    public int $product_id = 0;
     public string $product_name = '';
+    public string $product_description = '';
+    public string $brand_name = '';
+    public string $product_category = '';
     public string $product_code = '';
     public string $batch_number = '';
     public int $quantity = 0;
@@ -25,7 +30,7 @@ new class extends Component {
     public $locations = [];
     public $units = []; // List of units
     public string $unit = ''; // Selected unit
-
+    public string $supplier = ''; 
     public function mount()
     {
         $this->products = Product::all(); // Load all products initially
@@ -33,10 +38,20 @@ new class extends Component {
         $this->units = Unit::all(); // Load all units
     }
 
-    public function updatedSearch()
+    public function updatedSearch($value)
     {
-        $this->products = Product::where('name', 'like', '%' . $this->search . '%')
-            ->orWhere('code', 'like', '%' . $this->search . '%')
+        // Check if the input matches a product code (barcode)
+        $product = Product::where('product_code', $value)->first();
+
+        if ($product) {
+            $this->selectProduct($product->id); // Automatically select the product
+            $this->search = ''; // Clear the search field
+            return;
+        }
+
+        // Perform a normal search for product names or partial product codes
+        $this->products = Product::where('name', 'like', '%' . $value . '%')
+            ->orWhere('product_code', 'like', '%' . $value . '%')
             ->get();
     }
     public function updatedCapitalPrice($value)
@@ -51,13 +66,16 @@ new class extends Component {
 
     public function updatedQuantity($value)
     {
-        $this->quantity = number_format((int) str_replace(',', '', $value));
+        $this->quantity = (int) str_replace(',', '', $value); // Ensure the value is cast to an integer
     }
-
     public function selectProduct($productId)
     {
         $product = Product::find($productId);
+        $this->product_id = $product->id;
         $this->product_name = $product->name;
+        $this->brand_name = $product->brand->name;
+        $this->product_category = $product->category->name;
+        $this->product_description = $product->description;
         $this->product_code = $product->product_code; // Reset batch number for the new batch
 
         $this->openModal = false; // Close the modal after selection
@@ -82,23 +100,37 @@ new class extends Component {
         ];
     }
 
+    private function generateStockNumber()
+    {
+        $yearPrefix = date('Y');
+        $lastProduct = \App\Models\Stock::orderBy('id', 'desc')->first();
+        if ($lastProduct) {
+            $lastStockNumber = intval(substr($lastProduct->stock_number, -6));
+            $newStockNumber = $lastStockNumber + 1;
+        } else {
+            $newStockNumber = 1;
+        }
+        return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
+    }
+
     public function save()
     {
-        $this->validate();
 
         Stock::create([
             'product_name' => $this->product_name,
+            'product_id' => $this->product_id,
             'batch_number' => $this->batch_number,
+            'stock_number' => $this->generateStockNumber(),
             'quantity' => $this->quantity,
             'unit_id' => $this->unit, // Save the selected unit
             'capital_price' => $this->capital_price,
             'selling_price' => $this->selling_price,
-            'expiry_date' => $this->expiry_date,
+            'expiration_date' => $this->expiry_date,
             'manufactured_date' => $this->manufactured_date,
             'stock_location' => $this->stock_location,
             'invoice_number' => $this->invoice_number,
             'batch_notes' => $this->batch_notes,
-            'supplier' => $this->supplier,
+            'supplier_id' => $this->supplier,
         ]);
 
         session()->flash('message', 'Stock added successfully!');
@@ -161,22 +193,81 @@ new class extends Component {
                     <span class="text-lg font-semibold text-gray-800 dark:text-gray-100">Product Information</span>
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <flux:input wire:model="product_code" wire:click="$set('openModal', true)"
-                        :label="__('Product Code')" type="text"
-                        placeholder="The product code will appear after selection"
-                        class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" readonly />
-
-                    <flux:input wire:model="product_name" wire:click="$set('openModal', true)"
-                        :label="__('Product Name')" type="text" placeholder="Enter product name"
-                        class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" readonly />
-
+                    <!-- Product Code -->
+                    <div>
+                        <label for="product_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Code</label>
+                        <flux:input id="product_code" wire:model="product_code" wire:click="$set('openModal', true)"
+                            type="text" placeholder="Click to select a product"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" readonly />
+                        <small class="text-gray-500 dark:text-gray-400">The product code will appear after selection.</small>
+                    </div>
+                
+                    <!-- Product Name -->
+                    <div>
+                        <label for="product_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name</label>
+                        <flux:input id="product_name" wire:model="product_name" wire:click="$set('openModal', true)"
+                            type="text" placeholder="Click to select a product"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" readonly />
+                        <small class="text-gray-500 dark:text-gray-400">The product name will appear after selection.</small>
+                    </div>
+                
+                    <!-- Product Description -->
+                    <div class="col-span-2">
+                        <label for="product_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Description</label>
+                        <p id="product_description" class="text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                            {{ $product_description ?: 'No description available.' }}
+                        </p>
+                    </div>
+                
+                    <!-- Brand Name -->
+                    <div>
+                        <label for="brand_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Brand Name</label>
+                        <p id="brand_name" class="text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                            {{ $brand_name ?: 'No brand specified.' }}
+                        </p>
+                    </div>
+                
+                    <!-- Product Category -->
+                    <div>
+                        <label for="product_category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Category</label>
+                        <p id="product_category" class="text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                            {{ $product_category ?: 'No category assigned.' }}
+                        </p>
+                    </div>
+                
+                    <!-- Informative Message -->
+                    @if (!$product_code)
+                        <div class="col-span-2 bg-yellow-100 dark:bg-yellow-800 text-yellow-700 dark:text-yellow-300 p-4 rounded">
+                            <p class="text-sm">
+                                No product selected yet. Click the <strong>Search Product</strong> button to select a product.
+                            </p>
+                        </div>
+                    @endif
+                
                     <!-- Button to Open Modal -->
                     <div class="col-span-2 flex justify-end">
+                        <!-- Button to Open Modal -->
                         <button type="button" wire:click="$set('openModal', true)"
-                            class="btn bg-orange-700 hover:bg-orange-800 text-white px-4 py-2 rounded">
-                            Search Product
+                            class="btn bg-orange-700 hover:bg-orange-800 text-white px-4 py-2 rounded flex cursor-pointer relative">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M10 2a8 8 0 105.293 14.707l4.387 4.387a1 1 0 001.414-1.414l-4.387-4.387A8 8 0 0010 2zm0 2a6 6 0 100 12 6 6 0 000-12z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            Select Product
                         </button>
+                    
+                        <!-- Loading Indicator -->
+                        <div wire:loading wire:target="$set('openModal', true)" class="absolute right-0 top-0 flex items-center justify-center">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                        </div>
                     </div>
+                </div>
+
                 </div>
 
                 <!-- Product Search Modal -->
@@ -186,11 +277,20 @@ new class extends Component {
                             <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100">Search Product</h3>
 
                             <!-- Search Field -->
-                            <div class="mb-4">
-                                <input type="text" wire:model="search" placeholder="Search products..."
-                                    class="input input-bordered w-full py-2 px-4 bg-gray-200 border-2 rounded  dark:bg-gray-700 dark:text-gray-100" />
-                            </div>
+                            <div class="mb-4 relative">
+                                <input type="text" wire:model.live="search"
+                                    placeholder="Search by product name, code, or scan barcode..."
+                                    class="input input-bordered w-full py-2 px-4 bg-gray-200 border-2 rounded dark:bg-gray-700 dark:text-gray-100"
+                                    autofocus />
 
+                                <!-- Clear Button -->
+                                @if ($search)
+                                    <button type="button" wire:click="$set('search', '')"
+                                        class="absolute right-2 top-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100">
+                                        ✕
+                                    </button>
+                                @endif
+                            </div>
                             <!-- Product Table -->
                             <div class="overflow-x-auto">
                                 <table
@@ -274,54 +374,86 @@ new class extends Component {
         <!-- Quantity, Expiry, and Manufactured Date -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Quantity -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Quantity -->
-                <flux:input wire:model="quantity" :label="__('Quantity')" type="number"
-                    placeholder="Enter quantity"
+            <div>
+                <label for="quantity"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
+                <flux:input id="quantity" wire:model="quantity" type="number" placeholder="Enter quantity"
                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-            
-                <!-- Unit of Measurement -->
-                <flux:select wire:model="unit" :label="__('Unit of Measurement')" placeholder="Select a unit"
+                <small class="text-gray-500 dark:text-gray-400">Enter the total quantity of stock.</small>
+            </div>
+
+            <!-- Unit of Measurement -->
+            <div>
+                <label for="unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit of
+                    Measurement</label>
+                <flux:select id="unit" wire:model="unit" placeholder="Select a unit"
                     class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600">
                     @foreach ($units as $unit)
                         <flux:select.option value="{{ $unit->id }}">{{ $unit->name }}</flux:select.option>
                     @endforeach
                 </flux:select>
+                <small class="text-gray-500 dark:text-gray-400">Specify the unit of measurement (e.g., Box,
+                    Piece).</small>
             </div>
 
             <!-- Expiry Date -->
-            <flux:input wire:model="expiry_date" :label="__('Expiry Date')" type="date"
-                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+            <div>
+                <label for="expiry_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Expiry
+                    Date</label>
+                <flux:input id="expiry_date" wire:model="expiry_date" type="date"
+                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                <small class="text-gray-500 dark:text-gray-400">Enter the expiry date, if applicable.</small>
+            </div>
 
             <!-- Manufactured Date -->
-            <flux:input wire:model="manufactured_date" :label="__('Manufactured Date')" type="date"
-                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+            <div>
+                <label for="manufactured_date"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Manufactured Date</label>
+                <flux:input id="manufactured_date" wire:model="manufactured_date" type="date"
+                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                <small class="text-gray-500 dark:text-gray-400">Enter the manufacturing date, if applicable.</small>
+            </div>
         </div>
 
         <!-- Stock Location and Invoice Number -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Stock Location -->
-            <flux:select wire:model="stock_location" :label="__('Stock Location')" placeholder="Select a location"
-                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600">
-                @foreach ($locations as $location)
-                    <flux:select.option value="{{ $location->id }}">{{ $location->name }}</flux:select.option>
-                @endforeach
-            </flux:select>
+            <div>
+                <label for="stock_location" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock
+                    Location</label>
+                <flux:select id="stock_location" wire:model="stock_location" placeholder="Select a location"
+                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600">
+                    @foreach ($locations as $location)
+                        <flux:select.option value="{{ $location->id }}">{{ $location->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <small class="text-gray-500 dark:text-gray-400">Select where the stock will be stored.</small>
+            </div>
 
             <!-- Invoice Number -->
-            <flux:input wire:model="invoice_number" :label="__('Invoice Number')" type="text"
-                placeholder="Enter invoice number" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+            <div>
+                <label for="invoice_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice
+                    Number</label>
+                <flux:input id="invoice_number" wire:model="invoice_number" type="text"
+                    placeholder="Enter invoice number"
+                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                <small class="text-gray-500 dark:text-gray-400">Enter the supplier's invoice number for
+                    reference.</small>
+            </div>
         </div>
 
         <!-- Batch Notes -->
         <div>
-            <flux:textarea wire:model="batch_notes" :label="__('Batch Notes')"
-                placeholder="Enter any notes about the batch"
+            <label for="batch_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Batch
+                Notes</label>
+            <flux:textarea id="batch_notes" wire:model="batch_notes" placeholder="Enter any notes about the batch"
                 class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"></flux:textarea>
+            <small class="text-gray-500 dark:text-gray-400">Add any additional notes or instructions for this
+                batch.</small>
         </div>
         <!-- Submit -->
         <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button wire:click="save" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            <button wire:click="save" class="px-6 py-4 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer">
                 Receive Stock
             </button>
         </div>

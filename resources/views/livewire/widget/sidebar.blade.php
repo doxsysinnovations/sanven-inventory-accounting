@@ -148,7 +148,7 @@ new class extends Component {
 
 <div>
     <flux:navlist variant="outline" searchable>
-        <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" />
+        {{-- <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
 
         @foreach ($menuItems as $group)
             <flux:navlist.group :heading="__($group['heading'])" class="grid">
