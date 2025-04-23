@@ -44,6 +44,12 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
 
+    //POS /Orders
+    Volt::route('pos', 'pos.index')->name('pos');
+
+    //Quotations
+    Volt::route('quotations', 'quotations.index')->name('quotations');
+
 
 });
 
