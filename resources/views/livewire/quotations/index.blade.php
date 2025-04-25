@@ -64,26 +64,6 @@ new class extends Component {
         $this->calculateTotal();
     }
 
-    // public function updatedItems($value, $key)
-    // {
-    //     $index = explode('.', $key)[0];
-    //     $field = explode('.', $key)[1];
-
-    //     if ($field === 'product_id') {
-    //         $product = Product::find($value);
-    //         if ($product) {
-    //             $this->items[$index]['unit_price'] = $product->price;
-    //             $this->items[$index]['description'] = $product->description;
-    //         }
-    //     }
-
-    //     if ($field === 'quantity' || $field === 'unit_price') {
-    //         $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
-    //     }
-
-    //     $this->calculateTotal();
-    // }
-
     public function calculateTotal()
     {
         $this->total_amount = collect($this->items)->sum('total_price');
@@ -253,6 +233,18 @@ new class extends Component {
             ->orderBy('created_at', 'desc')
             ->paginate(10);
     }
+
+    public function print($quotationId)
+    {
+        $quotation = Quotation::with(['customer', 'agent', 'items.product'])->find($quotationId);
+
+        if (!$quotation) {
+            flash()->error('Quotation not found!');
+            return;
+        }
+
+        $this->dispatch('print-quotation', ['quotation' => $quotation->toArray()]);
+    }
 };
 ?>
 
@@ -379,6 +371,8 @@ new class extends Component {
                                                     <button wire:click="confirmDelete({{ $quotation->id }})"
                                                         class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
                                                 @endcan
+                                                <button wire:click="print({{ $quotation->id }})"
+                                                    class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">Print</button>
                                             </td>
                                         </tr>
                         @endforeach
@@ -651,4 +645,154 @@ new class extends Component {
             </div>
         </div>
     @endif
+
+
 </div>
+
+
+
+<script>
+    window.addEventListener('print-quotation', (event) => {
+        const quotation = event.detail.quotation;
+
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+
+        // HTML content for the quotation
+        const content = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Quotation ${quotation.quotation_number}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .company-name { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+                    .quotation-title { font-size: 20px; margin-bottom: 20px; }
+                    .details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+                    .from, .to { width: 48%; }
+                    .section-title { font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+                    th { background-color: #f5f5f5; }
+                    .text-right { text-align: right; }
+                    .total-row { font-weight: bold; }
+                    .notes { margin-top: 30px; }
+                    .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #777; }
+                    @media print {
+                        body { padding: 20px; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <div class="company-name">Your Company Name</div>
+                        <div class="quotation-title">QUOTATION</div>
+                    </div>
+
+                    <div class="details">
+                        <div class="from">
+                            <div class="section-title">From:</div>
+                            <div>Your Company Name</div>
+                            <div>123 Company Address</div>
+                            <div>City, State, ZIP</div>
+                            <div>Phone: (123) 456-7890</div>
+                            <div>Email: company@example.com</div>
+                        </div>
+
+                        <div class="to">
+                            <div class="section-title">To:</div>
+                            <div>${quotation.customer?.name || 'N/A'}</div>
+                            <div>${quotation.customer?.address || ''}</div>
+                            <div>${quotation.customer?.phone || ''}</div>
+                            <div>${quotation.customer?.email || ''}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="section-title">Quotation Details</div>
+                        <div><strong>Quotation #:</strong> ${quotation.quotation_number}</div>
+                        <div><strong>Date:</strong> ${new Date(quotation.created_at).toLocaleDateString()}</div>
+                        <div><strong>Valid Until:</strong> ${new Date(quotation.valid_until).toLocaleDateString()}</div>
+                        ${quotation.agent ? `<div><strong>Agent:</strong> ${quotation.agent.name}</div>` : ''}
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Description</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${quotation.items.map(item => `
+                                <tr>
+                                    <td>${item.product?.name || 'N/A'}</td>
+                                    <td>${item.description || ''}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${formatCurrency(item.unit_price)}</td>
+                                    <td>${formatCurrency(item.total_price)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-right">Subtotal:</td>
+                                <td>${formatCurrency(quotation.total_amount / (1 + (quotation.tax / 100)) + parseFloat(quotation.discount))}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" class="text-right">Discount:</td>
+                                <td>${formatCurrency(quotation.discount)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" class="text-right">Tax (${quotation.tax}%):</td>
+                                <td>${formatCurrency((quotation.total_amount / (1 + (quotation.tax / 100))) * (quotation.tax / 100))}</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td colspan="4" class="text-right">Total Amount:</td>
+                                <td>${formatCurrency(quotation.total_amount)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    ${quotation.notes ? `
+                    <div class="notes">
+                        <div class="section-title">Notes</div>
+                        <div>${quotation.notes}</div>
+                    </div>
+                    ` : ''}
+
+                    <div class="footer">
+                        <p>Thank you for your business!</p>
+                        <p>Terms & Conditions: Payment due within 30 days. Late payments subject to 1.5% monthly interest.</p>
+                    </div>
+                </div>
+
+                <script>
+                    function formatCurrency(amount) {
+                        return '₱' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                    }
+
+                    // Auto-print and close after a short delay
+                    setTimeout(() => {
+                        window.print();
+                        setTimeout(() => {
+                            window.close();
+                        }, 500);
+                    }, 500);
+                <\/script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.open();
+        printWindow.document.write(content);
+        printWindow.document.close();
+    });
+</script>
