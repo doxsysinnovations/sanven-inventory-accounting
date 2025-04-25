@@ -23,6 +23,30 @@ new class extends Component {
                         'label' => 'Dashboard',
                         'permission' => 'dashboard.view',
                     ],
+                    [
+                        'icon' => 'shopping-cart',
+                        'route' => 'pos',
+                        'label' => 'POS',
+                        'permission' => 'orders.view',
+                    ],
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'quotations',
+                        'label' => 'Quotations',
+                        'permission' => 'quotations.view',
+                    ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agents',
+                        'label' => 'Agents',
+                        'permission' => 'agents.view',
+                    ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'customers',
+                        'label' => 'Customers',
+                        'permission' => 'customers.view',
+                    ],
                 ],
             ],
             [
@@ -32,8 +56,14 @@ new class extends Component {
                     [
                         'icon' => 'plus',
                         'route' => 'stocks.create',
-                        'label' => 'Add Stocks',
+                        'label' => 'Receive Stocks',
                         'permission' => 'stocks.create',
+                    ],
+                    [
+                        'icon' => 'list-bullet',
+                        'route' => 'stocks',
+                        'label' => 'Stocks List',
+                        'permission' => 'stocks.view',
                     ],
                 ],
             ],
@@ -77,7 +107,6 @@ new class extends Component {
                         'label' => 'Units',
                         'permission' => 'units.view',
                     ],
-
                 ],
             ],
             [
@@ -122,27 +151,34 @@ new class extends Component {
         $filteredMenuItems = $this->filterMenuItems($this->menuItems, $this->search);
 
         return [
-            'menuItems' => $filteredMenuItems
+            'menuItems' => $filteredMenuItems,
         ];
     }
 
     protected function filterMenuItems($menuItems, $search)
     {
-        return collect($menuItems)->map(function ($group) use ($search) {
-            $filteredItems = collect($group['items'])->filter(function ($item) use ($search) {
-                return stripos($item['label'], $search) !== false;
-            })->values()->toArray();
+        return collect($menuItems)
+            ->map(function ($group) use ($search) {
+                $filteredItems = collect($group['items'])
+                    ->filter(function ($item) use ($search) {
+                        return stripos($item['label'], $search) !== false;
+                    })
+                    ->values()
+                    ->toArray();
 
-            return array_merge($group, ['items' => $filteredItems]);
-        })->filter(function ($group) {
-            return !empty($group['items']);
-        })->values()->toArray();
+                return array_merge($group, ['items' => $filteredItems]);
+            })
+            ->filter(function ($group) {
+                return !empty($group['items']);
+            })
+            ->values()
+            ->toArray();
     }
 }; ?>
 
 <div>
     <flux:navlist variant="outline" searchable>
-        <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" />
+        {{-- <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
 
         @foreach ($menuItems as $group)
             <flux:navlist.group :heading="__($group['heading'])" class="grid">
