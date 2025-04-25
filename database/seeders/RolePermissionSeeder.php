@@ -106,6 +106,18 @@ class RolePermissionSeeder extends Seeder
             'reports.create',
             'reports.edit',
             'reports.delete',
+
+            //Customers
+            'customers.view',
+            'customers.create',
+            'customers.edit',
+            'customers.delete',
+
+            //Agents
+            'agents.view',
+            'agents.create',
+            'agents.edit',
+            'agents.delete',
         ];
 
         foreach ($permissions as $permission) {

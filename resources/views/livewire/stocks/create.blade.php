@@ -30,7 +30,7 @@ new class extends Component {
     public $locations = [];
     public $units = []; // List of units
     public string $unit = ''; // Selected unit
-    public string $supplier = ''; 
+    public string $supplier = '';
     public function mount()
     {
         $this->products = Product::all(); // Load all products initially
@@ -73,8 +73,8 @@ new class extends Component {
         $product = Product::find($productId);
         $this->product_id = $product->id;
         $this->product_name = $product->name;
-        $this->brand_name = $product->brand->name;
-        $this->product_category = $product->category->name;
+        $this->brand_name = $product->brand->name ?? 'N/A';
+        $this->product_category = $product->category->name ?? 'N/A';
         $this->product_description = $product->description;
         $this->product_code = $product->product_code; // Reset batch number for the new batch
 
@@ -201,7 +201,7 @@ new class extends Component {
                             class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" readonly />
                         <small class="text-gray-500 dark:text-gray-400">The product code will appear after selection.</small>
                     </div>
-                
+
                     <!-- Product Name -->
                     <div>
                         <label for="product_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name</label>
@@ -210,7 +210,7 @@ new class extends Component {
                             class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" readonly />
                         <small class="text-gray-500 dark:text-gray-400">The product name will appear after selection.</small>
                     </div>
-                
+
                     <!-- Product Description -->
                     <div class="col-span-2">
                         <label for="product_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Description</label>
@@ -218,7 +218,7 @@ new class extends Component {
                             {{ $product_description ?: 'No description available.' }}
                         </p>
                     </div>
-                
+
                     <!-- Brand Name -->
                     <div>
                         <label for="brand_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Brand Name</label>
@@ -226,7 +226,7 @@ new class extends Component {
                             {{ $brand_name ?: 'No brand specified.' }}
                         </p>
                     </div>
-                
+
                     <!-- Product Category -->
                     <div>
                         <label for="product_category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Category</label>
@@ -234,7 +234,7 @@ new class extends Component {
                             {{ $product_category ?: 'No category assigned.' }}
                         </p>
                     </div>
-                
+
                     <!-- Informative Message -->
                     @if (!$product_code)
                         <div class="col-span-2 bg-yellow-100 dark:bg-yellow-800 text-yellow-700 dark:text-yellow-300 p-4 rounded">
@@ -243,7 +243,7 @@ new class extends Component {
                             </p>
                         </div>
                     @endif
-                
+
                     <!-- Button to Open Modal -->
                     <div class="col-span-2 flex justify-end">
                         <!-- Button to Open Modal -->
@@ -256,7 +256,7 @@ new class extends Component {
                             </svg>
                             Select Product
                         </button>
-                    
+
                         <!-- Loading Indicator -->
                         <div wire:loading wire:target="$set('openModal', true)" class="absolute right-0 top-0 flex items-center justify-center">
                             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

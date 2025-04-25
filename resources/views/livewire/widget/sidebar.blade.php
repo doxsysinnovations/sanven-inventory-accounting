@@ -35,6 +35,18 @@ new class extends Component {
                         'label' => 'Quotations',
                         'permission' => 'quotations.view',
                     ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agents',
+                        'label' => 'Agents',
+                        'permission' => 'agents.view',
+                    ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'customers',
+                        'label' => 'Customers',
+                        'permission' => 'customers.view',
+                    ],
                 ],
             ],
             [

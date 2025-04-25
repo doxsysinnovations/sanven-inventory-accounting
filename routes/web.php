@@ -50,6 +50,12 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Quotations
     Volt::route('quotations', 'quotations.index')->name('quotations');
 
+    //Agents
+    Volt::route('agents', 'agents.index')->name('agents');
+
+    //Customers
+    Volt::route('customers', 'customers.index')->name('customers');
+
 
 });
 

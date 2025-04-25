@@ -64,25 +64,25 @@ new class extends Component {
         $this->calculateTotal();
     }
 
-    public function updatedItems($value, $key)
-    {
-        $index = explode('.', $key)[0];
-        $field = explode('.', $key)[1];
+    // public function updatedItems($value, $key)
+    // {
+    //     $index = explode('.', $key)[0];
+    //     $field = explode('.', $key)[1];
 
-        if ($field === 'product_id') {
-            $product = Product::find($value);
-            if ($product) {
-                $this->items[$index]['unit_price'] = $product->price;
-                $this->items[$index]['description'] = $product->description;
-            }
-        }
+    //     if ($field === 'product_id') {
+    //         $product = Product::find($value);
+    //         if ($product) {
+    //             $this->items[$index]['unit_price'] = $product->price;
+    //             $this->items[$index]['description'] = $product->description;
+    //         }
+    //     }
 
-        if ($field === 'quantity' || $field === 'unit_price') {
-            $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
-        }
+    //     if ($field === 'quantity' || $field === 'unit_price') {
+    //         $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
+    //     }
 
-        $this->calculateTotal();
-    }
+    //     $this->calculateTotal();
+    // }
 
     public function calculateTotal()
     {
@@ -136,7 +136,7 @@ new class extends Component {
         $this->discount = $quotation->discount;
         $this->notes = $quotation->notes;
         $this->status = $quotation->status;
-        $this->valid_until = $quotation->valid_until->format('Y-m-d');
+        $this->valid_until = \Carbon\Carbon::parse($quotation->valid_until)->format('Y-m-d');
         $this->items = $quotation->items
             ->map(function ($item) {
                 return [
@@ -167,6 +167,28 @@ new class extends Component {
         }
         $this->confirmingDelete = false;
         $this->quotationToDelete = null;
+    }
+
+    public function updatedItems($value, $key)
+    {
+        $index = explode('.', $key)[0];
+        $field = explode('.', $key)[1];
+
+        if ($field === 'product_id') {
+            $product = Product::find($value);
+            if ($product) {
+                $this->items[$index]['unit_price'] = $product->selling_price; // Changed from price to selling_price
+                $this->items[$index]['description'] = $product->description;
+                // Auto-calculate total when product changes
+                $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
+            }
+        }
+
+        if ($field === 'quantity' || $field === 'unit_price') {
+            $this->items[$index]['total_price'] = floatval($this->items[$index]['quantity']) * floatval($this->items[$index]['unit_price']);
+        }
+
+        $this->calculateTotal();
     }
 
     public function save()
@@ -280,8 +302,8 @@ new class extends Component {
 
         @if ($quotations->isEmpty())
             <div class="flex flex-col items-center justify-center p-8">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -320,45 +342,45 @@ new class extends Component {
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
                         @foreach ($quotations as $quotation)
-                            <tr class="dark:hover:bg-gray-800" wire:key="quotation-{{ $quotation->id }}">
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                    {{ $quotation->quotation_number }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                    {{ $quotation->customer?->name ?? 'N/A' }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                    {{ number_format($quotation->total_amount, 2) }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    @php
-                                        $statusClasses = [
-                                            'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                                            'sent' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-                                            'accepted' =>
-                                                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-                                            'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-                                        ];
-                                    @endphp
-                                    <span
-                                        class="px-2 py-1 text-xs font-medium rounded-full {{ $statusClasses[$quotation->status] }}">
-                                        {{ ucfirst($quotation->status) }}
-                                    </span>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                    {{ $quotation->valid_until->format('M d, Y') }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 space-x-2">
-                                    @can('quotations.edit')
-                                        <button wire:click="edit({{ $quotation->id }})"
-                                            class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
-                                    @endcan
-                                    @can('quotations.delete')
-                                        <button wire:click="confirmDelete({{ $quotation->id }})"
-                                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
-                                    @endcan
-                                </td>
-                            </tr>
+                                        <tr class="dark:hover:bg-gray-800" wire:key="quotation-{{ $quotation->id }}">
+                                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                                {{ $quotation->quotation_number }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                                {{ $quotation->customer?->name ?? 'N/A' }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                                {{ number_format($quotation->total_amount, 2) }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4">
+                                                @php
+                                                    $statusClasses = [
+                                                        'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                                                        'sent' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                                                        'accepted' =>
+                                                            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                                                        'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                                                    ];
+                                                @endphp
+                                                <span
+                                                    class="px-2 py-1 text-xs font-medium rounded-full {{ $statusClasses[$quotation->status] }}">
+                                                    {{ ucfirst($quotation->status) }}
+                                                </span>
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                                {{ \Carbon\Carbon::parse($quotation->valid_until)->format('M d, Y') }}
+                                            </td>
+                                            <td class="whitespace-nowrap px-6 py-4 space-x-2">
+                                                @can('quotations.edit')
+                                                    <button wire:click="edit({{ $quotation->id }})"
+                                                        class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
+                                                @endcan
+                                                @can('quotations.delete')
+                                                    <button wire:click="confirmDelete({{ $quotation->id }})"
+                                                        class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
+                                                @endcan
+                                            </td>
+                                        </tr>
                         @endforeach
                     </tbody>
                 </table>
@@ -385,11 +407,14 @@ new class extends Component {
 
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div class="mb-4">
-                                    <flux:input wire:model="quotation_number" :label="__('Quotation Number')"
-                                        type="text"
-                                        class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                                    @if($isEditing)
+                                        <flux:input wire:model="quotation_number" :label="__('Quotation Number')" type="text"
+                                            readonly class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                                    @else
+                                        <flux:input wire:model="quotation_number" :label="__('Quotation Number')" type="text"
+                                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                                    @endif
                                 </div>
-
                                 <div class="mb-4">
                                     <flux:select wire:model.live="status" :label="__('Status')" size="md">
                                         <flux:select.option value="">Choose Status...</flux:select.option>
@@ -417,19 +442,19 @@ new class extends Component {
                                         <thead class="bg-gray-50 dark:bg-gray-800">
                                             <tr>
                                                 <th
-                                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                    class="w-2/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                                     Product
                                                 </th>
                                                 <th
-                                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                                     Quantity
                                                 </th>
                                                 <th
-                                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                                     Unit Price
                                                 </th>
                                                 <th
-                                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                                     Total
                                                 </th>
                                                 <th class="px-6 py-3"></th>
@@ -439,19 +464,20 @@ new class extends Component {
                                             @foreach ($items as $index => $item)
                                                 <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
                                                     wire:key="item-{{ $index }}">
-                                                    <td class="px-6 py-4">
-                                                        <select wire:model="items.{{ $index }}.product_id"
+                                                    <td class="w-2/5 px-6 py-4">
+                                                        <select wire:model.live.debounce.500ms="items.{{ $index }}.product_id"
                                                             class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-3.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
                                                             <option value="">Select Product</option>
                                                             @foreach ($products as $product)
                                                                 <option value="{{ $product->id }}">
-                                                                    {{ $product->name }}</option>
+                                                                    {{ $product->name }}
+                                                                </option>
                                                             @endforeach
                                                         </select>
                                                     </td>
-                                                    <td class="px-6 py-4">
+                                                    <td class="w-1/5 px-6 py-4">
                                                         <div class="relative">
-                                                            <input wire:model="items.{{ $index }}.quantity"
+                                                            <input wire:model.live.debounce.500ms="items.{{ $index }}.quantity"
                                                                 type="number" min="1" placeholder="Qty"
                                                                 class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 pl-3 pr-12 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
                                                             <span
@@ -460,34 +486,30 @@ new class extends Component {
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    <td class="px-6 py-4">
+                                                    <td class="w-1/5 px-6 py-4">
                                                         <div class="relative">
                                                             <span
-                                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
-                                                            <input wire:model="items.{{ $index }}.unit_price"
-                                                                type="number" step="0.01" min="0"
-                                                                placeholder="0.00"
+                                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₱</span>
+                                                            <input wire:model="items.{{ $index }}.unit_price" type="number"
+                                                                step="0.01" min="0" placeholder="0.00"
                                                                 class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 pl-8 pr-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
                                                         </div>
                                                     </td>
-                                                    <td class="px-6 py-4">
+                                                    <td class="w-1/5 px-6 py-4">
                                                         <div class="relative">
                                                             <span
-                                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
-                                                            <input wire:model="items.{{ $index }}.total_price"
-                                                                type="number" step="0.01" min="0" readonly
-                                                                placeholder="0.00"
+                                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₱</span>
+                                                            <input wire:model="items.{{ $index }}.total_price" type="number"
+                                                                step="0.01" min="0" readonly placeholder="0.00"
                                                                 class="w-full rounded-lg border border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 pl-8 pr-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-0 cursor-not-allowed">
                                                         </div>
                                                     </td>
                                                     <td class="px-6 py-4">
                                                         @if ($index > 0)
-                                                            <button type="button"
-                                                                wire:click="removeItem({{ $index }})"
+                                                            <button type="button" wire:click="removeItem({{ $index }})"
                                                                 class="invisible group-hover:visible inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:text-white hover:bg-red-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                                    class="h-5 w-5" viewBox="0 0 20 20"
-                                                                    fill="currentColor">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                                    viewBox="0 0 20 20" fill="currentColor">
                                                                     <path fill-rule="evenodd"
                                                                         d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
                                                                         clip-rule="evenodd" />
@@ -502,8 +524,8 @@ new class extends Component {
                                     <div class="mt-4">
                                         <button type="button" wire:click="addItem"
                                             class="inline-flex items-center text-sm text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1"
-                                                viewBox="0 0 20 20" fill="currentColor">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20"
+                                                fill="currentColor">
                                                 <path fill-rule="evenodd"
                                                     d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                                     clip-rule="evenodd" />

@@ -2,7 +2,7 @@
 
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
-use App\Models\Customer;
+use App\Models\Agent;
 use Livewire\Attributes\Title;
 
 new class extends Component {
@@ -10,22 +10,24 @@ new class extends Component {
 
     public $search = '';
     public $showModal = false;
-    public $customer;
+    public $agent;
     public $isEditing = false;
     public $confirmingDelete = false;
-    public $customerToDelete;
+    public $agentToDelete;
     public $name = '';
     public $email = '';
     public $phone = '';
     public $address = '';
+    public $is_active = true;
 
     public function rules()
     {
         return [
             'name' => 'required|string|max:255',
-            'email' => $this->isEditing ? 'required|email|unique:customers,email,' . $this->customer->id : 'required|email|unique:customers,email',
+            'email' => $this->isEditing ? 'required|email|unique:agents,email,' . $this->agent->id : 'required|email|unique:agents,email',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
+            'is_active' => 'boolean'
         ];
     }
 
@@ -36,14 +38,15 @@ new class extends Component {
         $this->showModal = true;
     }
 
-    public function edit(Customer $customer)
+    public function edit(Agent $agent)
     {
         $this->resetValidation();
-        $this->customer = $customer;
-        $this->name = $customer->name;
-        $this->email = $customer->email;
-        $this->phone = $customer->phone;
-        $this->address = $customer->address;
+        $this->agent = $agent;
+        $this->name = $agent->name;
+        $this->email = $agent->email;
+        $this->phone = $agent->phone;
+        $this->address = $agent->address;
+        $this->is_active = $agent->is_active;
         $this->isEditing = true;
         $this->showModal = true;
     }
@@ -53,42 +56,44 @@ new class extends Component {
         $this->validate();
 
         if ($this->isEditing) {
-            $this->customer->update([
+            $this->agent->update([
                 'name' => $this->name,
                 'email' => $this->email,
                 'phone' => $this->phone,
-                'address' => $this->address
+                'address' => $this->address,
+                'is_active' => $this->is_active
             ]);
-            flash()->success('Customer updated successfully!');
+            flash()->success('Agent updated successfully!');
         } else {
-            Customer::create([
+            Agent::create([
                 'name' => $this->name,
                 'email' => $this->email,
                 'phone' => $this->phone,
-                'address' => $this->address
+                'address' => $this->address,
+                'is_active' => $this->is_active
             ]);
-            flash()->success('Customer created successfully!');
+            flash()->success('Agent created successfully!');
         }
 
         $this->showModal = false;
         $this->resetForm();
     }
 
-    public function confirmDelete($customerId)
+    public function confirmDelete($agentId)
     {
-        $this->customerToDelete = $customerId;
+        $this->agentToDelete = $agentId;
         $this->confirmingDelete = true;
     }
 
     public function delete()
     {
-        $customer = Customer::find($this->customerToDelete);
-        if ($customer) {
-            $customer->delete();
-            flash()->success('Customer deleted successfully!');
+        $agent = Agent::find($this->agentToDelete);
+        if ($agent) {
+            $agent->delete();
+            flash()->success('Agent deleted successfully!');
         }
         $this->confirmingDelete = false;
-        $this->customerToDelete = null;
+        $this->agentToDelete = null;
     }
 
     private function resetForm()
@@ -97,21 +102,22 @@ new class extends Component {
         $this->email = '';
         $this->phone = '';
         $this->address = '';
-        $this->customer = null;
+        $this->is_active = true;
+        $this->agent = null;
         $this->resetValidation();
     }
 
-    #[Title('Customers')]
+    #[Title('Agents')]
     public function with(): array
     {
         return [
-            'customers' => $this->customers,
+            'agents' => $this->agents,
         ];
     }
 
-    public function getCustomersProperty()
+    public function getAgentsProperty()
     {
-        return Customer::query()
+        return Agent::query()
             ->where('name', 'like', '%' . $this->search . '%')
             ->orWhere('email', 'like', '%' . $this->search . '%')
             ->paginate(10);
@@ -137,7 +143,7 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Customers</span>
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Agents</span>
                     </div>
                 </li>
             </ol>
@@ -147,19 +153,19 @@ new class extends Component {
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
         <div class="flex items-center justify-between">
             <div class="w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search customers..."
+                <input wire:model.live="search" type="search" placeholder="Search agents..."
                     class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
             </div>
         </div>
-        @if ($customers->isEmpty())
+        @if ($agents->isEmpty())
             <div class="flex flex-col items-center justify-center p-8">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">No customers found</p>
-                @can('customers.create')
+                <p class="mb-4 text-gray-500 dark:text-gray-400">No agents found</p>
+                @can('agents.create')
                     <button wire:click="create"
                         class="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white transition-all duration-200 ease-in-out hover:bg-green-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 active:bg-green-800 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="my-auto mr-2 h-5 w-5" viewBox="0 0 20 20"
@@ -168,13 +174,13 @@ new class extends Component {
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Add Customer
+                        Add Agent
                     </button>
                 @endcan
             </div>
         @else
             <div class="flex justify-end">
-                @can('customers.create')
+                @can('agents.create')
                     <button wire:click="create"
                         class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
@@ -183,7 +189,7 @@ new class extends Component {
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Add Customer
+                        Add Agent
                     </button>
                 @endcan
 
@@ -199,25 +205,29 @@ new class extends Component {
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Phone</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Address</th>
+                                Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                        @foreach ($customers as $customer)
-                            <tr class="dark:hover:bg-gray-800" wire:key="customer-{{ $customer->id ?? uniqid() }}">
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $customer->name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $customer->email }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $customer->phone }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $customer->address }}</td>
+                        @foreach ($agents as $agent)
+                            <tr class="dark:hover:bg-gray-800" wire:key="agent-{{ $agent->id ?? uniqid() }}">
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $agent->name }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $agent->email }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $agent->phone }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $agent->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ $agent->is_active ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </td>
                                 <td class="whitespace-nowrap px-6 py-4 space-x-2">
-                                    @can('customers.edit')
-                                        <button wire:click="edit({{ $customer->id }})"
+                                    @can('agents.edit')
+                                        <button wire:click="edit({{ $agent->id }})"
                                             class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
                                     @endcan
-                                    @can('customers.delete')
-                                        <button wire:click="confirmDelete({{ $customer->id }})"
+                                    @can('agents.delete')
+                                        <button wire:click="confirmDelete({{ $agent->id }})"
                                             class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
                                     @endcan
                                 </td>
@@ -227,7 +237,7 @@ new class extends Component {
                 </table>
             </div>
             <div class="mt-4">
-                {{ $customers->links() }}
+                {{ $agents->links() }}
             </div>
         @endif
     </div>
@@ -258,6 +268,12 @@ new class extends Component {
                                 <flux:input wire:model="address" :label="__('Address')" type="text"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                             </div>
+                            <div class="mb-4">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" wire:model="is_active" class="form-checkbox">
+                                    <span class="ml-2">Active</span>
+                                </label>
+                            </div>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                             <flux:button type="submit" class="sm:ml-3 sm:w-auto sm:text-sm" variant="primary">
@@ -285,11 +301,11 @@ new class extends Component {
                         <div class="sm:flex sm:items-start">
                             <div class="mt-3 text-center sm:mt-0 sm:text-left">
                                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Customer
+                                    Delete Agent
                                 </h3>
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this customer? This action cannot be undone.
+                                        Are you sure you want to delete this agent? This action cannot be undone.
                                     </p>
                                 </div>
                             </div>
