@@ -26,7 +26,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Stock Adjustment',
+                'heading' => 'Stock Management',
                 'permission' => 'stocks.view',
                 'items' => [
                     [
@@ -39,6 +39,12 @@ new class extends Component {
                         'icon' => 'list-bullet',
                         'route' => 'stocks',
                         'label' => 'Stocks List',
+                        'permission' => 'stocks.view',
+                    ],
+                    [
+                        'icon' => 'exclamation-triangle',
+                        'route' => 'expiryproducts',
+                        'label' => 'Expiry stocks',
                         'permission' => 'stocks.view',
                     ],
                 ],
