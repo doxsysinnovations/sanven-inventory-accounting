@@ -2,7 +2,7 @@
 
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
-use App\Models\Product;
+use App\Models\Stock;
 use Livewire\Attributes\Title;
 
 new class extends Component {
@@ -66,7 +66,7 @@ new class extends Component {
 
     public function delete()
     {
-        $product = Product::find($this->productToDelete);
+        $product = Stock::find($this->productToDelete);
         if ($product) {
             $product->delete();
             flash()->success('Product deleted successfully!');
@@ -84,17 +84,16 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'products' => $this->products,
+            'stocks' => $this->stocks,
         ];
     }
 
-    public function getProductsProperty()
+    public function getStocksProperty()
     {
-        return Product::query()
+        return Stock::query()
             ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('product_code', 'like', '%' . $this->search . '%');
+                $query->whereHas('product', function ($q) {
+                    $q->where('product_name', 'like', '%' . $this->search . '%')->orWhere('product_code', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->category, fn($q) => $q->where('category_id', $this->category))
@@ -110,7 +109,7 @@ new class extends Component {
 <!-- HTML Blade Template Continues -->
 <div>
     <div class="mb-4">
-        <nav class="flex justify-end" aria-label="Breadcrumb">
+        <nav class="flex justify-start" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li class="inline-flex items-center">
                     <a href="{{ route('dashboard') }}"
@@ -122,9 +121,10 @@ new class extends Component {
                     <div class="flex items-center">
                         <svg class="w-3 h-3 mx-1 text-gray-400" viewBox="0 0 6 10">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="m1 9 4-4-4-4" />
+                                d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Products</span>
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Stocks
+                            List</span>
                     </div>
                 </li>
             </ol>
@@ -132,9 +132,16 @@ new class extends Component {
     </div>
 
     <div class="flex flex-col gap-4 rounded-xl">
+        <h2>
+            <span class="text-lg font-semibold text-gray-900 dark:text-gray-100">List of Stocks</span>
+            <p>
+                <span class="text-sm text-gray-500 dark:text-gray-400">Manage your stocks here.</span>
+            </p>
+        </h2>
         <div class="flex flex-wrap justify-between items-center gap-4">
+
             <div class="w-full sm:w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search products..."
+                <input wire:model.live="search" type="search" placeholder="Search products/stock..."
                     class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:ring-blue-400/20 transition duration-200">
             </div>
 
@@ -150,7 +157,7 @@ new class extends Component {
             </div>
         </div>
 
-        @if ($products->isEmpty())
+        @if ($stocks->isEmpty())
             <div class="flex flex-col items-center justify-center p-8">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -162,7 +169,7 @@ new class extends Component {
                     <a href="{{ route('stocks.create') }}"
                         class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                             fill="currentColor">
+                            fill="currentColor">
                             <path fill-rule="evenodd"
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                                 clip-rule="evenodd" />
@@ -187,45 +194,63 @@ new class extends Component {
                 @endcan
             </div>
 
-            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+            <div
+                class="overflow-x-auto overflow-y-scroll max-h-128 rounded-lg border border-gray-200 dark:border-gray-700">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Image</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Code</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Name</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Capital</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Selling</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Stocks</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Low</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                            {{-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Image
+                            </th> --}}
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Code
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Name
+                            </th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                                Capital</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                                Selling</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                                Stocks</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                                Manufactured Date</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                                Expiry Date</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                                Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        @foreach ($products as $product)
-                            <tr wire:key="product-{{ $product->id }}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <img src="{{ $product->getFirstMediaUrl('product-image') }}" alt="{{ $product->name }}"
-                                         class="w-12 h-12 rounded object-cover">
+                        @foreach ($stocks as $stock)
+                            <tr wire:key="product-{{ $stock->id }}">
+                                {{-- <td class="px-6 py-4 whitespace-nowrap">
+                                    <img src="{{ $stock->getFirstMediaUrl('product-image') }}"
+                                        alt="{{ $stock->product_name }}" class="w-12 h-12 rounded object-cover">
+                                </td> --}}
+                                <td class="px-6 py-4">{{ $stock->product->product_code }}</td>
+                                <td class="px-6 py-4">{{ $stock->product_name }}</td>
+                                <td class="px-6 py-4 text-center">{{ number_format($stock->capital_price, 2) }}</td>
+                                <td class="px-6 py-4 text-center">{{ number_format($stock->selling_price, 2) }}</td>
+                                <td class="px-6 py-4 text-center ">
+                                    {{ $stock->quantity }}
                                 </td>
-                                <td class="px-6 py-4">{{ $product->product_code }}</td>
-                                <td class="px-6 py-4">{{ $product->name }}</td>
-                                <td class="px-6 py-4 text-center">{{ number_format($product->capital_price, 2) }}</td>
-                                <td class="px-6 py-4 text-center">{{ number_format($product->selling_price, 2) }}</td>
-                                <td class="px-6 py-4 text-center {{ $product->stocks <= $product->low_stock_alert ? 'text-red-600' : '' }}">
-                                    {{ $product->stock_value }}
+                                <td class="px-6 py-4 text-center ">
+                                    {{ $stock->formatted_manufactured_date }}
                                 </td>
-                                <td class="px-6 py-4 text-center {{ $product->stocks <= $product->low_stock_alert ? 'text-red-600' : '' }}">
-                                    {{ $product->low_stock_value }}
+                                <td class="px-6 py-4 text-center ">
+                                    {{ $stock->formatted_expiration_date }}
                                 </td>
                                 <td class="px-6 py-4 text-center space-x-2">
                                     @can('products.edit')
-                                        <button wire:click="edit({{ $product->id }})"
-                                                class="text-blue-600 hover:underline dark:text-blue-400">Edit</button>
+                                        <button wire:click="edit({{ $stock->id }})"
+                                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-indigo-400">
+                                            Edit
+                                        </button>
                                     @endcan
                                     @can('products.delete')
-                                        <button wire:click="confirmDelete({{ $product->id }})"
-                                                class="text-red-600 hover:underline dark:text-red-400">Delete</button>
+                                        <button wire:click="confirmDelete({{ $stock->id }})"
+                                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400">
+                                            Delete
+                                        </button>
                                     @endcan
                                 </td>
                             </tr>
@@ -235,7 +260,7 @@ new class extends Component {
             </div>
 
             <div class="mt-4">
-                {{ $products->links() }}
+                {{ $stocks->links() }}
             </div>
         @endif
     </div>
