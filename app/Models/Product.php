@@ -20,13 +20,14 @@ class Product extends Model implements HasMedia
         'slug',
         'description',
         'brand_id',
+        'product_type_id',
         'unit_id',
         'category_id',
-        'subcategory_id',
         'capital_price',
         'selling_price',
         'stock_value',
-        'low_stock_alert'
+        'low_stock_alert',
+        'quantity_per_piece',
     ];
 
     /**

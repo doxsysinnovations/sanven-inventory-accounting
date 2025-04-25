@@ -2,6 +2,7 @@
 
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
+use App\Models\Product;
 
 new class extends Component {
     use WithFileUploads;
@@ -15,10 +16,10 @@ new class extends Component {
     public $selling_price;
     public $expiration_date;
     public $quantity;
-    public $product_type_id;
-    public $unit_id;
-    public $brand_id;
-    public $category_id;
+    public $product_type;
+    public $unit;
+    public $brand;
+    public $category;
     public $quantity_per_piece = 1;
     public $low_stock_value = 10;
     public $image;
@@ -30,17 +31,29 @@ new class extends Component {
     public $types = [];
     public $suppliers = [];
 
+    protected $rules = [
+        // 'product_code' => 'required|unique:products',
+        'name' => 'required',
+        'description' => 'nullable',
+        'product_type' => 'required',
+        'unit' => 'required',
+        'brand' => 'required',
+        'category' => 'required',
+        'quantity_per_piece' => 'required|integer|min:1',
+        'low_stock_value' => 'required|integer|min:0',
+    ];
+
     public function mount($productId)
     {
-        $this->product = \App\Models\Product::with('stocks')->findOrFail($productId);
+        $this->product = Product::with('stocks')->findOrFail($productId);
 
         $this->product_code = $this->product->product_code;
         $this->name = $this->product->name;
         $this->description = $this->product->description;
-        $this->product_type_id = $this->product->product_type_id;
-        $this->unit_id = $this->product->unit_id;
-        $this->brand_id = $this->product->brand_id;
-        $this->category_id = $this->product->category_id;
+        $this->product_type = $this->product->product_type_id;
+        $this->unit = $this->product->unit_id;
+        $this->brand = $this->product->brand_id;
+        $this->category = $this->product->category_id;
         $this->quantity_per_piece = $this->product->quantity_per_piece;
         $this->low_stock_value = $this->product->low_stock_value;
 
@@ -51,7 +64,7 @@ new class extends Component {
             $this->capital_price = $stock->capital_price;
             $this->selling_price = $stock->selling_price;
             $this->quantity = $stock->quantity;
-            $this->expiration_date = $stock->expiration_date;
+            $this->expiration_date = \Carbon\Carbon::parse($stock->expiration_date)->format('Y-m-d');
         }
 
         $this->loadDropdownData();
@@ -68,24 +81,19 @@ new class extends Component {
 
     public function update()
     {
-        $validated = $this->validate([
-            'product_code' => 'required|unique:products,product_code,' . $this->product->id,
-            'name' => 'required',
-            'description' => 'nullable',
-            'product_type_id' => 'required|exists:product_types,id',
-            'unit_id' => 'required|exists:units,id',
-            'brand_id' => 'required|exists:brands,id',
-            'category_id' => 'required|exists:categories,id',
-            'quantity_per_piece' => 'required|integer|min:1',
-            'low_stock_value' => 'required|integer|min:0',
-        ]);
+        $this->validate();
 
-        $this->product->update(
-            array_merge($validated, [
-                'capital_price' => $this->capital_price,
-                'selling_price' => $this->selling_price,
-            ]),
-        );
+        $this->product->update([
+            // 'product_code' => $this->product_code,
+            'name' => $this->name,
+            'description' => $this->description,
+            'product_type_id' => $this->product_type,
+            'unit_id' => $this->unit,
+            'brand_id' => $this->brand,
+            'category_id' => $this->category,
+            'quantity_per_piece' => $this->quantity_per_piece,
+            'low_stock_value' => $this->low_stock_value,
+        ]);
 
         if ($this->image) {
             $this->product->clearMediaCollection('product-image');
@@ -94,7 +102,7 @@ new class extends Component {
 
         $stock = $this->product->stocks()->firstOrNew([]);
         $stock->fill([
-            'stock_number' => $stock->stock_number ?? $this->generateStockNumber(),
+            'stock_number' => $stock->stock_number,
             'supplier_id' => $this->supplier,
             'quantity' => $this->quantity,
             'capital_price' => $this->capital_price,
@@ -107,7 +115,6 @@ new class extends Component {
 
         return redirect()->route('products');
     }
-
     private function generateStockNumber()
     {
         $yearPrefix = date('Y');
@@ -182,40 +189,40 @@ new class extends Component {
             </div>
             <div class="grid grid-cols-4 gap-4 mb-4">
                 <div>
-                    <flux:select wire:model.live="brand_id" :label="__('Brand')" size="md">
+                    <flux:select wire:model.live="brand" :label="__('Brand')" size="md">
                         <option value="">Choose brand...</option>
                         @foreach ($brands as $brand)
-                            <option value="{{ $brand->id }}" {{ $brand_id == $brand->id ? 'selected' : '' }}>
+                            <option value="{{ $brand->id }}">
                                 {{ $brand->name }}
                             </option>
                         @endforeach
                     </flux:select>
                 </div>
                 <div>
-                    <flux:select wire:model.live="category_id" :label="__('Category')" size="md">
+                    <flux:select wire:model.live="category" :label="__('Category')" size="md">
                         <option value="">Choose category...</option>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}"  {{ $category_id == $category->id ? 'selected' : '' }}>
+                            <option value="{{ $category->id }}">
                                 {{ $category->name }}
                             </option>
                         @endforeach
                     </flux:select>
                 </div>
                 <div>
-                    <flux:select wire:model.live="product_type_id" :label="__('Product Type')" size="md">
+                    <flux:select wire:model.live="product_type" :label="__('Product Type')" size="md">
                         <option value="">Choose product type...</option>
                         @foreach ($types as $type)
-                            <option value="{{ $type->id }}"  {{ $product_type_id == $type->id ? 'selected' : '' }}>
+                            <option value="{{ $type->id }}">
                                 {{ $type->name }}
                             </option>
                         @endforeach
                     </flux:select>
                 </div>
                 <div>
-                    <flux:select wire:model.live="unit_id" :label="__('Unit')" size="md">
+                    <flux:select wire:model.live="unit" :label="__('Unit')" size="md">
                         <option value="">Choose unit...</option>
                         @foreach ($units as $unit)
-                            <option value="{{ $unit->id }}" {{ $unit_id == $unit->id ? 'selected' : '' }}>
+                            <option value="{{ $unit->id }}">
                                 {{ $unit->name }}
                             </option>
                         @endforeach
@@ -311,7 +318,8 @@ new class extends Component {
                     </div>
                     <div class="mb-4">
                         <flux:input wire:model="expiration_date" :label="__('Expiration Date')" type="date"
-                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                            :value="$expiration_date"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"/>
                     </div>
                     {{-- <div class="mb-4">
                         <flux:select wire:model="supplier" :label="__('Supplier')" size="md">
@@ -328,12 +336,8 @@ new class extends Component {
             <!-- Navigation Buttons -->
             <div class="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                 <div class="flex justify-end space-x-4">
-                    <flux:button variant="primary" wire:click="save">
-                        Save
-                    </flux:button>
-                    <flux:button wire:click="save(true)" variant="primary"
-                        class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                        Save & Create Another
+                    <flux:button variant="primary" wire:click="update">
+                        Update
                     </flux:button>
                 </div>
             </div>

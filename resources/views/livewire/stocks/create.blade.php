@@ -106,8 +106,8 @@ new class extends Component {
         $product = Product::find($productId);
         $this->product_id = $product->id;
         $this->product_name = $product->name;
-        $this->brand_name = $product->brand->name;
-        $this->product_category = $product->category->name;
+        $this->brand_name = $product->brand->name ?? 'N/A';
+        $this->product_category = $product->category->name ?? 'N/A';
         $this->product_description = $product->description;
         $this->product_code = $product->product_code; // Reset batch number for the new batch
 
