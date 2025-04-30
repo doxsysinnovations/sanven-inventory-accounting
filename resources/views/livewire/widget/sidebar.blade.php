@@ -129,6 +129,18 @@ new class extends Component {
                 ],
             ],
             [
+                'heading' => 'Reporting',
+                'permission' => 'suppliers.view',
+                'items' => [
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agingreports',
+                        'label' => 'Aging Reports',
+                        'permission' => 'suppliers.view',
+                    ],
+                ],
+            ],
+            [
                 'heading' => 'User Management',
                 'permission' => 'users.view',
                 'items' => [
