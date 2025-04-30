@@ -89,23 +89,23 @@ new class extends Component {
     }
 
     public function getStocksProperty()
-    {
-        return Stock::query()
-            ->whereDate('expiration_date', '<=', now()->addDays(30)) // Products expiring within the next 30 days or already expired
-            ->when($this->search, function ($query) {
-                $query->whereHas('product', function ($q) {
-                    $q->where('product_name', 'like', '%' . $this->search . '%')
-                        ->orWhere('product_code', 'like', '%' . $this->search . '%');
-                });
-            })
-            ->when($this->category, fn($q) => $q->where('category_id', $this->category))
-            ->when($this->brand, fn($q) => $q->where('brand_id', $this->brand))
-            ->when($this->unit, fn($q) => $q->where('unit_id', $this->unit))
-            ->when($this->productType, fn($q) => $q->where('product_type_id', $this->productType))
-            ->latest()
-            ->paginate($this->perPage);
-            }
-        };
+{
+    return Stock::query()
+        ->whereDate('expiration_date', '<=', now()->addDays(30)) // Include products expiring within the next 30 days or already expired
+        ->when($this->search, function ($query) {
+            $query->whereHas('product', function ($q) {
+                $q->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('product_code', 'like', '%' . $this->search . '%');
+            });
+        })
+        ->when($this->category, fn($q) => $q->where('category_id', $this->category))
+        ->when($this->brand, fn($q) => $q->where('brand_id', $this->brand))
+        ->when($this->unit, fn($q) => $q->where('unit_id', $this->unit))
+        ->when($this->productType, fn($q) => $q->where('product_type_id', $this->productType))
+        ->orderBy('expiration_date', 'asc') // Sort by nearest expiration date
+        ->paginate($this->perPage);
+}
+};
 ?>
 
 <!-- HTML Blade Template Continues -->
@@ -134,20 +134,18 @@ new class extends Component {
     </div>
 
     <div class="flex flex-col gap-4 rounded-xl">
-        <h2>
+        <h2 class="mb-16">
             <span class="text-lg font-semibold text-gray-900 dark:text-gray-100">List of Expiry Products</span>
             <p>
                 <span class="text-sm text-gray-500 dark:text-gray-400">
-                    This table lists all products nearing or past their expiration date. Please review and take necessary actions to manage stock effectively.
+                    This table lists all products nearing or past their expiration date. Please review and take
+                    necessary actions to manage stock effectively.
                 </span>
             </p>
         </h2>
         <div class="flex flex-wrap justify-between items-center gap-4">
 
-            <div class="w-full sm:w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search products/stock..."
-                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:ring-blue-400/20 transition duration-200">
-            </div>
+          
 
             <div class="flex gap-2 items-center">
                 <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300">Per Page:</label>
@@ -225,40 +223,59 @@ new class extends Component {
                     </thead>
                     <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach ($stocks as $stock)
-                            <tr wire:key="product-{{ $stock->id }}">
-                                {{-- <td class="px-6 py-4 whitespace-nowrap">
-                                    <img src="{{ $stock->getFirstMediaUrl('product-image') }}"
-                                        alt="{{ $stock->product_name }}" class="w-12 h-12 rounded object-cover">
-                                </td> --}}
-                                <td class="px-6 py-4">{{ $stock->product->product_code }}</td>
-                                <td class="px-6 py-4">{{ $stock->product_name }}</td>
-                                <td class="px-6 py-4 text-center">{{ number_format($stock->capital_price, 2) }}</td>
-                                <td class="px-6 py-4 text-center">{{ number_format($stock->selling_price, 2) }}</td>
-                                <td class="px-6 py-4 text-center ">
-                                    {{ $stock->quantity }}
-                                </td>
-                                <td class="px-6 py-4 text-center ">
-                                    {{ $stock->formatted_manufactured_date }}
-                                </td>
-                                <td class="px-6 py-4 text-center ">
-                                    {{ $stock->formatted_expiration_date }}
-                                </td>
-                                <td class="px-6 py-4 text-center space-x-2">
-                                    @can('products.edit')
-                                        <button wire:click="edit({{ $stock->id }})"
-                                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-indigo-400">
-                                            Edit
-                                        </button>
-                                    @endcan
-                                    @can('products.delete')
-                                        <button wire:click="confirmDelete({{ $stock->id }})"
-                                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400">
-                                            Delete
-                                        </button>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @endforeach
+                        <tr wire:key="product-{{ $stock->id }}">
+                            {{-- Product Details --}}
+                            <td class="px-6 py-4">{{ $stock->product->product_code }}</td>
+                            <td class="px-6 py-4">{{ $stock->product_name }}</td>
+                            <td class="px-6 py-4 text-center">{{ number_format($stock->capital_price, 2) }}</td>
+                            <td class="px-6 py-4 text-center">{{ number_format($stock->selling_price, 2) }}</td>
+                            <td class="px-6 py-4 text-center">{{ $stock->quantity }}</td>
+                            <td class="px-6 py-4 text-center">{{ $stock->formatted_manufactured_date }}</td>
+                    
+                            {{-- Expiration Date --}}
+                            <td class="px-6 py-4 text-center">
+                                <span class="
+                                @php
+                                $expirationDate = \Carbon\Carbon::parse($stock->expiration_date);
+                                $daysDifference = $expirationDate->diffInDays(now(), false);
+                            @endphp
+                            
+                            @if ($daysDifference < 0 && $daysDifference >= -3) {{-- Expiring soon (within 3 days) --}}
+                                text-orange-600 font-medium
+                            @elseif ($daysDifference >= 0) {{-- Already expired --}}
+                                text-red-600 font-bold
+                            @else {{-- More than 3 days left --}}
+                                text-yellow-500 font-semibold
+                            @endif
+                            
+                                ">
+                                    {{ $expirationDate->format('F j, Y') }}
+                                </span>
+                                {{-- Expired Label --}}
+                                @if ($daysDifference >= 0)
+                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                                        Expired
+                                    </span>
+                                @endif
+                            </td>
+                    
+                            {{-- Actions --}}
+                            <td class="px-6 py-4 text-center space-x-2">
+                                @can('products.edit')
+                                    <button wire:click="edit({{ $stock->id }})"
+                                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-indigo-400">
+                                        Edit
+                                    </button>
+                                @endcan
+                                @can('products.delete')
+                                    <button wire:click="confirmDelete({{ $stock->id }})"
+                                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400">
+                                        Delete
+                                    </button>
+                                @endcan
+                            </td>
+                        </tr>
+                    @endforeach
                     </tbody>
                 </table>
             </div>
