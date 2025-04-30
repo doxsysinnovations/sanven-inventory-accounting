@@ -106,8 +106,8 @@ new class extends Component {
         $product = Product::find($productId);
         $this->product_id = $product->id;
         $this->product_name = $product->name;
-        $this->brand_name = $product->brand->name ?? 'N/A';
-        $this->product_category = $product->category->name ?? 'N/A';
+        $this->brand_name = $product->brand->name;
+        $this->product_category = $product->category->name;
         $this->product_description = $product->description;
         $this->product_code = $product->product_code; // Reset batch number for the new batch
 
@@ -134,27 +134,18 @@ new class extends Component {
     }
 
     private function generateStockNumber()
-{
-    $yearPrefix = date('Y');
-
-    // Use a database transaction to ensure uniqueness
-    return \DB::transaction(function () use ($yearPrefix) {
-        // Lock the table to prevent race conditions
-        $lastStock = \App\Models\Stock::where('stock_number', 'like', $yearPrefix . '%')
-            ->lockForUpdate() // Lock the rows for update
-            ->orderByRaw('CAST(SUBSTRING(stock_number, 5) AS UNSIGNED) DESC') // Order by the numeric part of the stock number
-            ->first();
-
-        if ($lastStock) {
-            $lastStockNumber = intval(substr($lastStock->stock_number, 4)); // Extract the numeric part after the year prefix
+    {
+        $yearPrefix = date('Y');
+        $lastProduct = \App\Models\Stock::orderBy('id', 'desc')->first();
+        if ($lastProduct) {
+            $lastStockNumber = intval(substr($lastProduct->stock_number, -6));
             $newStockNumber = $lastStockNumber + 1;
         } else {
-            $newStockNumber = 1; // Start from 1 if no stock exists for the current year
+            $newStockNumber = 1;
         }
-
         return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
-    });
-}
+    }
+
     public function save()
     {
 
@@ -164,6 +155,7 @@ new class extends Component {
             'product_name' => $this->product_name,
             'product_id' => $this->product_id,
             'batch_number' => $this->batch_number,
+            'stock_number' => $this->generateStockNumber(),
             'quantity' => $this->quantity,
             'unit_id' => $this->unit_id, // Save the selected unit
             'capital_price' => $this->capital_price,
