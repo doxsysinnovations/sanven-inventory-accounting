@@ -76,6 +76,7 @@ class RolePermissionSeeder extends Seeder
             'stocks.create',
             'stocks.edit',
             'stocks.delete',
+            'stocks.view-expiry',
 
             //Orders/POS
             'orders.view',
@@ -118,6 +119,12 @@ class RolePermissionSeeder extends Seeder
             'agents.create',
             'agents.edit',
             'agents.delete',
+
+            //Invoicing
+            'invoicing.view',
+            'invoicing.create',
+            'invoicing.edit',
+            'invoicing.delete',
         ];
 
         foreach ($permissions as $permission) {
