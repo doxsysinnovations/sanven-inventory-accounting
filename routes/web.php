@@ -50,6 +50,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //POS /Orders
     Volt::route('pos', 'pos.index')->name('pos');
+    Volt::route('pos/create', 'pos.create')->name('pos.create');
 
     //Quotations
     Volt::route('quotations', 'quotations.index')->name('quotations');
