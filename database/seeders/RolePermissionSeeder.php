@@ -103,6 +103,7 @@ class RolePermissionSeeder extends Seeder
             'expenses.delete',
 
             //Reports
+            'reports.view-aging-reportss',
             'reports.view',
             'reports.create',
             'reports.edit',
@@ -135,6 +136,7 @@ class RolePermissionSeeder extends Seeder
             //Profile
             'profile.view',
             'profile.edit',
+
         ];
 
         foreach ($permissions as $permission) {
