@@ -69,7 +69,7 @@ new class extends Component {
                         'icon' => 'exclamation-triangle',
                         'route' => 'expiryproducts',
                         'label' => 'Expiry stocks',
-                        'permission' => 'stocks.view',
+                        'permission' => 'stocks.view-expiry',
                     ],
                 ],
             ],
