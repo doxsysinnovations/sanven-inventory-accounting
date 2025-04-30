@@ -39,7 +39,10 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Suppliers
     Volt::route('suppliers', 'suppliers.index')->name('suppliers');
-
+     
+    //Aging
+     Volt::route('agingreports', 'agingreports.index')->name('agingreports');
+    
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
@@ -50,6 +53,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //POS /Orders
     Volt::route('pos', 'pos.index')->name('pos');
+    Volt::route('pos/create', 'pos.create')->name('pos.create');
 
     //Quotations
     Volt::route('quotations', 'quotations.index')->name('quotations');

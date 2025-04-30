@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('stocks', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('stock_number')->autoIncrement()->change(); // Make stock_number auto-increment
+            $table->string('stock_number')->unique();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->foreignId('supplier_id')->nullable()->constrained()->onDelete('cascade');            $table->integer('quantity')->default(1);
             $table->decimal('capital_price', 10, 2)->nullable();

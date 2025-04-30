@@ -13,6 +13,7 @@ new class extends Component {
 
     public function with()
     {
+        $expiryStocksCount = \App\Models\Stock::whereDate('expiration_date', '<=', now()->addDays(30))->count(); // Count expiry stocks
         $this->menuItems = [
             [
                 'heading' => 'Navigations',
@@ -26,7 +27,7 @@ new class extends Component {
                     [
                         'icon' => 'shopping-cart',
                         'route' => 'pos',
-                        'label' => 'POS',
+                        'label' => 'Invoicing',
                         'permission' => 'orders.view',
                     ],
                     [
@@ -68,7 +69,7 @@ new class extends Component {
                     [
                         'icon' => 'exclamation-triangle',
                         'route' => 'expiryproducts',
-                        'label' => 'Expiry stocks',
+                        'label' => 'Expiry Stocks (' . $expiryStocksCount . ')', // Add the count here
                         'permission' => 'stocks.view-expiry',
                     ],
                 ],
@@ -123,6 +124,18 @@ new class extends Component {
                         'icon' => 'user-group',
                         'route' => 'suppliers',
                         'label' => 'Suppliers',
+                        'permission' => 'suppliers.view',
+                    ],
+                ],
+            ],
+            [
+                'heading' => 'Reporting',
+                'permission' => 'suppliers.view',
+                'items' => [
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agingreports',
+                        'label' => 'Aging Reports',
                         'permission' => 'suppliers.view',
                     ],
                 ],
@@ -187,19 +200,9 @@ new class extends Component {
         {{-- <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
 
         @foreach ($menuItems as $group)
-            <flux:navlist.group :heading="__($group['heading'])" class="grid">
-                @if (isset($group['permission']))
-                    @can($group['permission'])
-                        @foreach ($group['items'] as $item)
-                            @if (!$item['permission'] || auth()->user()->can($item['permission']))
-                                <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                    :current="request()->routeIs($item['route'])" wire:navigate>
-                                    {{ __($item['label']) }}
-                                </flux:navlist.item>
-                            @endif
-                        @endforeach
-                    @endcan
-                @else
+        <flux:navlist.group :heading="__($group['heading'])" class="grid">
+            @if (isset($group['permission']))
+                @can($group['permission'])
                     @foreach ($group['items'] as $item)
                         @if (!$item['permission'] || auth()->user()->can($item['permission']))
                             <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
@@ -208,8 +211,18 @@ new class extends Component {
                             </flux:navlist.item>
                         @endif
                     @endforeach
-                @endif
-            </flux:navlist.group>
-        @endforeach
+                @endcan
+            @else
+                @foreach ($group['items'] as $item)
+                    @if (!$item['permission'] || auth()->user()->can($item['permission']))
+                        <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
+                            :current="request()->routeIs($item['route'])" wire:navigate>
+                            {{ __($item['label']) }}
+                        </flux:navlist.item>
+                    @endif
+                @endforeach
+            @endif
+        </flux:navlist.group>
+    @endforeach
     </flux:navlist>
 </div>
