@@ -212,10 +212,10 @@ new class extends Component {
                                 <td class="px-6 py-4">{{ $product->name }}</td>
                                 <td class="px-6 py-4 text-center">{{ number_format($product->capital_price, 2) }}</td>
                                 <td class="px-6 py-4 text-center">{{ number_format($product->selling_price, 2) }}</td>
-                                <td class="px-6 py-4 text-center {{ $product->stocks <= $product->low_stock_alert ? 'text-red-600' : '' }}">
+                                <td class="px-6 py-4 text-center {{ $product->stock_value <= $product->low_stock_value ? 'text-red-600' : '' }}">
                                     {{ $product->stock_value }}
                                 </td>
-                                <td class="px-6 py-4 text-center {{ $product->stocks <= $product->low_stock_alert ? 'text-red-600' : '' }}">
+                                <td class="px-6 py-4 text-center {{ $product->stock_value <= $product->low_stock_value ? 'text-red-600' : '' }}">
                                     {{ $product->low_stock_value }}
                                 </td>
                                 <td class="px-6 py-4 text-center space-x-2">

@@ -2,5 +2,6 @@
     <x-app-logo-icon class="size-5 fill-current text-white dark:text-black" />
 </div>
 <div class="ml-1 grid flex-1 text-left text-sm">
-    <span class="mb-0.5 truncate leading-none font-semibold">{{ config('app.name') }}</span>
+    <span class="mb-0.5 truncate leading-none font-semibold">SANVEN IQA System</span>
+    <span class="mb-0.5 truncate text-xs leading-none">Innovated By Doxsys</span>
 </div>

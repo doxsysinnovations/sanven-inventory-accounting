@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Volt\Component;
+use App\Models\Product;
 
 new class extends Component {
     use Livewire\WithFileUploads;
@@ -28,6 +29,18 @@ new class extends Component {
     public $types = [];
     public $suppliers = [];
 
+    protected $rules = [
+        'product_code' => 'required|unique:products',
+        'name' => 'required',
+        'description' => 'nullable',
+        'product_type' => 'required',
+        'unit' => 'required',
+        'brand' => 'required',
+        'category' => 'required',
+        'quantity_per_piece' => 'required|integer|min:1',
+        'low_stock_value' => 'required|integer|min:0',
+    ];
+
     public function mount()
     {
         $this->productTypes = \App\Models\ProductType::all();
@@ -53,23 +66,19 @@ new class extends Component {
 
     public function save($createAnother = false)
     {
-        $validated = $this->validate([
-            'product_code' => 'required|unique:products',
-            'name' => 'required',
-            'description' => 'nullable',
-            'product_type' => 'required|exists:product_types,id',
-            'unit' => 'required|exists:units,id',
-            'brand' => 'required|exists:brands,id',
-            'category' => 'required|exists:categories,id',
-            'quantity_per_piece' => 'required|integer|min:1',
-            'low_stock_value' => 'required|integer|min:0',
+        $this->validate();
+        $product = Product::create([
+            'product_code' => $this->product_code,
+            'name' => $this->name,
+            'description' => $this->description,
+            'product_type_id' => $this->product_type,
+            'unit_id' => $this->unit,
+            'brand_id' => $this->brand,
+            'category_id' => $this->category,
+            'quantity_per_piece' => $this->quantity_per_piece,
+            'low_stock_value' => $this->low_stock_value,
         ]);
 
-        $validated['stock_value'] = $this->quantity;
-        $validated['capital_price'] = $this->capital_price;
-        $validated['selling_price'] = $this->selling_price;
-
-        $product = \App\Models\Product::create($validated);
         if ($this->image) {
             $product->addMedia($this->image)->toMediaCollection('product-image');
         }

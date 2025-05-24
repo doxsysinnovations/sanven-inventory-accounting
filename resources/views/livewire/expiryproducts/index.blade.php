@@ -91,9 +91,11 @@ new class extends Component {
     public function getStocksProperty()
     {
         return Stock::query()
+            ->whereDate('expiration_date', '<=', now()->addDays(30)) // Products expiring within the next 30 days or already expired
             ->when($this->search, function ($query) {
                 $query->whereHas('product', function ($q) {
-                    $q->where('product_name', 'like', '%' . $this->search . '%')->orWhere('product_code', 'like', '%' . $this->search . '%');
+                    $q->where('product_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('product_code', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->category, fn($q) => $q->where('category_id', $this->category))
@@ -102,8 +104,8 @@ new class extends Component {
             ->when($this->productType, fn($q) => $q->where('product_type_id', $this->productType))
             ->latest()
             ->paginate($this->perPage);
-    }
-};
+            }
+        };
 ?>
 
 <!-- HTML Blade Template Continues -->
@@ -123,7 +125,7 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Stocks
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Expiry Products
                             List</span>
                     </div>
                 </li>
@@ -133,9 +135,11 @@ new class extends Component {
 
     <div class="flex flex-col gap-4 rounded-xl">
         <h2>
-            <span class="text-lg font-semibold text-gray-900 dark:text-gray-100">List of Stocks</span>
+            <span class="text-lg font-semibold text-gray-900 dark:text-gray-100">List of Expiry Products</span>
             <p>
-                <span class="text-sm text-gray-500 dark:text-gray-400">Manage your stocks here.</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                    This table lists all products nearing or past their expiration date. Please review and take necessary actions to manage stock effectively.
+                </span>
             </p>
         </h2>
         <div class="flex flex-wrap justify-between items-center gap-4">
@@ -158,7 +162,7 @@ new class extends Component {
         </div>
 
         @if ($stocks->isEmpty())
-            <div class="flex flex-col items-center justify-center p-8">
+            {{-- <div class="flex flex-col items-center justify-center p-8">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
@@ -177,9 +181,9 @@ new class extends Component {
                         Add Product
                     </a>
                 @endcan
-            </div>
+            </div> --}}
         @else
-            <div class="flex justify-end">
+            {{-- <div class="flex justify-end">
                 @can('products.create')
                     <a href="{{ route('stocks.create') }}"
                         class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
@@ -192,7 +196,7 @@ new class extends Component {
                         Add / Receive Stock
                     </a>
                 @endcan
-            </div>
+            </div> --}}
 
             <div
                 class="overflow-x-auto overflow-y-scroll max-h-128 rounded-lg border border-gray-200 dark:border-gray-700">
