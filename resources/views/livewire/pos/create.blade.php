@@ -450,7 +450,7 @@ new class extends Component {
         <span class="text-sm text-gray-500 ml-2 dark:text-gray-400">Step {{ $currentStep }} of 3</span>
     </h1>
     <div class="flex items-center justify-between mt-6 mb-6">
-    
+
         <div class="flex space-x-4">
             <!-- Step 1 -->
             <button wire:click="$set('currentStep', 1)"
@@ -811,7 +811,7 @@ new class extends Component {
                                             ₱{{ number_format($item['selling_price'] * $this->getCartQuantity($index), 2) }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                                           {{ number_format($item['is_vatable'])  }}
+                                           {{ number_format($item['is_vatable'] ?? 0)  }}
                                         </td>
                                         <td class="px-6 py-4">
                                             <button wire:click="removeProductFromCart({{ $index }})"
@@ -851,7 +851,7 @@ new class extends Component {
                                     </td>
                                 </tr>
                             </tfoot>
-                            
+
                         </table>
                     </div>
                 </div>
