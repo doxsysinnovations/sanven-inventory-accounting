@@ -130,10 +130,10 @@ class RolePermissionSeeder extends Seeder
             'invoicing.delete',
 
             //Settings
-            'settings.view',
-            'settings.create',
-            'settings.edit',
-            'settings.delete',
+            // 'settings.view',
+            // 'settings.create',
+            // 'settings.edit',
+            // 'settings.delete',
 
             //Profile
             'profile.view',
@@ -145,6 +145,11 @@ class RolePermissionSeeder extends Seeder
             'locations.create',
             'locations.edit',
             'locations.delete',
+
+            //Settings
+            'settings.view',
+            'settings.2fa-config',
+            'settings.seeders',
         ];
 
         foreach ($permissions as $permission) {
