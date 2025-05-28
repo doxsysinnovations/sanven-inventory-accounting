@@ -64,6 +64,10 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Customers
     Volt::route('customers', 'customers.index')->name('customers');
 
+    //Locations
+    Volt::route('locations', 'locations.index')->name('locations');
+
+
 
 });
 

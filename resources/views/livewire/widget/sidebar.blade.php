@@ -162,6 +162,12 @@ new class extends Component {
                         'label' => 'Audit Trail',
                         'permission' => 'audittrail.view',
                     ],
+                    [
+                        'icon' => 'map-pin',
+                        'route' => 'locations',
+                        'label' => 'Locations',
+                        'permission' => 'locations.view',
+                    ],
                 ],
             ],
         ];

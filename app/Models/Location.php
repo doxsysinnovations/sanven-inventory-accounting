@@ -4,17 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Agent extends Model
+class Location extends Model
 {
     use SoftDeletes;
 
     protected $guarded = [];
 
-    public function locations(): BelongsToMany
+    public function agents(): BelongsToMany
     {
-        return $this->belongsToMany(Location::class)
+        return $this->belongsToMany(Agent::class)
             ->using(AgentLocation::class)
             ->withTimestamps()
             ->withTrashed();
