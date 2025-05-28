@@ -66,6 +66,7 @@ class RolePermissionSeeder extends Seeder
             'units.delete',
 
             //Suppliers
+            'suppliers.info',
             'suppliers.view',
             'suppliers.create',
             'suppliers.edit',
