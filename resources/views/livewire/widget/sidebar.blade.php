@@ -70,7 +70,7 @@ new class extends Component {
                         'icon' => 'exclamation-triangle',
                         'route' => 'expiryproducts',
                         'label' => 'Expiry Stocks (' . $expiryStocksCount . ')', // Add the count here
-                        'permission' => 'stocks.view',
+                        'permission' => 'stocks.view-expiry',
                     ],
                 ],
             ],

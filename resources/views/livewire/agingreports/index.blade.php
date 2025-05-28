@@ -1,355 +1,263 @@
 <?php
 
 use Livewire\Volt\Component;
-use Livewire\WithPagination;
-use App\Models\Supplier;
-use Livewire\Attributes\Title;
 
 new class extends Component {
-    use WithPagination;
+    public $agents = [
+        [
+            'id' => 1,
+            'agent_name' => 'John Smith',
+            'customer_name' => 'City Pharmacy',
+            'customer_type' => 'Pharmacy',
+            'invoice_number' => 'INV-2023-001',
+            'date' => '2023-01-15',
+            'due_date' => '2023-02-15',
+            'total_amount' => 1250.50,
+            'status' => 'Paid',
+            'days_overdue' => 0,
+        ],
+        [
+            'id' => 2,
+            'agent_name' => 'Sarah Johnson',
+            'customer_name' => 'General Hospital',
+            'customer_type' => 'Hospital',
+            'invoice_number' => 'INV-2023-002',
+            'date' => '2023-01-18',
+            'due_date' => '2023-02-18',
+            'total_amount' => 875.25,
+            'status' => 'Pending',
+            'days_overdue' => 12,
+        ],
+        [
+            'id' => 3,
+            'agent_name' => 'Michael Chen',
+            'customer_name' => 'Quick Drugstore',
+            'customer_type' => 'Drugstore',
+            'invoice_number' => 'INV-2023-003',
+            'date' => '2023-01-20',
+            'due_date' => '2023-02-20',
+            'total_amount' => 2200.00,
+            'status' => 'Unpaid',
+            'days_overdue' => 45,
+        ],
+        // ... (97 more records will be generated)
+    ];
 
-    public $search = '';
-    public $showModal = false;
-    public $supplier;
-    public $isEditing = false;
-    public $confirmingDelete = false;
-    public $supplierToDelete;
-    public $name = '';
-    public $contact_number = '';
-    public $address = '';
-    public $email = '';
-    public $trade_name = '';
-    public $identification_number = '';
-
-    public function rules()
+    public function mount()
     {
-        return [
-            'name' => 'required|string|max:255',
-            'trade_name' => 'required|string|max:255',
-            'identification_number' => 'required|string|max:255',
-            'contact_number' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'email' => $this->isEditing ? 'nullable|email|unique:suppliers,email,' . $this->supplier->id : 'nullable|email|unique:suppliers,email',
-        ];
-    }
+        $customerTypes = ['Pharmacy', 'Hospital', 'Drugstore'];
+        $pharmacyNames = ['City', 'Metro', 'Central', 'Family', 'Wellness', 'Care', 'Vital', 'Life', 'Community', 'Premium'];
+        $hospitalNames = ['General', 'Memorial', 'Regional', 'City', 'University', 'Children\'s', 'Saint', 'Mercy', 'Parkview', 'Valley'];
+        $drugstoreNames = ['Quick', 'Express', 'Neighborhood', 'Discount', 'Corner', '24/7', 'Value', 'Save', 'Prime', 'Care'];
 
-    public function create()
-    {
-        $this->resetForm();
-        $this->isEditing = false;
-        $this->showModal = true;
-    }
+        // Generate the remaining 97 records
+        for ($i = 4; $i <= 100; $i++) {
+            $statuses = ['Paid', 'Pending', 'Unpaid'];
+            $status = $statuses[array_rand($statuses)];
 
-    public function edit(Supplier $supplier)
-    {
-        $this->resetValidation();
-        $this->supplier = $supplier;
-        $this->name = $supplier->name;
-        $this->trade_name = $supplier->trade_name;
-        $this->identification_number = $supplier->identification_number;
-        $this->contact_number = $supplier->contact_number;
-        $this->address = $supplier->address;
-        $this->email = $supplier->email;
-        $this->isEditing = true;
-        $this->showModal = true;
-    }
+            $date = now()->subDays(rand(10, 90))->format('Y-m-d');
+            $dueDate = date('Y-m-d', strtotime($date . ' +' . rand(15, 30) . ' days'));
 
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
+            $daysOverdue = ($status !== 'Paid') ? max(0, now()->diffInDays($dueDate)) : 0;
 
-    public function save()
-    {
-        $this->validate();
+            // Generate customer data
+            $customerType = $customerTypes[array_rand($customerTypes)];
+            $customerName = '';
 
-        if ($this->isEditing) {
-            $this->supplier->update([
-                'name' => $this->name,
-                'trade_name' => $this->trade_name,
-                'identification_number' => $this->identification_number,
-                'contact_number' => $this->contact_number,
-                'address' => $this->address,
-                'email' => $this->email,
-            ]);
-            flash()->success('Supplier updated successfully!');
-        } else {
-            Supplier::create([
-                'name' => $this->name,
-                'trade_name' => $this->trade_name,
-                'identification_number' => $this->identification_number,
-                'contact_number' => $this->contact_number,
-                'address' => $this->address,
-                'email' => $this->email,
-            ]);
-            flash()->success('Supplier created successfully!');
+            switch($customerType) {
+                case 'Pharmacy':
+                    $customerName = $pharmacyNames[array_rand($pharmacyNames)] . ' Pharmacy';
+                    break;
+                case 'Hospital':
+                    $customerName = $hospitalNames[array_rand($hospitalNames)] . ' Hospital';
+                    break;
+                case 'Drugstore':
+                    $customerName = $drugstoreNames[array_rand($drugstoreNames)] . ' Drugstore';
+                    break;
+            }
+
+            $this->agents[] = [
+                'id' => $i,
+                'agent_name' => $this->generateRandomName(),
+                'customer_name' => $customerName,
+                'customer_type' => $customerType,
+                'invoice_number' => 'INV-2023-' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'date' => $date,
+                'due_date' => $dueDate,
+                'total_amount' => rand(500, 5000) + (rand(0, 99) / 100),
+                'status' => $status,
+                'days_overdue' => $daysOverdue,
+            ];
         }
-
-        $this->showModal = false;
-        $this->resetForm();
     }
 
-    public function confirmDelete($supplierId)
+    private function generateRandomName()
     {
-        $this->supplierToDelete = $supplierId;
-        $this->confirmingDelete = true;
+        $firstNames = ['James', 'Mary', 'Robert', 'Patricia', 'David', 'Jennifer', 'William', 'Linda', 'Richard', 'Elizabeth'];
+        $lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+
+        return $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
     }
+}; ?>
 
-    public function delete()
-    {
-        $supplier = Supplier::find($this->supplierToDelete);
-        if ($supplier) {
-            $supplier->delete();
-            flash()->success('Supplier deleted successfully!');
-        }
-        $this->confirmingDelete = false;
-        $this->supplierToDelete = null;
-    }
+<div class="bg-gray-900 text-gray-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Agent Aging Report with Customers</h1>
 
-    private function resetForm()
-    {
-        $this->name = '';
-        $this->trade_name = '';
-        $this->identification_number = '';
-        $this->contact_number = '';
-        $this->address = '';
-        $this->email = '';
-        $this->supplier = null;
-        $this->resetValidation();
-    }
-
-    #[Title('Suppliers')]
-    public function with(): array
-    {
-        return [
-            'suppliers' => $this->suppliers,
-        ];
-    }
-
-    public function getSuppliersProperty()
-    {
-        return Supplier::query()
-            ->where('identification_number', 'like', '%' . $this->search . '%')
-            ->orWhere('name', 'like', '%' . $this->search . '%')
-            ->orWhere('trade_name', 'like', '%' . $this->search . '%')
-            ->orWhere('email', 'like', '%' . $this->search . '%')
-            ->paginate(10);
-    }
-};
-
-?>
-
-<div>
-    <div class="mb-4">
-        <nav class="flex justify-end" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Suppliers</span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
-
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="flex items-center justify-between">
-            <div class="w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search suppliers..."
-                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <div class="flex space-x-4">
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        class="bg-gray-700 text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <select class="bg-gray-700 text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>All Statuses</option>
+                        <option>Paid</option>
+                        <option>Pending</option>
+                        <option>Unpaid</option>
+                    </select>
+                    <select class="bg-gray-700 text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>All Customer Types</option>
+                        <option>Pharmacy</option>
+                        <option>Hospital</option>
+                        <option>Drugstore</option>
+                    </select>
+                </div>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition">
+                    Export Report
+                </button>
             </div>
-        </div>
-        @if ($suppliers->isEmpty())
-            <div class="flex flex-col items-center justify-center p-8">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">No suppliers found</p>
-                @can('suppliers.create')
-                    <button wire:click="create"
-                        class="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white transition-all duration-200 ease-in-out hover:bg-green-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 active:bg-green-800 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="my-auto mr-2 h-5 w-5" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add Supplier
-                    </button>
-                @endcan
-            </div>
-        @else
-            <div class="flex justify-end">
-                @can('suppliers.create')
-                    <button wire:click="create"
-                        class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add Supplier
-                    </button>
-                @endcan
 
-            </div>
-            <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-750">
                         <tr>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                ID</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Name</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Trade Name</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Contact Number</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Email</th>
-                            {{-- <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Address</th> --}}
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Actions</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Agent
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Customer
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Type
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Invoice #
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Due Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Amount
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Days Overdue
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                Actions
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                        @foreach ($suppliers as $supplier)
-                            <tr class="dark:hover:bg-gray-800" wire:key="supplier-{{ $supplier->id ?? uniqid() }}">
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->identification_number }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->trade_name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                    {{ $supplier->contact_number }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->email }}</td>
-                                {{-- <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->address }}</td> --}}
-                                <td class="whitespace-nowrap px-6 py-4 space-x-2">
-                                    @can('suppliers.edit')
-                                        <button wire:click="edit({{ $supplier->id }})"
-                                            class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
-                                    @endcan
-                                    @can('suppliers.delete')
-                                        <button wire:click="confirmDelete({{ $supplier->id }})"
-                                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
-                                    @endcan
-                                </td>
-                            </tr>
+                    <tbody class="bg-gray-800 divide-y divide-gray-700">
+                        @foreach($agents as $agent)
+                        <tr class="hover:bg-gray-750 transition">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center">
+                                        <span class="text-gray-300">{{ substr($agent['agent_name'], 0, 1) }}</span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-white">{{ $agent['agent_name'] }}</div>
+                                        <div class="text-sm text-gray-400">ID: {{ $agent['id'] }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-white">{{ $agent['customer_name'] }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @php
+                                    $typeColors = [
+                                        'Pharmacy' => 'bg-purple-800 text-purple-100',
+                                        'Hospital' => 'bg-blue-800 text-blue-100',
+                                        'Drugstore' => 'bg-indigo-800 text-indigo-100'
+                                    ];
+                                @endphp
+                                <span class="px-2 py-1 text-xs rounded-full {{ $typeColors[$agent['customer_type']] }}">
+                                    {{ $agent['customer_type'] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-400 font-mono">
+                                {{ $agent['invoice_number'] }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {{ date('M d, Y', strtotime($agent['date'])) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {{ date('M d, Y', strtotime($agent['due_date'])) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-300">
+                                ${{ number_format($agent['total_amount'], 2) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @php
+                                    $statusColors = [
+                                        'Paid' => 'bg-green-800 text-green-100',
+                                        'Pending' => 'bg-yellow-800 text-yellow-100',
+                                        'Unpaid' => 'bg-red-800 text-red-100'
+                                    ];
+                                @endphp
+                                <span class="px-2 py-1 text-xs rounded-full {{ $statusColors[$agent['status']] }}">
+                                    {{ $agent['status'] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                @if($agent['days_overdue'] > 0)
+                                    <span class="text-red-400">{{ $agent['days_overdue'] }} days</span>
+                                @else
+                                    <span class="text-green-400">On time</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="text-blue-400 hover:text-blue-300 mr-3">View</button>
+                                <button class="text-gray-400 hover:text-gray-300">More</button>
+                            </td>
+                        </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-            <div class="mt-4">
-                {{ $suppliers->links() }}
+
+            <div class="px-6 py-4 border-t border-gray-700 flex items-center justify-between">
+                <div class="text-sm text-gray-400">
+                    Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">100</span> results
+                </div>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600">
+                        Previous
+                    </button>
+                    <button class="px-3 py-1 rounded-md bg-blue-600 text-white">
+                        1
+                    </button>
+                    <button class="px-3 py-1 rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600">
+                        2
+                    </button>
+                    <button class="px-3 py-1 rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600">
+                        3
+                    </button>
+                    <button class="px-3 py-1 rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600">
+                        Next
+                    </button>
+                </div>
             </div>
-        @endif
+        </div>
     </div>
-
-    @if ($showModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
-                </div>
-                <div
-                    class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <form wire:submit="save">
-                        <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-
-                            <div class="mb-4">
-                                <flux:input wire:model="name" :label="__('Name')" type="text"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="trade_name" :label="__('Trade Name')" type="text"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="identification_number" :label="__('Identification Number')"
-                                    type="text" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="contact_number" :label="__('Contact Number')" type="text"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="email" :label="__('Email')" type="email"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:textarea wire:model="address" :label="__('Address')"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                            <flux:button type="submit" class="sm:ml-3 sm:w-auto sm:text-sm" variant="primary">
-                                {{ $isEditing ? 'Update' : 'Create' }}
-                            </flux:button>
-                            <button type="button" wire:click="$set('showModal', false)"
-                                class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    @if ($confirmingDelete)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
-                </div>
-                <div
-                    class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Supplier
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this supplier? This action cannot be undone.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button wire:click="delete"
-                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400 sm:ml-3 sm:w-auto sm:text-sm">
-                            Delete
-                        </button>
-                        <button wire:click="$set('confirmingDelete', false)"
-                            class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 </div>

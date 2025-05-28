@@ -64,26 +64,6 @@ new class extends Component {
         $this->calculateTotal();
     }
 
-    // public function updatedItems($value, $key)
-    // {
-    //     $index = explode('.', $key)[0];
-    //     $field = explode('.', $key)[1];
-
-    //     if ($field === 'product_id') {
-    //         $product = Product::find($value);
-    //         if ($product) {
-    //             $this->items[$index]['unit_price'] = $product->price;
-    //             $this->items[$index]['description'] = $product->description;
-    //         }
-    //     }
-
-    //     if ($field === 'quantity' || $field === 'unit_price') {
-    //         $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
-    //     }
-
-    //     $this->calculateTotal();
-    // }
-
     public function calculateTotal()
     {
         $this->total_amount = collect($this->items)->sum('total_price');
@@ -253,6 +233,18 @@ new class extends Component {
             ->orderBy('created_at', 'desc')
             ->paginate(10);
     }
+
+    public function print($quotationId)
+    {
+        $quotation = Quotation::with(['customer', 'agent', 'items.product'])->find($quotationId);
+
+        if (!$quotation) {
+            flash()->error('Quotation not found!');
+            return;
+        }
+
+        $this->dispatch('print-quotation', ['quotation' => $quotation->toArray()]);
+    }
 };
 ?>
 
@@ -379,6 +371,8 @@ new class extends Component {
                                                     <button wire:click="confirmDelete({{ $quotation->id }})"
                                                         class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
                                                 @endcan
+                                                <button wire:click="print({{ $quotation->id }})"
+                                                    class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">Print</button>
                                             </td>
                                         </tr>
                         @endforeach
