@@ -21,6 +21,10 @@ new class extends Component {
     public $trade_name = '';
     public $identification_number = '';
 
+    public $infoModal = false;
+    public $supplierInfo;
+    public $activeTab = 'basic';
+
     public function rules()
     {
         return [
@@ -42,6 +46,7 @@ new class extends Component {
 
     public function edit(Supplier $supplier)
     {
+        $this->infoModal = false;
         $this->resetValidation();
         $this->supplier = $supplier;
         $this->name = $supplier->name;
@@ -124,6 +129,13 @@ new class extends Component {
         return [
             'suppliers' => $this->suppliers,
         ];
+    }
+
+    public function info($supplierId)
+    {
+        $this->supplierInfo = Supplier::find($supplierId);
+        $this->activeTab = 'basic';
+        $this->infoModal = true;
     }
 
     public function getSuppliersProperty()
@@ -245,6 +257,12 @@ new class extends Component {
                                 <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->email }}</td>
                                 {{-- <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->address }}</td> --}}
                                 <td class="whitespace-nowrap px-6 py-4 space-x-2">
+                                    @can('suppliers.info')
+                                        <button wire:click="info({{ $supplier->id }})"
+                                            class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                            View
+                                        </button>
+                                    @endcan
                                     @can('suppliers.edit')
                                         <button wire:click="edit({{ $supplier->id }})"
                                             class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
@@ -311,6 +329,123 @@ new class extends Component {
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($infoModal && $supplierInfo)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Background overlay -->
+                <div class="fixed inset-0 bg-gray-500 dark:bg-gray-800 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+                <!-- Modal content -->
+                <div class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle">
+                    <!-- Banner -->
+                    <div class="relative h-32 w-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <h3 class="text-xl font-bold text-white dark:text-gray-100">Supplier Profile</h3>
+                        </div>
+                    </div>
+
+                    <!-- Profile section -->
+                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="flex">
+                            <!-- Profile Picture -->
+                            <div class="relative -mt-16 mr-6">
+                                <div class="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                                    <svg class="h-full w-full text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Supplier name -->
+                            <div class="mt-2">
+                                <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                    {{ $supplierInfo->name }}
+                                </h3>
+                                <p class="text-gray-500 dark:text-gray-400">ID: {{ $supplierInfo->identification_number }}</p>
+                                <p class="text-gray-500 dark:text-gray-400">{{ $supplierInfo->trade_name }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Tabs -->
+                        <div class="mt-6 border-b border-gray-200 dark:border-gray-700">
+                            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                                <button wire:click="$set('activeTab', 'basic')"
+                                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium {{ $activeTab === 'basic' ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Basic Info
+                                </button>
+                                <button wire:click="$set('activeTab', 'contact')"
+                                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium {{ $activeTab === 'contact' ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Contact Details
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- Tab content -->
+                        <div class="mt-4">
+                            @if($activeTab === 'basic')
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $supplierInfo->name }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Trade Name</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $supplierInfo->trade_name }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Identification Number</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $supplierInfo->identification_number }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Created At</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $supplierInfo->created_at?->format('M d, Y h:i A') ?? 'Not provided' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $supplierInfo->email ?? 'Not provided' }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Number</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $supplierInfo->contact_number ?? 'Not provided' }}
+                                        </p>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $supplierInfo->address ?? 'Not provided' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Modal footer -->
+                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" wire:click="$set('infoModal', false)"
+                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 sm:ml-3 sm:w-auto sm:text-sm">
+                            Close
+                        </button>
+                        @can('suppliers.edit')
+                            <button wire:click="edit({{ $supplierInfo->id }})" type="button"
+                                class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Edit Supplier
+                            </button>
+                        @endcan
+                    </div>
                 </div>
             </div>
         </div>
