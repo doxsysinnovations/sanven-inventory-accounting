@@ -145,6 +145,11 @@ class RolePermissionSeeder extends Seeder
             'locations.create',
             'locations.edit',
             'locations.delete',
+
+            //Settings
+            'settings.view',
+            'settings.2fa-config',
+            'settings.seeders',
         ];
 
         foreach ($permissions as $permission) {

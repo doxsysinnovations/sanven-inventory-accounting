@@ -19,6 +19,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
     Volt::route('settings/2fa-config', 'settings.two-factor-authentication')->name('settings.2fa-config');
+    Volt::route('settings/seeders', 'settings.seeders')->name('settings.seeders');
 
     Volt::route('users', 'users.index')->name('users');
     Volt::route('roles', 'roles.index')->name('roles');
@@ -39,10 +40,10 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Suppliers
     Volt::route('suppliers', 'suppliers.index')->name('suppliers');
-     
+
     //Aging
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
-    
+
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
@@ -73,6 +74,18 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Volt::route('2fa/verify', 'auth.two-factor-verify')->name('2fa.verify');
+});
+
+//run optimize clear
+Route::get('optimize', function () {
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return 'Optimize clear';
+});
+
+//run migrate
+Route::get('migrate', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate');
+    return 'Migrate';
 });
 
 require __DIR__.'/auth.php';
