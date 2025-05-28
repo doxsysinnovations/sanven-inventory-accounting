@@ -118,6 +118,12 @@ class RolePermissionSeeder extends Seeder
             'agents.create',
             'agents.edit',
             'agents.delete',
+
+            //Locations
+            'locations.view',
+            'locations.create',
+            'locations.edit',
+            'locations.delete',
         ];
 
         foreach ($permissions as $permission) {
