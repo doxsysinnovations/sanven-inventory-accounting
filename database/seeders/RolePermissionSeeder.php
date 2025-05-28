@@ -114,6 +114,7 @@ class RolePermissionSeeder extends Seeder
             'customers.create',
             'customers.edit',
             'customers.delete',
+            'customers.info',
 
             //Agents
             'agents.view',

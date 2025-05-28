@@ -28,6 +28,7 @@ class Product extends Model implements HasMedia
         'stock_value',
         'low_stock_alert',
         'quantity_per_piece',
+        'is_vatable',
     ];
 
     /**
