@@ -139,6 +139,12 @@ class RolePermissionSeeder extends Seeder
             'profile.view',
             'profile.edit',
 
+
+            //Locations
+            'locations.view',
+            'locations.create',
+            'locations.edit',
+            'locations.delete',
         ];
 
         foreach ($permissions as $permission) {
