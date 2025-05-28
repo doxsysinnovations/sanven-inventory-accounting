@@ -130,10 +130,10 @@ class RolePermissionSeeder extends Seeder
             'invoicing.delete',
 
             //Settings
-            'settings.view',
-            'settings.create',
-            'settings.edit',
-            'settings.delete',
+            // 'settings.view',
+            // 'settings.create',
+            // 'settings.edit',
+            // 'settings.delete',
 
             //Profile
             'profile.view',
