@@ -38,7 +38,7 @@ new class extends Component {
     public string $new_customer_email = '';
     public string $new_customer_phone = '';
     public string $new_customer_address = '';
-    public ?int $customer_id = null; // Set to null by default
+    public ?int $customer_id = 0; // Set to null by default
     public $selectedCustomer = null;
     public array $cart = [];
     public bool $showStockModal = false;
@@ -76,6 +76,7 @@ new class extends Component {
     {
         $this->selectedCustomer = $this->customers->firstWhere('id', $this->customer_id);
     }
+
     public function toggleSelectAll()
     {
         if (count($this->selectedProducts) === count($this->products)) {
@@ -113,6 +114,13 @@ new class extends Component {
         // Optionally, update other properties or perform calculations
         $this->calculateGrandTotal();
     }
+    public function calculateVatTotal()
+    {
+        return collect($this->cart)
+            ->filter(fn($item) => $item['is_vatable'] == true)
+            ->sum(fn($item) => $item['selling_price'] * $item['quantity'] * 0.12);
+    }
+
     public function calculateGrandTotal()
     {
         $this->grandTotal = collect($this->cart)->sum(fn($item) => $item['selling_price'] * $item['quantity']);
@@ -161,6 +169,7 @@ new class extends Component {
                         'selling_price' => $stock->selling_price,
                         'stock_number' => $stock->stock_number,
                         'expiration_date' => $stock->formatted_expiration_date,
+                        'is_vatable' => $stock->product->is_vatable, // Assuming the product has a vatable property
                     ];
                 } else {
                     // Update the quantity if the stock already exists in the cart
@@ -221,16 +230,25 @@ new class extends Component {
     private function validateStep()
     {
         if ($this->currentStep === 1) {
+            if (empty($this->customer_id) || $this->customer_id == 0) {
+                flash()->error('Please select customer');
+
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'customer_id' => 'Please select customer.',
+                ]);
+            }
+            
             $this->validate([
-                'customer_id' => 'required|int|max:255',
+                'customer_id' => 'required|integer|min:1|max:255',
             ]);
+
         } elseif ($this->currentStep === 2) {
             // Prevent moving to the next step if no products are selected
             if (empty($this->cart)) {
-                flash()->error('You must select at least one product to proceed.');
+                flash()->error('Select products. To choose a product, click the browse stocks button.');
 
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'selectedProducts' => 'You must select at least one product to proceed.',
+                    'selectedProducts' => 'Select products. To choose a product, click the browse stocks button.',
                 ]);
             }
         }
@@ -822,7 +840,7 @@ new class extends Component {
                                     </tr>
                                 @endforeach
                             </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-800">
+                            <tfoot class="bg-gray-50 dark:bg-gray-800 w-full">
                                 <tr>
                                     <td colspan="4"
                                         class="px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -838,7 +856,7 @@ new class extends Component {
                                         VAT (12%):
                                     </td>
                                     <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        ₱{{ number_format($this->grandTotal * 0.12, 2) }}
+                                        ₱{{ number_format($this->calculateVatTotal(), 2) }}
                                     </td>
                                 </tr>
                                 <tr>
@@ -871,35 +889,10 @@ new class extends Component {
     <div>
         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Additional Details</h2>
 
-        <!-- Tax and Discount -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="tax" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tax</label>
-                <flux:input id="tax" wire:model="tax" type="number" step="0.01"
-                    placeholder="Enter tax percentage or amount"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-                    @error('tax') border-red-500 dark:border-red-500 @enderror" />
-                <small class="text-gray-500 dark:text-gray-400">Specify the tax for this invoice.</small>
-                @error('tax')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-            <div>
-                <label for="discount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Discount</label>
-                <flux:input id="discount" wire:model="discount" type="number" step="0.01"
-                    placeholder="Enter discount amount"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-                    @error('discount') border-red-500 dark:border-red-500 @enderror" />
-                <small class="text-gray-500 dark:text-gray-400">Apply a discount to this invoice.</small>
-                @error('discount')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-        </div>
 
         <!-- Payment Terms and Assigned Agent -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
+            {{-- <div>
                 <label for="payment_terms" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Terms</label>
                 <flux:select id="payment_terms" wire:model="payment_terms"
                     class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
@@ -909,7 +902,7 @@ new class extends Component {
                     <flux:select.option value="Net 90">Net 90</flux:select.option>
                 </flux:select>
                 <small class="text-gray-500 dark:text-gray-400">Select the payment terms for this invoice.</small>
-            </div>
+            </div> --}}
             <div>
                 <label for="assigned_agent_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Agent</label>
                 <flux:select id="assigned_agent_id" wire:model="assigned_agent_id"
