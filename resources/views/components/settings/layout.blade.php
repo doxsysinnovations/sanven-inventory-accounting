@@ -4,8 +4,13 @@
             <flux:navlist.item :href="route('settings.profile')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
             <flux:navlist.item :href="route('settings.password')" wire:navigate>{{ __('Password') }}</flux:navlist.item>
             <flux:navlist.item :href="route('settings.appearance')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
-            <flux:navlist.item :href="route('settings.2fa-config')" wire:navigate>{{ __('2FA Config') }}
-            </flux:navlist.item>
+            @can('settings.2fa-config')
+                <flux:navlist.item :href="route('settings.2fa-config')" wire:navigate>{{ __('2FA Config') }}</flux:navlist.item>
+            @endcan
+            @can('settings.seeders')
+                <flux:navlist.item :href="route('settings.seeders')" wire:navigate>{{ __('Seeders') }}</flux:navlist.item>
+            @endcan
+
         </flux:navlist>
     </div>
 
