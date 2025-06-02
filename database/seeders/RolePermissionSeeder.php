@@ -146,6 +146,10 @@ class RolePermissionSeeder extends Seeder
             'locations.edit',
             'locations.delete',
 
+            //Special Features
+            'special-features.view',
+            'special-features.pdf-binding-view',
+
             //Settings
             'settings.view',
             'settings.2fa-config',
