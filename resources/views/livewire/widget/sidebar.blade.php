@@ -170,6 +170,19 @@ new class extends Component {
                     ],
                 ],
             ],
+            [
+                'heading' => 'Special Features',
+                'permission' => 'special-features.view',
+                'items' => [
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'pdf-binding',
+                        'label' => 'PDF Binding',
+                        'permission' => 'special-features.pdf-binding-view',
+                    ],
+                ],
+            ],
+
         ];
 
         // Filter menu items based on search input
@@ -203,12 +216,23 @@ new class extends Component {
 
 <div>
     <flux:navlist variant="outline" searchable>
-        {{-- <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
+        {{--
+        <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
 
         @foreach ($menuItems as $group)
-        <flux:navlist.group :heading="__($group['heading'])" class="grid">
-            @if (isset($group['permission']))
-                @can($group['permission'])
+            <flux:navlist.group :heading="__($group['heading'])" class="grid">
+                @if (isset($group['permission']))
+                    @can($group['permission'])
+                        @foreach ($group['items'] as $item)
+                            @if (!$item['permission'] || auth()->user()->can($item['permission']))
+                                <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
+                                    :current="request()->routeIs($item['route'])" wire:navigate>
+                                    {{ __($item['label']) }}
+                                </flux:navlist.item>
+                            @endif
+                        @endforeach
+                    @endcan
+                @else
                     @foreach ($group['items'] as $item)
                         @if (!$item['permission'] || auth()->user()->can($item['permission']))
                             <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
@@ -217,18 +241,8 @@ new class extends Component {
                             </flux:navlist.item>
                         @endif
                     @endforeach
-                @endcan
-            @else
-                @foreach ($group['items'] as $item)
-                    @if (!$item['permission'] || auth()->user()->can($item['permission']))
-                        <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                            :current="request()->routeIs($item['route'])" wire:navigate>
-                            {{ __($item['label']) }}
-                        </flux:navlist.item>
-                    @endif
-                @endforeach
-            @endif
-        </flux:navlist.group>
-    @endforeach
+                @endif
+            </flux:navlist.group>
+        @endforeach
     </flux:navlist>
 </div>

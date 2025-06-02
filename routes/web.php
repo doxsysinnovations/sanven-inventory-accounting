@@ -68,7 +68,8 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Locations
     Volt::route('locations', 'locations.index')->name('locations');
 
-
+    //Special Features
+    Volt::route('pdf-binding', 'special-features.pdf-binding')->name('pdf-binding');
 
 });
 
