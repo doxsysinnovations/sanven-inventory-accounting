@@ -464,21 +464,8 @@ new class extends Component {
             </h1>
             <!-- Monthly Sales -->
             <div class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Monthly Sales</h3>
-                <ul class="space-y-2">
-                    @forelse ($overdueInvoices as $invoice)
-                        <li class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <span class="text-sm text-gray-700 dark:text-gray-300">
-                                Invoice #{{ $invoice->invoice_number }} - {{ $invoice->customer->name ?? 'Unknown Customer' }}
-                            </span>
-                            <span class="text-sm text-red-500 font-semibold">
-                                {{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}
-                            </span>
-                        </li>
-                    @empty
-                        <li class="text-sm text-gray-500 dark:text-gray-400">No overdue invoices.</li>
-                    @endforelse
-                </ul>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Monthly Sales</h3>
+                <div id="monthlySales" style="width: 100%; height: 320px;"></div>
             </div>
 
             <!-- Invoice Status -->
@@ -522,8 +509,36 @@ new class extends Component {
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script>
+
+    //Monthly Sales Line chart
+    document.addEventListener('DOMContentLoaded', function () {
+        const isDark = document.documentElement.classList.contains('dark');
+        var chartDom = document.getElementById('monthlySales');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        option = {
+        xAxis: {
+            type: 'category',
+            data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [
+            {
+            data: [150, 230, 224, 218, 135, 147, 260],
+            type: 'line'
+            }
+        ]
+        };
+
+        option && myChart.setOption(option);
+    });
+
     //Pie chart for Invoice Status
     document.addEventListener('DOMContentLoaded', function () {
+        const isDark = document.documentElement.classList.contains('dark');
         var chartDom = document.getElementById('invoiceStatusChart');
         var myChart = echarts.init(chartDom);
         var option;
@@ -551,8 +566,8 @@ new class extends Component {
             legend: { 
                 left: 'center',
                 textStyle: {
-                    color: '#fff'
-                } 
+                    color: isDark ? '#fff' : '#222'
+                }
             },
             series: [
                 {
@@ -581,6 +596,7 @@ new class extends Component {
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+        const isDark = document.documentElement.classList.contains('dark');
         const chart = echarts.init(document.getElementById('expiringChart'));
         const option = {
             dataset: {
@@ -603,7 +619,7 @@ new class extends Component {
                     color: ['#FF4C4C', '#FFD700', '#65B581']
                 },
                 textStyle: {
-                    color: '#fff'
+                    color: isDark ? '#fff' : '#222'
                 }
             },
             series: [
