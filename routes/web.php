@@ -4,15 +4,29 @@ use Livewire\Volt\Volt;
 use App\Livewire\TwoFactorVerify;
 use Illuminate\Support\Facades\Route;
 
+//For testing low stock notification
+use App\Models\Stock;
+Route::get('/test-low-stock', function () {
+    $stock = Stock::first(); 
+    $stock->quantity = 9; 
+    $stock->save();
+    return 'Low stock test triggered!';
+});
+
 Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth','check.active', 'verified','2fa'])
-    ->name('dashboard');
+// Route::view('dashboard', 'dashboard')
+//     ->middleware(['auth','check.active', 'verified','2fa'])
+//     ->name('dashboard');
+
 
 Route::middleware(['auth','check.active','2fa'])->group(function () {
+
+    //Dashboard
+    Volt::route('dashboard', 'dashboard')->middleware(['auth','check.active', 'verified','2fa'])->name('dashboard');
+
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
