@@ -20,6 +20,7 @@ new class extends Component {
     public $topCustomers = [];
     public $topSuppliers = [];
     public $lowStockItems = [];
+    public $salesToday = 0; //For Income Sales Today card
 
     public function mount()
     {
@@ -37,7 +38,7 @@ new class extends Component {
             ->with('product')
             ->get();
 
-        $totalExpiredProducts = $this->expiredStocks->count();
+        $this->totalExpiredProducts = $this->expiredStocks->count();
 
         $this->overdueInvoices = Invoice::where('due_date', '<', [$today])
             ->whereNotIn('status', ['paid', 'cancelled'])
@@ -148,7 +149,7 @@ new class extends Component {
                 </svg>
                 <div>
                     <h3 class="text-MD font-bold text-green-500">Income Sales Today</h3>
-                    <p class="text-4xl font-semibold text-green-500">₱104,000</p>
+                    <p class="text-4xl font-semibold text-green-500">{{ $salesToday }}</p>
                 </div>
             </div>
         </div>
@@ -497,7 +498,13 @@ new class extends Component {
             <!-- Expiring Products Soon -->
             <div class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Expiring Products Soon</h3>
-                <div id="expiringChart" style="width: 100%; height: 320px;"></div>
+                @if(count($chartData) <= 1)
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                        No products expiring within 7 days.
+                    </div>
+                @else
+                    <div id="expiringChart" style="width: 100%; height: 320px;"></div>
+                @endif
             </div>
 
 
