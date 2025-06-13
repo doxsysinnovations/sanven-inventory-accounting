@@ -17,22 +17,22 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-// Route::view('dashboard', 'dashboard')
-//     ->middleware(['auth','check.active', 'verified','2fa'])
-//     ->name('dashboard');
+Route::view('dashboard', 'dashboard')
+    ->middleware(['auth','check.active', 'verified','2fa'])
+    ->name('dashboard');
 
 
 Route::middleware(['auth','check.active','2fa'])->group(function () {
-
-    //Dashboard
-    Volt::route('dashboard', 'dashboard')->middleware(['auth','check.active', 'verified','2fa'])->name('dashboard');
-
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
     Volt::route('settings/2fa-config', 'settings.two-factor-authentication')->name('settings.2fa-config');
+    
+    Volt::route('settings/admin-panel', 'settings.admin-panel')
+        ->middleware('role:superadmin')
+        ->name('settings.admin-panel');
 
     Volt::route('users', 'users.index')->name('users');
     Volt::route('roles', 'roles.index')->name('roles');
