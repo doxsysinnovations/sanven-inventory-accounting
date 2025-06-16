@@ -56,7 +56,7 @@ new class extends Component {
 
     <x-settings.layout :heading="__('Admin Panel')" :subheading="__('Administrative Settings')">
         <form wire:submit.prevent="addRecipient" class="mt-6 space-y-6">
-            <flux:input wire:model="email" :label="__(' Add Email recipients')" type="email" required />
+            <flux:input wire:model="email" :label="__(' Add Email Recipients')" type="email" required />
             <flux:button type="submit" variant="primary">{{ __('Add Recipient') }}</flux:button>
         </form>
 
