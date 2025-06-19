@@ -210,12 +210,16 @@ new class extends Component {
                                 </td>
                                 <td class="px-6 py-4">{{ $product->product_code }}</td>
                                 <td class="px-6 py-4">{{ $product->name }}</td>
-                                <td class="px-6 py-4 text-center">{{ number_format($product->capital_price, 2) }}</td>
-                                <td class="px-6 py-4 text-center">{{ number_format($product->selling_price, 2) }}</td>
-                                <td class="px-6 py-4 text-center {{ $product->stock_value <= $product->low_stock_value ? 'text-red-600' : '' }}">
-                                    {{ $product->stock_value }}
+                                <td class="px-6 py-4 text-center">
+                                    {{ number_format(optional($product->stocks()->latest()->first())->capital_price ?? 0, 2) }}
                                 </td>
-                                <td class="px-6 py-4 text-center {{ $product->stock_value <= $product->low_stock_value ? 'text-red-600' : '' }}">
+                                <td class="px-6 py-4 text-center">
+                                    {{ number_format(optional($product->stocks()->latest()->first())->selling_price ?? 0, 2) }}
+                                </td>
+                                <td class="px-6 py-4 text-center {{ $product->stocks->sum('quantity') <= $product->low_stock_value ? 'text-red-600' : '' }}">
+                                    {{ $product->stocks->sum('quantity') }}
+                                </td>
+                                <td class="px-6 py-4 text-center {{ $product->stocks->sum('quantity') <= $product->low_stock_value ? 'text-red-600' : '' }}">
                                     {{ $product->low_stock_value }}
                                 </td>
                                 <td class="px-6 py-4 text-center space-x-2">
