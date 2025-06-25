@@ -4,7 +4,7 @@
             <flux:navlist.item :href="route('settings.profile')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
             <flux:navlist.item :href="route('settings.password')" wire:navigate>{{ __('Password') }}</flux:navlist.item>
             <flux:navlist.item :href="route('settings.appearance')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
-            <flux:navlist.item :href="route('settings.2fa-config')" wire:navigate>{{ __('2FA Config') }}</flux:navlist.item>
+            <!-- <flux:navlist.item :href="route('settings.2fa-config')" wire:navigate>{{ __('2FA Config') }}</flux:navlist.item> -->
             @if(auth()->user()->hasRole('superadmin'))
                 <flux:navlist.item :href="route('settings.admin-panel')" wire:navigate>{{ __('Admin Panel') }}</flux:navlist.item>
             @endif

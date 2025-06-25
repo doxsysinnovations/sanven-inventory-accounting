@@ -85,11 +85,19 @@ class Stock extends Model implements HasMedia
     {
         static::updated(function ($stock) {
             $product = $stock->product;
-            if ($product && $stock->quantity <= $product->low_stock_value) {
-                $recipients = NotificationRecipient::where('is_active', true)->whereNull('deleted_at')->pluck('email')->toArray();
+
+            $totalQuantity = self::where('product_id', $product->id)
+                ->whereNull('deleted_at')
+                ->sum('quantity');
+                
+            if ($totalQuantity <= $product->low_stock_value) {
+                $recipients = NotificationRecipient::where('is_active', true)
+                    ->whereNull('deleted_at')
+                    ->pluck('email')
+                    ->toArray();
                 foreach ($recipients as $email) {
                     \Notification::route('mail', $email)
-                        ->notify(new LowStockNotification($stock));
+                        ->notify(new LowStockNotification($product, $totalQuantity));
                 }
             }
         });

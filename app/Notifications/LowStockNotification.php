@@ -7,19 +7,22 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Stock;
+use App\Models\Product;
 
 class LowStockNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public $stock;
+    public $product;
+    public $totalQuantity;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(Stock $stock)
+    public function __construct(Product $product, $totalQuantity)
     {
-        $this->stock = $stock;
+        $this->product = $product;
+        $this->totalQuantity = $totalQuantity;
     }
 
     /**
@@ -38,10 +41,10 @@ class LowStockNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Low Stock Alert: ' . $this->stock->product_name)
-            ->line('The stock for product (' . $this->stock->product->product_code . ') - ' . $this->stock->product_name . ' is low.')
-            ->line('Current quantity: ' . $this->stock->quantity)
-            ->line('Low stock threshold: ' . $this->stock->product->low_stock_value)
-            ->action('View Stock', url('/stocks/' . $this->stock->id));
+            ->subject('Low Stock Alert: ' . $this->product->name)
+            ->line('The stock for product (' . $this->product->product_code . ') - ' . $this->product->name . ' is low.')
+            ->line('Current total quantity: ' . $this->totalQuantity)
+            ->line('Low stock threshold: ' . $this->product->low_stock_value)
+            ->action('View Product', url('/products/' . $this->product->id));
     }
 }
