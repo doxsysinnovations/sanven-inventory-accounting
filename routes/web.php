@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Route;
 //For testing low stock notification
 use App\Models\Stock;
 Route::get('/test-low-stock', function () {
-    $stock = Stock::first(); 
-    $stock->quantity = 9; 
+    $stock = Stock::first();
+    $stock->quantity = 9;
     $stock->save();
     return 'Low stock test triggered!';
 });
@@ -36,7 +36,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
     Volt::route('settings/2fa-config', 'settings.two-factor-authentication')->name('settings.2fa-config');
-    
+
     Volt::route('settings/admin-panel', 'settings.admin-panel')
         ->middleware('role:superadmin')
         ->name('settings.admin-panel');
@@ -88,6 +88,11 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Locations
     Volt::route('locations', 'locations.index')->name('locations');
+
+    //Invoicing
+    Volt::route('invoicing', 'invoicing.index')->name('invoicing');
+    Volt::route('invoicing/create', 'invoicing.create')->name('invoicing.create');
+    Volt::route('invoicing/show', 'invoicing.create')->name('invoicing.show');
 
     //Special Features
     Volt::route('pdf-binding', 'special-features.pdf-binding')->name('pdf-binding');
