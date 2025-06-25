@@ -131,6 +131,12 @@ class RolePermissionSeeder extends Seeder
             'settings.view',
             'settings.2fa-config',
             'settings.seeders',
+
+            //Invoicing
+            'invoicing.view',
+            'invoicing.create',
+            'invoicing.edit',
+            'invoicing.delete',
         ];
 
         foreach ($permissions as $permission) {
