@@ -18,6 +18,7 @@ Route::get('/', function () {
 })->name('home');
 
 
+
 // Route::view('dashboard', 'dashboard')
 //     ->middleware(['auth','check.active', 'verified','2fa'])
 //     ->name('dashboard');
