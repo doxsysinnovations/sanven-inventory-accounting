@@ -382,6 +382,7 @@ new class extends Component {
                 'issued_date' => $this->invoice_date,
                 'notes' => $this->notes,
                 'created_by' => auth()->id(),
+                'agent_id' => $this->assigned_agent,
             ]);
 
             // Add invoice items
