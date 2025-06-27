@@ -26,9 +26,9 @@ new class extends Component {
                     ],
                     [
                         'icon' => 'shopping-cart',
-                        'route' => 'pos',
+                        'route' => 'invoicing',
                         'label' => 'Invoicing',
-                        'permission' => 'orders.view',
+                        'permission' => 'invoicing.view',
                     ],
                     [
                         'icon' => 'document-text',
