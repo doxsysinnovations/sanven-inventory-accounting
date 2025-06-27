@@ -17,12 +17,16 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth','check.active', 'verified','2fa'])
-    ->name('dashboard');
+// Route::view('dashboard', 'dashboard')
+//     ->middleware(['auth','check.active', 'verified','2fa'])
+//     ->name('dashboard');
 
 
 Route::middleware(['auth','check.active','2fa'])->group(function () {
+
+    //Dashboard
+    Volt::route('dashboard', 'dashboard')->middleware(['auth','check.active', 'verified','2fa'])->name('dashboard');
+
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
