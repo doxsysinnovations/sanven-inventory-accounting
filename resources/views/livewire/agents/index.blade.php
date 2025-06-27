@@ -20,6 +20,27 @@ new class extends Component {
     public $address = '';
     public $is_active = true;
 
+    // Info Modal properties
+    public $infoModal = false;
+    public $agentInfo;
+    public $activeTab = 'basic';
+
+    //Location related properties
+    public $selectedLocations = [];
+    public $allLocations = [];
+
+    public function mount()
+    {
+        $this->allLocations = \App\Models\Location::where('is_active', true)->pluck('name', 'id')->toArray();
+    }
+
+    public function showInfo(Agent $agent)
+    {
+        $this->agentInfo = $agent;
+        $this->infoModal = true;
+        $this->activeTab = 'basic';
+    }
+
     public function rules()
     {
         return [
@@ -49,6 +70,8 @@ new class extends Component {
         $this->is_active = $agent->is_active;
         $this->isEditing = true;
         $this->showModal = true;
+
+        $this->selectedLocations = $agent->locations()->pluck('locations.id')->toArray();
     }
 
     public function save()
@@ -63,15 +86,17 @@ new class extends Component {
                 'address' => $this->address,
                 'is_active' => $this->is_active
             ]);
+            $this->agent->locations()->sync($this->selectedLocations);
             flash()->success('Agent updated successfully!');
         } else {
-            Agent::create([
+            $agent = Agent::create([
                 'name' => $this->name,
                 'email' => $this->email,
                 'phone' => $this->phone,
                 'address' => $this->address,
                 'is_active' => $this->is_active
             ]);
+            $agent->locations()->sync($this->selectedLocations);
             flash()->success('Agent created successfully!');
         }
 
@@ -105,6 +130,8 @@ new class extends Component {
         $this->is_active = true;
         $this->agent = null;
         $this->resetValidation();
+
+        $this->selectedLocations = [];
     }
 
     #[Title('Agents')]
@@ -192,7 +219,6 @@ new class extends Component {
                         Add Agent
                     </button>
                 @endcan
-
             </div>
             <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -204,6 +230,8 @@ new class extends Component {
                                 Email</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Phone</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Location/s</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -217,11 +245,16 @@ new class extends Component {
                                 <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $agent->email }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $agent->phone }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
+                                    {{ $agent->locations->pluck('name')->join(', ') }}
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $agent->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                         {{ $agent->is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 space-x-2">
+                                    <button wire:click="showInfo({{ $agent->id }})"
+                                        class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">View</button>
                                     @can('agents.edit')
                                         <button wire:click="edit({{ $agent->id }})"
                                             class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
@@ -251,7 +284,6 @@ new class extends Component {
                 <div class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
                     <form wire:submit="save">
                         <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-
                             <div class="mb-4">
                                 <flux:input wire:model="name" :label="__('Name')" type="text"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
@@ -268,6 +300,18 @@ new class extends Component {
                                 <flux:input wire:model="address" :label="__('Address')" type="text"
                                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                             </div>
+
+                            <!-- Location Multiselect -->
+                            <div class="mb-4">
+                                <label class="block mb-1 font-medium text-gray-700 dark:text-gray-200">Location/s</label>
+                                <select wire:model="selectedLocations" multiple class="w-full rounded-lg border border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600">
+                                    @foreach($allLocations as $id => $name)
+                                        <option value="{{ $id }}">{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('selectedLocations') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+
                             <div class="mb-4">
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" wire:model="is_active" class="form-checkbox">
@@ -319,6 +363,162 @@ new class extends Component {
                         <button wire:click="$set('confirmingDelete', false)"
                             class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                             Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Info Modal -->
+    @if($infoModal && $agentInfo)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Background overlay -->
+                <div class="fixed inset-0 bg-gray-500 dark:bg-gray-800 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+                <!-- Modal content -->
+                <div class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle">
+                    <!-- Banner -->
+                    <div class="relative h-32 w-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <h3 class="text-xl font-bold text-white dark:text-gray-100">Agent Profile</h3>
+                        </div>
+                    </div>
+
+                    <!-- Profile section -->
+                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="flex">
+                            <!-- Profile Picture -->
+                            <div class="relative -mt-16 mr-6">
+                                <div class="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                                    <svg class="h-full w-full text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Agent name -->
+                            <div class="mt-2">
+                                <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                    {{ $agentInfo->name }}
+                                </h3>
+                                <p class="text-gray-500 dark:text-gray-400">Agent ID: #{{ $agentInfo->id }}</p>
+                                <p class="mt-1">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $agentInfo->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ $agentInfo->is_active ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Tabs -->
+                        <div class="mt-6 border-b border-gray-200 dark:border-gray-700">
+                            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                                <button wire:click="$set('activeTab', 'basic')"
+                                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium {{ $activeTab === 'basic' ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Basic Info
+                                </button>
+                                <button wire:click="$set('activeTab', 'contact')"
+                                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium {{ $activeTab === 'contact' ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Contact Details
+                                </button>
+                                <button wire:click="$set('activeTab', 'locations')"
+                                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium {{ $activeTab === 'locations' ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Locations
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- Tab content -->
+                        <div class="mt-4">
+                            @if($activeTab === 'basic')
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $agentInfo->name }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Agent ID</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">#{{ $agentInfo->id }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $agentInfo->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ $agentInfo->is_active ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Created At</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $agentInfo->created_at->format('M d, Y h:i A') }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Updated</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $agentInfo->updated_at->format('M d, Y h:i A') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @elseif($activeTab === 'contact')
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $agentInfo->email }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $agentInfo->phone ?? 'Not provided' }}
+                                        </p>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                            {{ $agentInfo->address ?? 'Not provided' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="space-y-4">
+                                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Locations</h4>
+                                    @if($agentInfo->locations->count() > 0)
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                            @foreach($agentInfo->locations as $location)
+                                                <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+                                                    <h5 class="font-medium text-gray-900 dark:text-gray-100">{{ $location->name }}</h5>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        Status: <span class="{{ $location->is_active ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                                            {{ $location->is_active ? 'Active' : 'Inactive' }}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="rounded-lg bg-gray-50 dark:bg-gray-800 p-4 text-center">
+                                            <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                            </svg>
+                                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No locations assigned</h3>
+                                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">This agent is not assigned to any locations yet.</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Modal footer -->
+                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" wire:click="$set('infoModal', false)"
+                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 sm:ml-3 sm:w-auto sm:text-sm">
+                            Close
                         </button>
                     </div>
                 </div>

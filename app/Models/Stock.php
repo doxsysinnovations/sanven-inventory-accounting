@@ -9,6 +9,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Notifications\LowStockNotification;
+use App\Models\NotificationRecipient;
+
 
 class Stock extends Model implements HasMedia
 {
@@ -77,4 +80,19 @@ class Stock extends Model implements HasMedia
             ])->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
+
+    protected static function booted()
+    {
+        static::updated(function ($stock) {
+            $product = $stock->product;
+            if ($product && $stock->quantity <= $product->low_stock_value) {
+                $recipients = NotificationRecipient::where('is_active', true)->whereNull('deleted_at')->pluck('email')->toArray();
+                foreach ($recipients as $email) {
+                    \Notification::route('mail', $email)
+                        ->notify(new LowStockNotification($stock));
+                }
+            }
+        });
+    }
+
 }

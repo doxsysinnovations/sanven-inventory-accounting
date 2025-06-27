@@ -110,7 +110,7 @@ new class extends Component {
 <!-- HTML Blade Template Continues -->
 <div>
     <div class="mb-4">
-        <nav class="flex justify-start" aria-label="Breadcrumb">
+        <nav class="flex justify-end" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li class="inline-flex items-center">
                     <a href="{{ route('dashboard') }}"
@@ -120,12 +120,13 @@ new class extends Component {
                 </li>
                 <li aria-current="page">
                     <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" viewBox="0 0 6 10">
+                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 6 10">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Stocks
-                            List</span>
+                        <span
+                            class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Invoices</span>
                     </div>
                 </li>
             </ol>

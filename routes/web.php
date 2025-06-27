@@ -4,21 +4,43 @@ use Livewire\Volt\Volt;
 use App\Livewire\TwoFactorVerify;
 use Illuminate\Support\Facades\Route;
 
+//For testing low stock notification
+use App\Models\Stock;
+Route::get('/test-low-stock', function () {
+    $stock = Stock::first();
+    $stock->quantity = 9;
+    $stock->save();
+    return 'Low stock test triggered!';
+});
+
 Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth','check.active', 'verified','2fa'])
-    ->name('dashboard');
+
+// Route::view('dashboard', 'dashboard')
+//     ->middleware(['auth','check.active', 'verified','2fa'])
+//     ->name('dashboard');
+
+
+
 
 Route::middleware(['auth','check.active','2fa'])->group(function () {
+
+    //Dashboard
+    Volt::route('dashboard', 'dashboard')->middleware(['auth','check.active', 'verified','2fa'])->name('dashboard');
+
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
     Volt::route('settings/2fa-config', 'settings.two-factor-authentication')->name('settings.2fa-config');
+
+    Volt::route('settings/admin-panel', 'settings.admin-panel')
+        ->middleware('role:superadmin')
+        ->name('settings.admin-panel');
+    Volt::route('settings/seeders', 'settings.seeders')->name('settings.seeders');
 
     Volt::route('users', 'users.index')->name('users');
     Volt::route('roles', 'roles.index')->name('roles');
@@ -39,10 +61,10 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Suppliers
     Volt::route('suppliers', 'suppliers.index')->name('suppliers');
-     
+
     //Aging
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
-    
+
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
@@ -64,11 +86,33 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Customers
     Volt::route('customers', 'customers.index')->name('customers');
 
+    //Locations
+    Volt::route('locations', 'locations.index')->name('locations');
+
+    //Invoicing
+    Volt::route('invoicing', 'invoicing.index')->name('invoicing');
+    Volt::route('invoicing/create', 'invoicing.create')->name('invoicing.create');
+    Volt::route('invoicing/show', 'invoicing.create')->name('invoicing.show');
+    Volt::route('invoicing/{id}/edit', 'invoicing.edit')->name('invoicing.edit');
+
+
 
 });
 
 Route::middleware(['auth'])->group(function () {
     Volt::route('2fa/verify', 'auth.two-factor-verify')->name('2fa.verify');
+});
+
+//run optimize clear
+Route::get('optimize', function () {
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return 'Optimize clear';
+});
+
+//run migrate
+Route::get('migrate', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate');
+    return 'Migrate';
 });
 
 require __DIR__.'/auth.php';

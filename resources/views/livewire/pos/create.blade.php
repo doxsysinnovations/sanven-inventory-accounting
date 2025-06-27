@@ -450,7 +450,7 @@ new class extends Component {
         <span class="text-sm text-gray-500 ml-2 dark:text-gray-400">Step {{ $currentStep }} of 3</span>
     </h1>
     <div class="flex items-center justify-between mt-6 mb-6">
-    
+
         <div class="flex space-x-4">
             <!-- Step 1 -->
             <button wire:click="$set('currentStep', 1)"
@@ -642,10 +642,9 @@ new class extends Component {
                 <label for="search_product" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search
                     Product</label>
                 <div class="flex items-center gap-2">
-                    <flux:input id="search_product" wire:click="$set('showStockModal', true)" type="text"
+                    <input id="search_product" wire:click="$set('showStockModal', true)" type="text"
                         placeholder="Search or browse stocks"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-                @error('search') border-red-500 dark:border-red-500 @enderror" />
+                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                     <button wire:click="$set('showStockModal', true)" type="button"
                         class="px-4 py-2 bg-gray-900 text-white rounded w-1/3 cursor-pointer hover:bg-gray-800">
                         Browse Stocks
@@ -654,8 +653,6 @@ new class extends Component {
                 <small class="text-gray-500 dark:text-gray-400">Click the search field or the button to browse
                     stocks.</small>
             </div>
-
-            <!-- Product List -->
 
             <!-- Stock Modal -->
             @if ($showStockModal)
@@ -666,10 +663,9 @@ new class extends Component {
 
                         <!-- Search Field in Modal -->
                         <div class="mb-4">
-                            <flux:input id="modal_search_product" wire:model="search" type="text"
+                            <input id="modal_search_product" wire:model.live.debounce.300ms="search" type="text"
                                 placeholder="Search by product name or code"
-                                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-                            @error('search') border-red-500 dark:border-red-500 @enderror" />
+                                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                             <small class="text-gray-500 dark:text-gray-400">Search for products by name or
                                 code.</small>
                         </div>
@@ -703,27 +699,26 @@ new class extends Component {
                                 <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                                     @forelse ($products as $product)
                                         <tr>
-
                                             <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $product->product_name }}
+                                                {{ $product['product_name'] }}
                                             </td>
                                             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $product->stock_number }}
+                                                {{ $product['stock_number'] }}
                                             </td>
                                             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $product->formatted_manufactured_date }}
+                                                {{ $product['formatted_manufactured_date'] }}
                                             </td>
                                             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $product->formatted_expiration_date }}
+                                                {{ $product['formatted_expiration_date'] }}
                                             </td>
                                             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $product->quantity - (collect($cart)->firstWhere('id', $product->id)['quantity'] ?? 0) }}
+                                                {{ $product['quantity'] - collect($cart)->where('id', $product['id'])->sum('quantity') }}
                                             </td>
                                             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                <flux:input type="number"
-                                                    wire:model="quantities.{{ $product->id }}" min="0"
-                                                    max=" {{ $product->quantity - (collect($cart)->firstWhere('id', $product->id)['quantity'] ?? 0) }}"
-                                                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-20 rounded" />
+                                                <input type="number" wire:model="quantities.{{ $product['id'] }}"
+                                                    min="0"
+                                                    max="{{ $product['quantity'] - collect($cart)->where('id', $product['id'])->sum('quantity') }}"
+                                                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-20 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                                             </td>
                                         </tr>
                                     @empty
@@ -752,6 +747,7 @@ new class extends Component {
                     </div>
                 </div>
             @endif
+
             <!-- Selected Products -->
             @if (count($cart) > 0)
                 <div class="mt-6">
@@ -778,7 +774,7 @@ new class extends Component {
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                                         Total Amount</th>
-                                        <th
+                                    <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                                         Vatable</th>
                                     <th
@@ -799,10 +795,10 @@ new class extends Component {
                                             {{ $item['expiration_date'] }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                            <flux:input type="number" wire:model="cart.{{ $index }}.quantity"
+                                            <input type="number" wire:model="cart.{{ $index }}.quantity"
                                                 wire:change="updateCartQuantity({{ $index }})" min="1"
                                                 max="{{ $item['available_quantity'] }}"
-                                                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-20 rounded" />
+                                                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-20 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                                             ₱{{ number_format($item['selling_price'], 2) }}
@@ -811,7 +807,7 @@ new class extends Component {
                                             ₱{{ number_format($item['selling_price'] * $this->getCartQuantity($index), 2) }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                                           {{ number_format($item['is_vatable'])  }}
+                                            {{ $item['is_vatable'] ? 'Yes' : 'No' }}
                                         </td>
                                         <td class="px-6 py-4">
                                             <button wire:click="removeProductFromCart({{ $index }})"
@@ -851,127 +847,137 @@ new class extends Component {
                                     </td>
                                 </tr>
                             </tfoot>
-                            
                         </table>
                     </div>
                 </div>
             @endif
+
             <!-- Navigation Buttons -->
             <div class="flex justify-between mt-4">
-                <button wire:click="previousStep" class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                <button wire:click="backToStep1" class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                     Back
                 </button>
-                <button wire:click="nextStep" class="px-6 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
+                <button wire:click="goToStep3" class="px-6 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                    @if (count($cart) === 0) disabled @endif>
                     Next
                 </button>
             </div>
         </div>
     @endif
     @if ($currentStep === 3)
-    <div>
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Additional Details</h2>
+        <div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Additional Details</h2>
 
-        <!-- Tax and Discount -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="tax" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tax</label>
-                <flux:input id="tax" wire:model="tax" type="number" step="0.01"
-                    placeholder="Enter tax percentage or amount"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
+            <!-- Tax and Discount -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="tax"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tax</label>
+                    <flux:input id="tax" wire:model="tax" type="number" step="0.01"
+                        placeholder="Enter tax percentage or amount"
+                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
                     @error('tax') border-red-500 dark:border-red-500 @enderror" />
-                <small class="text-gray-500 dark:text-gray-400">Specify the tax for this invoice.</small>
-                @error('tax')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-            <div>
-                <label for="discount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Discount</label>
-                <flux:input id="discount" wire:model="discount" type="number" step="0.01"
-                    placeholder="Enter discount amount"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
+                    <small class="text-gray-500 dark:text-gray-400">Specify the tax for this invoice.</small>
+                    @error('tax')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="discount"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Discount</label>
+                    <flux:input id="discount" wire:model="discount" type="number" step="0.01"
+                        placeholder="Enter discount amount"
+                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
                     @error('discount') border-red-500 dark:border-red-500 @enderror" />
-                <small class="text-gray-500 dark:text-gray-400">Apply a discount to this invoice.</small>
-                @error('discount')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
+                    <small class="text-gray-500 dark:text-gray-400">Apply a discount to this invoice.</small>
+                    @error('discount')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
-        </div>
 
-        <!-- Payment Terms and Assigned Agent -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
-                <label for="payment_terms" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Terms</label>
-                <flux:select id="payment_terms" wire:model="payment_terms"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
-                    <flux:select.option value="Net 15">Net 15</flux:select.option>
-                    <flux:select.option value="Net 30">Net 30</flux:select.option>
-                    <flux:select.option value="Net 60">Net 60</flux:select.option>
-                    <flux:select.option value="Net 90">Net 90</flux:select.option>
-                </flux:select>
-                <small class="text-gray-500 dark:text-gray-400">Select the payment terms for this invoice.</small>
+            <!-- Payment Terms and Assigned Agent -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label for="payment_terms"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Terms</label>
+                    <flux:select id="payment_terms" wire:model="payment_terms"
+                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
+                        <flux:select.option value="Net 15">Net 15</flux:select.option>
+                        <flux:select.option value="Net 30">Net 30</flux:select.option>
+                        <flux:select.option value="Net 60">Net 60</flux:select.option>
+                        <flux:select.option value="Net 90">Net 90</flux:select.option>
+                    </flux:select>
+                    <small class="text-gray-500 dark:text-gray-400">Select the payment terms for this invoice.</small>
+                </div>
+                <div>
+                    <label for="assigned_agent_id"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Agent</label>
+                    <flux:select id="assigned_agent_id" wire:model="assigned_agent_id"
+                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
+                        <flux:select.option value="0" disabled>Select an agent</flux:select.option>
+                        @foreach ($agents as $agent)
+                            <flux:select.option value="{{ $agent->id }}">{{ $agent->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    <small class="text-gray-500 dark:text-gray-400">Assign this invoice to an agent or staff
+                        member.</small>
+                </div>
             </div>
-            <div>
-                <label for="assigned_agent_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Agent</label>
-                <flux:select id="assigned_agent_id" wire:model="assigned_agent_id"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
-                    <flux:select.option value="0" disabled>Select an agent</flux:select.option>
-                    @foreach ($agents as $agent)
-                        <flux:select.option value="{{ $agent->id }}">{{ $agent->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-                <small class="text-gray-500 dark:text-gray-400">Assign this invoice to an agent or staff member.</small>
-            </div>
-        </div>
 
-        <!-- Invoice Due Date and Invoice Status -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
-                <label for="invoice_due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Due Date</label>
-                <flux:input id="invoice_due_date" wire:model="invoice_due_date" type="date"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
+            <!-- Invoice Due Date and Invoice Status -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label for="invoice_due_date"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Due Date</label>
+                    <flux:input id="invoice_due_date" wire:model="invoice_due_date" type="date"
+                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
                     @error('invoice_due_date') border-red-500 dark:border-red-500 @enderror" />
-                <small class="text-gray-500 dark:text-gray-400">Specify the due date for this invoice.</small>
-                @error('invoice_due_date')
+                    <small class="text-gray-500 dark:text-gray-400">Specify the due date for this invoice.</small>
+                    @error('invoice_due_date')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="invoice_status"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Status</label>
+                    <flux:select id="invoice_status" wire:model="invoice_status"
+                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
+                        <flux:select.option value="Pending">Pending</flux:select.option>
+                        <flux:select.option value="Paid">Paid</flux:select.option>
+                        <flux:select.option value="Overdue">Overdue</flux:select.option>
+                    </flux:select>
+                    <small class="text-gray-500 dark:text-gray-400">Set the status of this invoice.</small>
+                </div>
+            </div>
+
+            <!-- Invoice Notes -->
+            <div class="mt-4">
+                <label for="invoice_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice
+                    Notes</label>
+                <flux:textarea id="invoice_notes" wire:model="invoice_notes"
+                    placeholder="Enter any notes about the invoice"
+                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
+                @error('invoice_notes') border-red-500 dark:border-red-500 @enderror">
+                </flux:textarea>
+                <small class="text-gray-500 dark:text-gray-400">Add any additional notes or instructions for this
+                    invoice.</small>
+                @error('invoice_notes')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-            <div>
-                <label for="invoice_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Status</label>
-                <flux:select id="invoice_status" wire:model="invoice_status"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
-                    <flux:select.option value="Pending">Pending</flux:select.option>
-                    <flux:select.option value="Paid">Paid</flux:select.option>
-                    <flux:select.option value="Overdue">Overdue</flux:select.option>
-                </flux:select>
-                <small class="text-gray-500 dark:text-gray-400">Set the status of this invoice.</small>
+
+            <!-- Submit Button -->
+            <div class="flex justify-between mt-4">
+                <button wire:click="previousStep" class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    Back
+                </button>
+                <button wire:click="save" class="px-6 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
+                    Submit
+                </button>
             </div>
         </div>
-
-        <!-- Invoice Notes -->
-        <div class="mt-4">
-            <label for="invoice_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Notes</label>
-            <flux:textarea id="invoice_notes" wire:model="invoice_notes"
-                placeholder="Enter any notes about the invoice"
-                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-                @error('invoice_notes') border-red-500 dark:border-red-500 @enderror">
-            </flux:textarea>
-            <small class="text-gray-500 dark:text-gray-400">Add any additional notes or instructions for this invoice.</small>
-            @error('invoice_notes')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-
-        <!-- Submit Button -->
-        <div class="flex justify-between mt-4">
-            <button wire:click="previousStep" class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                Back
-            </button>
-            <button wire:click="save" class="px-6 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
-                Submit
-            </button>
-        </div>
-    </div>
-@endif
+    @endif
 </div>
 
 </div>

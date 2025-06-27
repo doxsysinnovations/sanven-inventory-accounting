@@ -66,6 +66,7 @@ class RolePermissionSeeder extends Seeder
             'units.delete',
 
             //Suppliers
+            'suppliers.info',
             'suppliers.view',
             'suppliers.create',
             'suppliers.edit',
@@ -112,12 +113,31 @@ class RolePermissionSeeder extends Seeder
             'customers.create',
             'customers.edit',
             'customers.delete',
+            'customers.info',
 
             //Agents
             'agents.view',
             'agents.create',
             'agents.edit',
             'agents.delete',
+
+            //Locations
+            'locations.view',
+            'locations.create',
+            'locations.edit',
+            'locations.delete',
+
+            //Settings
+            'settings.view',
+            'settings.2fa-config',
+            'settings.seeders',
+
+            //Invoicing
+            'invoicing.view',
+            'invoicing.show',
+            'invoicing.create',
+            'invoicing.edit',
+            'invoicing.delete',
         ];
 
         foreach ($permissions as $permission) {
