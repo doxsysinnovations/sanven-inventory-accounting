@@ -134,6 +134,7 @@ class RolePermissionSeeder extends Seeder
 
             //Invoicing
             'invoicing.view',
+            'invoicing.show',
             'invoicing.create',
             'invoicing.edit',
             'invoicing.delete',
