@@ -18,6 +18,9 @@ new class extends Component {
     public $showDeleteModal = false;
     public $deleteError = null;
 
+    public $showInvoiceModal = false;
+    public $selectedInvoice = null;
+
     public function mount()
     {
         $this->perPage = session('perPage', 10);
@@ -95,6 +98,17 @@ new class extends Component {
         return [
             'invoices' => $this->invoices,
         ];
+    }
+
+    public function showInvoice($invoiceId)
+    {
+        $this->selectedInvoice = Invoice::with(['customer', 'items.stock.product'])->find($invoiceId);
+        $this->showInvoiceModal = true;
+    }
+
+    public function closeInvoiceModal()
+    {
+        $this->reset(['selectedInvoice', 'showInvoiceModal']);
     }
 
     public function getInvoicesProperty()
@@ -354,7 +368,7 @@ new class extends Component {
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
                                         @can('invoicing.show')
-                                            <a href="{{ route('invoicing.show', $invoice->id) }}"
+                                            <button wire:click="showInvoice({{ $invoice->id }})"
                                                 class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -363,7 +377,7 @@ new class extends Component {
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
-                                            </a>
+                                            </button>
                                         @endcan
                                         @can('invoicing.edit')
                                             <a href="{{ route('invoicing.show', $invoice->id) }}"
@@ -397,6 +411,235 @@ new class extends Component {
                 {{ $invoices->links() }}
             </div>
         @endif
+    </div>
+
+    <!-- Invoice Detail Modal -->
+    <div x-cloak x-data="{ show: @entangle('showInvoiceModal') }" x-show="show" class="fixed inset-0 z-50 overflow-y-auto"
+        aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <!-- Modal panel -->
+            <div x-show="show" x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100"
+                                id="modal-title">
+                                Invoice #{{ $selectedInvoice->invoice_number ?? '' }}
+                            </h3>
+                            <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        aria-hidden="true">
+                                        <path fill-rule="evenodd"
+                                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    Issued:
+                                    {{ \Carbon\Carbon::parse($selectedInvoice->issued_date ?? '')->format('M d, Y') }}
+                                </div>
+                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        aria-hidden="true">
+                                        <path fill-rule="evenodd"
+                                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    Due:
+                                    {{ \Carbon\Carbon::parse($selectedInvoice->due_date ?? '')->format('M d, Y') }}
+                                </div>
+                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        aria-hidden="true">
+                                        <path
+                                            d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                    </svg>
+                                    Customer: {{ $selectedInvoice->customer->name ?? '' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <span @class([
+                                'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' =>
+                                    isset($selectedInvoice) && $selectedInvoice->status === 'pending',
+                                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' =>
+                                    isset($selectedInvoice) && $selectedInvoice->status === 'paid',
+                                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' =>
+                                    isset($selectedInvoice) && $selectedInvoice->status === 'overdue',
+                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100' =>
+                                    isset($selectedInvoice) && $selectedInvoice->status === 'cancelled',
+                            ])>
+                                {{ isset($selectedInvoice) ? ucfirst($selectedInvoice->status) : '' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Details -->
+                    <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">BILL FROM</h4>
+                            <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">Your Company Name</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">123 Business Street</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">City, State 12345</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Phone: (123) 456-7890</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Email: billing@yourcompany.com</p>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">BILL TO</h4>
+                            <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {{ $selectedInvoice->customer->name ?? '' }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                {{ $selectedInvoice->customer->address ?? '' }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                {{ $selectedInvoice->customer->phone ?? '' }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                {{ $selectedInvoice->customer->email ?? '' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Items -->
+                    <div class="mt-6">
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">INVOICE ITEMS</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-100 dark:bg-gray-700">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Item
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Qty
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Price
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Discount
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Tax
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Total
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    @foreach ($selectedInvoice->items ?? [] as $item)
+                                        <tr>
+                                            <td
+                                                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                                {{ $item->product_name ?? 'N/A' }}
+                                                @if (!empty($item->notes))
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        {{ $item->notes }}</p>
+                                                @endif
+                                            </td>
+                                            <td
+                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                {{ $item->quantity }}
+                                            </td>
+                                            <td
+                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                Php {{ number_format($item->price, 2) }}
+                                            </td>
+                                            <td
+                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                Php {{ number_format($item->discount ?? 0, 2) }}
+                                            </td>
+                                            <td
+                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                Php {{ number_format($item->tax ?? 0, 2) }}
+                                            </td>
+                                            <td
+                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100 font-medium">
+                                                Php {{ number_format($item->total, 2) }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Summary -->
+                    <div class="mt-6 flex justify-end">
+                        <div class="w-full max-w-md">
+                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <span>Subtotal</span>
+                                    <span>Php {{ number_format($selectedInvoice->total_amount ?? 0, 2) }}</span>
+                                </div>
+                                @if ($selectedInvoice->discount ?? 0 > 0)
+                                    <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                        <span>Discount</span>
+                                        <span>- Php {{ number_format($selectedInvoice->discount ?? 0, 2) }}</span>
+                                    </div>
+                                @endif
+                                @if ($selectedInvoice->tax ?? 0 > 0)
+                                    <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                        <span>Tax</span>
+                                        <span>Php {{ number_format($selectedInvoice->tax ?? 0, 2) }}</span>
+                                    </div>
+                                @endif
+                                <div
+                                    class="flex justify-between py-2 text-lg font-medium text-gray-900 dark:text-gray-100 border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                                    <span>Total</span>
+                                    <span>Php {{ number_format($selectedInvoice->grand_total ?? 0, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <span>Payment Method</span>
+                                    <span>{{ ucfirst(str_replace('_', ' ', $selectedInvoice->payment_method ?? 'N/A')) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Notes -->
+                    @if (!empty($selectedInvoice->notes))
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">NOTES</h4>
+                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                <p class="text-sm text-gray-900 dark:text-gray-100">{{ $selectedInvoice->notes }}</p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" wire:click="closeInvoiceModal"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Close
+                    </button>
+                    {{-- <a href="{{ route('invoicing.download', $selectedInvoice->id ?? '') }}" target="_blank" --}}
+                    <a href="#" target="_blank"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
