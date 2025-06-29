@@ -18,6 +18,7 @@ Route::get('/', function () {
 })->name('home');
 
 
+
 // Route::view('dashboard', 'dashboard')
 //     ->middleware(['auth','check.active', 'verified','2fa'])
 //     ->name('dashboard');
@@ -37,6 +38,10 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
     Volt::route('settings/2fa-config', 'settings.two-factor-authentication')->name('settings.2fa-config');
 
+    <<<<<<<<< Temporary merge branch 1
+    Volt::route('settings/seeders', 'settings.seeders')->name('settings.seeders');
+=========
+    
     Volt::route('settings/admin-panel', 'settings.admin-panel')
         ->middleware('role:superadmin')
         ->name('settings.admin-panel');
