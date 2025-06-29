@@ -382,6 +382,7 @@ new class extends Component {
                 'issued_date' => $this->invoice_date,
                 'notes' => $this->notes,
                 'created_by' => auth()->id(),
+                'agent_id' => $this->assigned_agent,
             ]);
 
             // Add invoice items
@@ -467,9 +468,8 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Invoices</span>
+                        <a href="{{ route('invoicing') }}" class="ml-1 text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 md:ml-2">Invoices</a>
                     </div>
-                </li>
                 <li aria-current="page">
                     <div class="flex items-center">
                         <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"

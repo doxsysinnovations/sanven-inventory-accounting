@@ -96,6 +96,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('invoicing', 'invoicing.index')->name('invoicing');
     Volt::route('invoicing/create', 'invoicing.create')->name('invoicing.create');
     Volt::route('invoicing/show', 'invoicing.create')->name('invoicing.show');
+    Volt::route('invoicing/{id}/edit', 'invoicing.edit')->name('invoicing.edit');
 
     //Special Features
     Volt::route('pdf-binding', 'special-features.pdf-binding')->name('pdf-binding');
