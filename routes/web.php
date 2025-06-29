@@ -64,6 +64,9 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Aging
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
+     
+    //Recievables
+    Volt::route('recievables', 'recievables.index')->name('recievables');
 
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');

@@ -138,6 +138,12 @@ new class extends Component {
                         'label' => 'Aging Reports',
                         'permission' => 'suppliers.view',
                     ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'recievables',
+                        'label' => 'Receivables',
+                        'permission' => 'suppliers.view',
+                    ],
                 ],
             ],
             [
