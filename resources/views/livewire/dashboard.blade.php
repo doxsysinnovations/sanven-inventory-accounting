@@ -184,51 +184,51 @@ new class extends Component {
             <x-reports-data-table title="Overdue Invoices" :headers="['Invoice #', 'Customer', 'Due', 'Low']"
                 headerBackgroundColor="bg-white" emptyMessage="There are currently no overdue invoices."
                 :rows="$overdueInvoices->map(fn($invoice) => [
-        $invoice->invoice_number,
-        $invoice->customer->name ?? 'Unknown Customer',
-        \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y'),
-    ])->toArray()"
-                :rowColors="$overdueInvoices->map(fn($invoice) => [
-        '',
-        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
-        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
-    ])->toArray()" />
+                $invoice->invoice_number,
+                $invoice->customer->name ?? 'Unknown Customer',
+                \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y'),
+            ])->toArray()"
+                        :rowColors="$overdueInvoices->map(fn($invoice) => [
+                '',
+                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
+                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
+            ])->toArray()" />
 
             <!-- Items with less than 50 in stock -->
             <x-reports-data-table title="Low Stock Items" description="Items below low stock value" :headers="['Code', 'Name', 'Qty', 'Low']" headerBackgroundColor="bg-white" :rows="$lowStockItems->map(fn($item) => [
-        $item->product->product_code ?? '-',
-        $item->product->name ?? 'Unknown Product',
-        $item->total_quantity,
-        $item->product->low_stock_value ?? '-',
-    ])->toArray()" :rowColors="$lowStockItems->map(fn($item) => [
-        '',
-        '',
-        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
-        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
-    ])->toArray()" />
+                $item->product->product_code ?? '-',
+                $item->product->name ?? 'Unknown Product',
+                $item->total_quantity,
+                $item->product->low_stock_value ?? '-',
+            ])->toArray()" :rowColors="$lowStockItems->map(fn($item) => [
+                '',
+                '',
+                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
+                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
+            ])->toArray()" />
 
             <!-- Expired Products -->
             <x-reports-data-table title="Expired Products" description="Products past their expiration date"
                 :headers="['Code', 'Name', 'Qty', 'Expiration']" headerBackgroundColor="bg-white"
                 :rows="$expiredStocks->map(fn($stock) => [
-        $stock->product->product_code ?? '-',
-        $stock->product->name ?? 'Unknown Product',
-        $stock->quantity . ' ' . ($stock->product?->unit?->name ?? ''),
-        \Carbon\Carbon::parse($stock->expiration_date)->format('M d, Y'),
-    ])->toArray()"
-                :rowColors="$expiredStocks->map(fn($stock) => [
-        '', // No badge for Code
-        '', // No badge for Name
-        '', // Qty
-        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Expiration
-    ])->toArray()" />
+                $stock->product->product_code ?? '-',
+                $stock->product->name ?? 'Unknown Product',
+                $stock->quantity . ' ' . ($stock->product?->unit?->name ?? ''),
+                \Carbon\Carbon::parse($stock->expiration_date)->format('M d, Y'),
+            ])->toArray()"
+                        :rowColors="$expiredStocks->map(fn($stock) => [
+                '', // No badge for Code
+                '', // No badge for Name
+                '', // Qty
+                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Expiration
+            ])->toArray()" />
 
             <!-- Returned/Rejected Products -->
             <x-reports-data-table title="Returned Products" :headers="['Product', 'Returned']" :rows="[
-        ['Surgical Gloves (Box of 100)', '10 boxes returned'],
-        ['Face Masks (Box of 50)', '5 boxes returned'],
-        ['Digital Thermometers', '3 units rejected'],
-    ]" : rowColors="[
+                ['Surgical Gloves (Box of 100)', '10 boxes returned'],
+                ['Face Masks (Box of 50)', '5 boxes returned'],
+                ['Digital Thermometers', '3 units rejected'],
+            ]" : rowColors="[
                             ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
                             ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
                             ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
