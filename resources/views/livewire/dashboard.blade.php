@@ -136,38 +136,42 @@ new class extends Component {
     <h1 class="font-bold sm:text-sm md:text-lg lg:text-xl">
         Dashboard
     </h1>
-
     <!-- General Statistics -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <x-stat-card :value="$salesToday" label="Income Sales Today" iconBackgroundColor="bg-(--color-accent-2)">
-            <svg class='w-8 h-8 text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'
-                stroke-width='1.5' stroke='currentColor'>
-                <path stroke-linecap='round' stroke-linejoin='round'
-                    d='M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z' />
-            </svg>
-        </x-stat-card>
-        <x-stat-card :value="$totalProducts" label="Total Products" iconBackgroundColor="bg-(--color-accent)">
-            <svg class="w-8 h-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke-width="1.5" stroke="currentColor">
+        <x-stat-card :value="$salesToday" label="Income Sales Today" cardColor="bg-white" iconColor="text-white
+            text-white" iconBackgroundColor="bg-[var(--color-accent)]">
+            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
             </svg>
         </x-stat-card>
-        <x-stat-card :value="$totalInvoices" label="Total Invoices" iconBackgroundColor="bg-(--color-accent-2)">
-            <svg class="w-8 h-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke-width="1.5" stroke="currentColor">
+        <x-stat-card :value="$totalProducts" label="Total Products" cardColor="bg-white" iconColor="text-white
+            text-white" iconBackgroundColor="bg-[var(--color-accent-2)]">
+            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+        </x-stat-card>
+        <x-stat-card :value="$totalInvoices" label="Total Invoices" cardColor="bg-white" iconColor="text-white
+            text-white" iconBackgroundColor="bg-[var(--color-accent)]">
+            <svg class=" w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
         </x-stat-card>
-        <x-stat-card :value="$totalExpiredProducts" label="Expired Products" iconBackgroundColor="bg-(--color-accent)">
-            <svg class="w-8 h-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke-width="1.5" stroke="currentColor">
+        <x-stat-card :value="$totalExpiredProducts" label="Expired Products" cardColor="bg-white" iconColor="text-white
+            text-white" iconBackgroundColor="bg-[var(--color-accent-2)]">
+            <svg class=" w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
         </x-stat-card>
     </div>
+
     <div>
         <h1 class="font-bold sm:text-sm md:text-lg lg:text-xl">
             Reports
@@ -175,168 +179,109 @@ new class extends Component {
     </div>
 
     <!-- Reports -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <!-- Left Column - Column Span 2 - Tables -->
-        <div class="flex h-full w-full flex-1 flex-col gap-4 col-span-3 md:col-span-2">
-            <!-- Two Column Cards -->
-            <div class="grid auto-rows-min gap-6 md:grid-cols-2">
-                <!-- Overdue Invoices -->
-                <div class="relative overflow-hidden shadow rounded-xl bg-white dark:bg-gray-800 p-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Overdue Invoices</h3>
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-(--color-accent-2) dark:border-gray-700">
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Invoice #
-                                </th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Customer
-                                </th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Due</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($overdueInvoices as $invoice)
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ $invoice->invoice_number }}
-                                    </td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ $invoice->customer->name ?? 'Unknown Customer' }}
-                                    </td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-2 px-4 text-sm text-gray-500 dark:text-gray-400">No overdue
-                                        invoices
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+    <div class="flex h-full w-full flex-1 flex-col gap-6">
+        <div class="grid auto-rows-min gap-6 md:grid-cols-2">
+            <x-reports-data-table title="Overdue Invoices" :headers="['Invoice #', 'Customer', 'Due', 'Low']"
+                headerBackgroundColor="bg-white" emptyMessage="There are currently no overdue invoices."
+                :rows="$overdueInvoices->map(fn($invoice) => [
+        $invoice->invoice_number,
+        $invoice->customer->name ?? 'Unknown Customer',
+        \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y'),
+    ])->toArray()"
+                :rowColors="$overdueInvoices->map(fn($invoice) => [
+        '',
+        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
+        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
+    ])->toArray()" />
 
-                <!-- Items with less than 50 in stock -->
-                <x-reports-data-table title="Low Stock Items" 
-                    description="Items below low stock value"
-                    :headers="['Code', 'Name', 'Qty', 'Low']"
-                    headerBackgroundColor="bg-(--color-accent)"
-                    :rows="$lowStockItems->map(fn($item) => [
-                    $item->product->product_code ?? '-',
-                    $item->product->name ?? 'Unknown Product',
-                    $item->total_quantity,
-                    $item->product->low_stock_value ?? '-',
-                ])->toArray()"
-                                :rowColors="$lowStockItems->map(fn($item) => [
-                    '',
-                    '',
-                    'text-(--color-accent)',
-                    'text-(--color-accent)'
-                ])->toArray()" />
+            <!-- Items with less than 50 in stock -->
+            <x-reports-data-table title="Low Stock Items" description="Items below low stock value" :headers="['Code', 'Name', 'Qty', 'Low']" headerBackgroundColor="bg-white" :rows="$lowStockItems->map(fn($item) => [
+        $item->product->product_code ?? '-',
+        $item->product->name ?? 'Unknown Product',
+        $item->total_quantity,
+        $item->product->low_stock_value ?? '-',
+    ])->toArray()" :rowColors="$lowStockItems->map(fn($item) => [
+        '',
+        '',
+        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
+        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
+    ])->toArray()" />
 
+            <!-- Expired Products -->
+            <x-reports-data-table title="Expired Products" description="Products past their expiration date"
+                :headers="['Code', 'Name', 'Qty', 'Expiration']" headerBackgroundColor="bg-white"
+                :rows="$expiredStocks->map(fn($stock) => [
+        $stock->product->product_code ?? '-',
+        $stock->product->name ?? 'Unknown Product',
+        $stock->quantity . ' ' . ($stock->product?->unit?->name ?? ''),
+        \Carbon\Carbon::parse($stock->expiration_date)->format('M d, Y'),
+    ])->toArray()"
+                :rowColors="$expiredStocks->map(fn($stock) => [
+        '', // No badge for Code
+        '', // No badge for Name
+        '', // Qty
+        'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Expiration
+    ])->toArray()" />
 
-                <!-- Expired Products -->
-                <div
-                    class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Expired Products</h3>
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-gray-200 dark:border-gray-700">
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Code</th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Name</th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Qty</th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Expiration
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($expiredStocks as $stock)
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ $stock->product->product_code ?? '-' }}
-                                    </td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ $stock->product->name ?? 'Unknown Product' }}
-                                    </td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        @if($stock->quantity)
-                                            {{ $stock->quantity }} {{ $stock->product?->unit?->name }}
-                                        @endif
-                                    </td>
-                                    <td class="py-2 px-4 text-sm text-red-500 dark:text-red-500">
-                                        {{ \Carbon\Carbon::parse($stock->expiration_date)->format('M d, Y') }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-2 px-4 text-sm text-gray-500 dark:text-gray-400">No expired
-                                        products.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Returned/Rejected Products -->
+            <x-reports-data-table title="Returned Products" :headers="['Product', 'Returned']" :rows="[
+        ['Surgical Gloves (Box of 100)', '10 boxes returned'],
+        ['Face Masks (Box of 50)', '5 boxes returned'],
+        ['Digital Thermometers', '3 units rejected'],
+    ]" : rowColors="[
+                            ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
+                            ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
+                            ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
+                        ]" headerBackgroundColor="bg-white" />
+        </div>
 
-                <!-- Returned/Rejected Products -->
-                <x-reports-data-table 
-                    title="Returned Products" 
-                    :headers="['Product', 'Return']" 
-                    :rows="[
-                        ['Surgical Gloves (Box of 100)', '10 boxes returned'],
-                        ['Face Masks (Box of 50)', '5 boxes returned'],
-                        ['Digital Thermometers', '3 units rejected'],
-                    ]" 
-                    headerBackgroundColor="bg-[#D86B59]"
-                    evenBackgroundColor="bg-[rgba(216,107,89,0.1)]" />
-
+        <!-- Aging Reports Table -->
+        <div
+            class="bg-white shadow-lg rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aging Reports</h3>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Agent</th>
+                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Invoice #</th>
+                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Total Amount
+                        </th>
+                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">John Doe</td>
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1001</td>
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱75,000</td>
+                        <td class="py-2 px-4 text-sm text-red-500 font-semibold">Overdue</td>
+                    </tr>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">Jane Smith</td>
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1002</td>
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱83,200</td>
+                        <td class="py-2 px-4 text-sm text-yellow-500 font-semibold">Pending</td>
+                    </tr>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">Michael Brown</td>
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1003</td>
+                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱197,800</td>
+                        <td class="py-2 px-4 text-sm text-green-500 font-semibold">Paid</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="mt-4 text-right">
+                <button class="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
+                    See All
+                </button>
             </div>
+        </div>
 
-            <!-- Aging Reports Table -->
-            <div
-                class="bg-white shadow-lg rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aging Reports</h3>
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Agent</th>
-                            <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Invoice #</th>
-                            <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Total Amount
-                            </th>
-                            <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">John Doe</td>
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1001</td>
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱75,000</td>
-                            <td class="py-2 px-4 text-sm text-red-500 font-semibold">Overdue</td>
-                        </tr>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">Jane Smith</td>
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1002</td>
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱83,200</td>
-                            <td class="py-2 px-4 text-sm text-yellow-500 font-semibold">Pending</td>
-                        </tr>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">Michael Brown</td>
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1003</td>
-                            <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱197,800</td>
-                            <td class="py-2 px-4 text-sm text-green-500 font-semibold">Paid</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="mt-4 text-right">
-                    <button class="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
-                        See All
-                    </button>
-                </div>
-            </div>
-            <!-- Top Customers / Top Suppliers -->
-            <div class="grid auto-rows-min gap-6 md:grid-cols-2">
-                <!-- Top Suppliers by Delivery -->
+        <!-- Top Customers / Top Suppliers -->
+        <div class="grid gap-6 md:grid-cols-2 grid-rows-2">
+
+            <!-- Top Suppliers by Delivery -->
+            <div class="row-start-1 col-start-1">
                 <div
                     class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Top Suppliers of
@@ -381,7 +326,10 @@ new class extends Component {
                         </a>
                     </div>
                 </div>
-                <!-- Top Customers by Total Spent -->
+            </div>
+
+            <!-- Top Customers by Total Spent -->
+            <div class="row-start-2 col-start-1">
                 <div
                     class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Top Customers of
@@ -427,15 +375,22 @@ new class extends Component {
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Left Column - Column Span 1 - Charts/Graphs -->
-        <div class="flex h-full w-full flex-1 flex-col gap-4 col-span-3 md:col-span-2">
+
             <!-- Monthly Sales -->
-            <div
-                class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Monthly Sales</h3>
-                <div id="monthlySales" style="width: 100%; height: 320px;"></div>
+            <div class="row-span-2 col-start-2">
+                <div
+                    class="relative h-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Monthly Sales</h3>
+                    <div id="monthlySales" class="w-full h-full"></div>
+                </div>
             </div>
+
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex h-full w-full flex-1 flex-col gap-4 col-span-1 md:col-span-2">
+
             <!-- Invoice Status -->
             <div
                 class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
@@ -481,7 +436,6 @@ new class extends Component {
         </div>
     </div>
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script>
