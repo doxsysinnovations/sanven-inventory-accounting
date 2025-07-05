@@ -380,7 +380,7 @@ new class extends Component {
                                             </button>
                                         @endcan
                                         @can('invoicing.edit')
-                                            <a href="{{ route('invoicing.show', $invoice->id) }}"
+                                            <a href="{{ route('invoicing.edit', $invoice->id) }}"
                                                 class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
