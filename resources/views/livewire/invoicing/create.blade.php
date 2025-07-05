@@ -377,6 +377,7 @@ new class extends Component {
                 'tax' => $this->tax,
                 'grand_total' => $this->total,
                 'status' => 'pending',
+                'payment_terms' => $this->payment_terms,
                 'payment_method' => $this->payment_method,
                 'due_date' => $this->due_date,
                 'issued_date' => $this->invoice_date,
