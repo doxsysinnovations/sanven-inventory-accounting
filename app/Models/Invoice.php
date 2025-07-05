@@ -24,6 +24,7 @@ class Invoice extends Model
         'grand_total',
         'status',
         'payment_method',
+        'payment_terms',
         'due_date',
         'issued_date',
         'notes',
