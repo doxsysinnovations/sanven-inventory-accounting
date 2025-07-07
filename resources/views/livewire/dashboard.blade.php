@@ -11,6 +11,7 @@ new class extends Component {
     public $totalProducts = 0;
     public $totalInvoices = 0;
     public $expiredStocks = [];
+    public $agingReports = [];
     public $overdueInvoices = [];
     public $invoiceStatusCounts = [];
     public $expiringSoonStocks = [];
@@ -39,6 +40,7 @@ new class extends Component {
 
         $this->totalExpiredProducts = $this->expiredStocks->count();
 
+        $this->agingReports=Invoice::get();
         $this->overdueInvoices = Invoice::where('due_date', '<', [$today])
             ->whereNotIn('status', ['paid', 'cancelled'])
             ->with('customer')
@@ -181,387 +183,546 @@ new class extends Component {
     <!-- Reports -->
     <div class="flex h-full w-full flex-1 flex-col gap-6">
         <div class="grid auto-rows-min gap-6 md:grid-cols-2">
-            <x-reports-data-table title="Overdue Invoices" :headers="['Invoice #', 'Customer', 'Due', 'Low']"
-                headerBackgroundColor="bg-white" emptyMessage="There are currently no overdue invoices."
+            <x-reports-data-table 
+                title="Overdue Invoices" 
+                :headers="['Invoice #', 'Customer', 'Due']"
+                emptyMessage="There are currently no overdue invoices." 
                 :rows="$overdueInvoices->map(fn($invoice) => [
-                $invoice->invoice_number,
-                $invoice->customer->name ?? 'Unknown Customer',
-                \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y'),
-            ])->toArray()"
-                        :rowColors="$overdueInvoices->map(fn($invoice) => [
-                '',
-                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
-                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
-            ])->toArray()" />
+                    $invoice->invoice_number,
+                    $invoice->customer->name ?? 'Unknown Customer',
+                    \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y'),
+                ])->toArray()"
+                :rowColors="$overdueInvoices->map(fn($invoice) => [
+                    '',
+                    '',
+                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
+                ])->toArray()" />
 
             <!-- Items with less than 50 in stock -->
-            <x-reports-data-table title="Low Stock Items" description="Items below low stock value" :headers="['Code', 'Name', 'Qty', 'Low']" headerBackgroundColor="bg-white" :rows="$lowStockItems->map(fn($item) => [
-                $item->product->product_code ?? '-',
-                $item->product->name ?? 'Unknown Product',
-                $item->total_quantity,
-                $item->product->low_stock_value ?? '-',
-            ])->toArray()" :rowColors="$lowStockItems->map(fn($item) => [
-                '',
-                '',
-                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
-                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
-            ])->toArray()" />
+            <x-reports-data-table 
+                title="Low Stock Items" 
+                description="Items below low stock value" 
+                :headers="['Code', 'Name', 'Qty', 'Low']" 
+                :rows="$lowStockItems->map(fn($item) => [
+                    $item->product->product_code ?? '-',
+                    $item->product->name ?? 'Unknown Product',
+                    $item->total_quantity,
+                    $item->product->low_stock_value ?? '-',
+                ])->toArray()" :rowColors="$lowStockItems->map(fn($item) => [
+                    '',
+                    '',
+                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
+                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
+                ])->toArray()" />
 
             <!-- Expired Products -->
-            <x-reports-data-table title="Expired Products" description="Products past their expiration date"
-                :headers="['Code', 'Name', 'Qty', 'Expiration']" headerBackgroundColor="bg-white"
+            <x-reports-data-table title="Expired Products" 
+                description="Products past their expiration date"
+                :headers="['Code', 'Name', 'Qty', 'Expiration']" 
                 :rows="$expiredStocks->map(fn($stock) => [
-                $stock->product->product_code ?? '-',
-                $stock->product->name ?? 'Unknown Product',
-                $stock->quantity . ' ' . ($stock->product?->unit?->name ?? ''),
-                \Carbon\Carbon::parse($stock->expiration_date)->format('M d, Y'),
-            ])->toArray()"
-                        :rowColors="$expiredStocks->map(fn($stock) => [
-                '', // No badge for Code
-                '', // No badge for Name
-                '', // Qty
-                'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Expiration
-            ])->toArray()" />
+                    $stock->product->product_code ?? '-',
+                    $stock->product->name ?? 'Unknown Product',
+                    $stock->quantity . ' ' . ($stock->product?->unit?->name ?? ''),
+                    \Carbon\Carbon::parse($stock->expiration_date)->format('M d, Y'),
+                ])->toArray()" :rowColors="$expiredStocks->map(fn($stock) => [
+                    '', // No badge for Code
+                    '', // No badge for Name
+                    '', // Qty
+                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Expiration
+                ])->toArray()" />
 
             <!-- Returned/Rejected Products -->
-            <x-reports-data-table title="Returned Products" :headers="['Product', 'Returned']" :rows="[
-                ['Surgical Gloves (Box of 100)', '10 boxes returned'],
-                ['Face Masks (Box of 50)', '5 boxes returned'],
-                ['Digital Thermometers', '3 units rejected'],
-            ]" : rowColors="[
-                            ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
-                            ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
-                            ['', 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
-                        ]" headerBackgroundColor="bg-white" />
+            <x-reports-data-table 
+                title="Returned Products" 
+                :headers="['Product', 'Returned']" 
+                :rows="[
+                    ['Surgical Gloves (Box of 100)', '10 boxes returned'],
+                    ['Face Masks (Box of 50)', '5 boxes returned'],
+                    ['Digital Thermometers', '3 units rejected'],
+                ]" :rowColors="[
+                    [null, 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
+                    [null, 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
+                    [null, 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
+                ]" />
         </div>
 
         <!-- Aging Reports Table -->
-        <div
-            class="bg-white shadow-lg rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aging Reports</h3>
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Agent</th>
-                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Invoice #</th>
-                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Total Amount
-                        </th>
-                        <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">John Doe</td>
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1001</td>
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱75,000</td>
-                        <td class="py-2 px-4 text-sm text-red-500 font-semibold">Overdue</td>
-                    </tr>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">Jane Smith</td>
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1002</td>
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱83,200</td>
-                        <td class="py-2 px-4 text-sm text-yellow-500 font-semibold">Pending</td>
-                    </tr>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">Michael Brown</td>
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">#1003</td>
-                        <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">₱197,800</td>
-                        <td class="py-2 px-4 text-sm text-green-500 font-semibold">Paid</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="mt-4 text-right">
-                <button class="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
-                    See All
-                </button>
-            </div>
-        </div>
+        <x-reports-data-table-with-status 
+            title="Aging Reports" 
+            :headers="['Agent', 'Inovice #', 'Total Amount', 'Status']" 
+            :rows="$agingReports->map(fn($report)=>[
+                $report->agent_id ?? 'null',
+                $report->invoice_number,
+                '₱' . number_format($report->total_amount, 2),
+                $report->status,
+            ])"
+        />
 
         <!-- Top Customers / Top Suppliers -->
-        <div class="grid gap-6 md:grid-cols-2 grid-rows-2">
-
+        <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
             <!-- Top Suppliers by Delivery -->
-            <div class="row-start-1 col-start-1">
-                <div
-                    class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Top Suppliers of
-                        {{ $currentMonth }}
-                    </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Based on Total Deliveries</p>
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-gray-200 dark:border-gray-700">
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">#</th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Supplier
-                                    Name
-                                </th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Deliveries
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($topSuppliers as $i => $supplier)
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">{{ $i + 1 }}</td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ $supplier->supplier->name ?? 'Unknown Supplier' }}
-                                    </td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ $supplier->delivery_count }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-2 px-4 text-sm text-gray-500 dark:text-gray-400">No suppliers
-                                        found for the month of {{ $currentMonth }}.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                    <div class="mt-4 text-right">
-                        <a href="{{ route('suppliers') }}"
-                            class="inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600">
-                            All Suppliers
-                        </a>
-                    </div>
-                </div>
-            </div>
+            <x-reports-data-table-with-button
+                styleAttributes="md:row-start-1 md:col-start-1"
+                title="Top Suppliers of {{ $currentMonth }}" 
+                description="Based on Total Deliveries"
+                :headers="['#', 'Supplier Name', 'Deliveries']" 
+                :rows="$topSuppliers->map(fn($supplier, $i)=>[
+                    $supplier->supplier->name ?? 'Unknown Supplier',
+                    $supplier->delivery_count,
+                    $i + 1
+                ])"
+                emptyMessage="No suppliers found for the month of {{ $currentMonth }}"
+                buttonLabel="All Customers"
+            />
 
             <!-- Top Customers by Total Spent -->
-            <div class="row-start-2 col-start-1">
-                <div
-                    class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Top Customers of
-                        {{ $currentMonth }}
-                    </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Based on Total Spent</p>
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-gray-200 dark:border-gray-700">
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">#</th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Customer
-                                    Name
-                                </th>
-                                <th class="py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Grand Total
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($topCustomers as $i => $customer)
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">{{ $i + 1 }}</td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ $customer->customer->name ?? 'Unknown Customer' }}
-                                    </td>
-                                    <td class="py-2 px-4 text-sm text-gray-700 dark:text-gray-300">
-                                        ₱{{ number_format($customer->total_spent, 2) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-2 px-4 text-sm text-gray-500 dark:text-gray-400">No customers
-                                        found for the month of {{ $currentMonth }} .
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                    <div class="mt-4 text-right">
-                        <a href="{{ route('customers') }}"
-                            class="inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600">
-                            All Customers
-                        </a>
-                    </div>
-                </div>
-            </div>
+            <x-reports-data-table-with-button
+                styleAttributes="md:row-start-2 md:col-start-1"
+                description="Based on Total Spent"
+                title="Top Customers of {{ $currentMonth }}" 
+                :headers="['#', 'Customer Name', 'Grand Total']" 
+                :rows="$topCustomers->map(fn($customer, $i)=>[
+                    $i + 1,
+                    $customer->customer->name ?? 'Unknown Customer',
+                    '₱' . number_format($customer->total_spent, 2)
+                ])"
+                emptyMessage="No suppliers found for the month of {{ $currentMonth }}"
+                buttonLabel="All Customers"
+            />
 
             <!-- Monthly Sales -->
-            <div class="row-span-2 col-start-2">
+            <div class="md:row-span-2 md:col-start-2">
                 <div
-                    class="relative h-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
+                    class="relative h-full overflow-hidden rounded-xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Monthly Sales</h3>
                     <div id="monthlySales" class="w-full h-full"></div>
                 </div>
             </div>
-
         </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex h-full w-full flex-1 flex-col gap-4 col-span-1 md:col-span-2">
-
-            <!-- Invoice Status -->
+        <!-- Invoice Status -->
             <div
-                class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Invoice Status</h3>
-                <div class="flex flex-col items-center">
-                    <div id="invoiceStatusChart" style="width: 100%; height: 300px;"></div>
-                    <div class="mt-4 flex flex-row gap-5 text-xs">
-                        <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-green-500"></span>
-                            <span class="text-gray-700 dark:text-gray-300">Paid:
-                                {{ $invoiceStatusCounts['paid']['percent'] }}%</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-yellow-300"></span>
-                            <span class="text-gray-700 dark:text-gray-300">Pending:
-                                {{ $invoiceStatusCounts['pending']['percent'] }}%</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-orange-400"></span>
-                            <span class="text-gray-700 dark:text-gray-300">Overdue:
-                                {{ $invoiceStatusCounts['overdue']['percent'] }}%</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>
-                            <span class="text-gray-700 dark:text-gray-300">Cancelled:
-                                {{ $invoiceStatusCounts['cancelled']['percent'] }}%</span>
-                        </div>
+            class="relative overflow-hidden rounded-xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Invoice Status</h3>
+            <div class="flex flex-col items-center">
+                <div id="invoiceStatusChart" class="-mb-5" style="width: 100%; height: 300px;"></div>
+                <div class="flex flex-row gap-5 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-3 h-3 rounded-full bg-green-400"></span>
+                        <span class="text-gray-700 dark:text-gray-300">Paid:
+                            {{ $invoiceStatusCounts['paid']['percent'] }}%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-3 h-3 rounded-full bg-yellow-400"></span>
+                        <span class="text-gray-700 dark:text-gray-300">Pending:
+                            {{ $invoiceStatusCounts['pending']['percent'] }}%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-3 h-3 rounded-full bg-[var(--color-accent-2)]"></span>
+                        <span class="text-gray-700 dark:text-gray-300">Overdue:
+                            {{ $invoiceStatusCounts['overdue']['percent'] }}%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-3 h-3 rounded-full bg-orange-400"></span>
+                        <span class="text-gray-700 dark:text-gray-300">Cancelled:
+                            {{ $invoiceStatusCounts['cancelled']['percent'] }}%</span>
                     </div>
                 </div>
             </div>
-            <!-- Expiring Products Soon -->
-            <div
-                class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Expiring Products Soon</h3>
-                @if(count($chartData) <= 1)
-                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
-                        No products expiring within 7 days.
-                    </div>
-                @else
-                    <div id="expiringChart" style="width: 100%; height: 320px;"></div>
-                @endif
-            </div>
+        </div>
+
+        <!-- Expiring Products Soon -->
+        <div
+            class="relative overflow-hidden rounded-xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Expiring Products Soon</h3>
+            @if(count($chartData) <= 1)
+                <div class="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
+                    No products expiring within 7 days.
+                </div>
+            @else
+                <div id="expiringChart" style="width: 100%; height: 320px;"></div>
+            @endif
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script>
+    // Store chart instances globally for resize handling
+    let charts = {};
+    let isInitialized = false;
 
-    //Monthly Sales Line chart
-    document.addEventListener('DOMContentLoaded', function () {
-        const isDark = document.documentElement.classList.contains('dark');
-        var chartDom = document.getElementById('monthlySales');
-        var myChart = echarts.init(chartDom);
-        var option;
+    // Utility function to get CSS variables
+    function getCSSVariable(name) {
+        return getComputedStyle(document.documentElement)
+            .getPropertyValue(name)
+            .trim();
+    }
 
-        option = {
-            xAxis: {
-                type: 'category',
-                data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-            },
-            yAxis: {
-                type: 'value'
-            },
-            series: [
-                {
-                    data: [150, 230, 224, 218, 135, 147, 260],
-                    type: 'line'
-                }
-            ]
-        };
+    // Utility function to check if element is visible and has dimensions
+    function isElementReady(element) {
+        return element && 
+               element.offsetWidth > 0 && 
+               element.offsetHeight > 0 &&
+               element.offsetParent !== null;
+    }
 
-        option && myChart.setOption(option);
-    });
-
-    //Pie chart for Invoice Status
-    document.addEventListener('DOMContentLoaded', function () {
-        const isDark = document.documentElement.classList.contains('dark');
-        var chartDom = document.getElementById('invoiceStatusChart');
-        var myChart = echarts.init(chartDom);
-        var option;
-
-        var paid = {{ $invoiceStatusCounts['paid']['count'] }};
-        var pending = {{ $invoiceStatusCounts['pending']['count'] }};
-        var overdue = {{ $invoiceStatusCounts['overdue']['count'] }};
-        var cancelled = {{ $invoiceStatusCounts['cancelled']['count'] }};
-        var total = paid + pending + overdue + cancelled;
-
-        var data = [];
-        if (total === 0) {
-            data = [{ value: 0, name: 'No Invoice', itemStyle: { color: '#d1d5db' } }];
-        } else {
-            data = [
-                { value: paid, name: 'Paid', itemStyle: { color: '#22c55e' } },
-                { value: pending, name: 'Pending', itemStyle: { color: '#fde047' } },
-                { value: overdue, name: 'Overdue', itemStyle: { color: '#fb923c' } },
-                { value: cancelled, name: 'Cancelled', itemStyle: { color: '#ef4444' } }
-            ];
+    // Wait for element to be ready with timeout
+    function waitForElement(selector, callback, timeout = 5000) {
+        const startTime = Date.now();
+        
+        function check() {
+            const element = document.getElementById(selector);
+            if (isElementReady(element)) {
+                callback(element);
+                return;
+            }
+            
+            if (Date.now() - startTime < timeout) {
+                requestAnimationFrame(check);
+            } else {
+                console.warn(`Element ${selector} not ready after ${timeout}ms`);
+            }
         }
+        
+        check();
+    }
 
-        option = {
-            tooltip: { trigger: 'item' },
-            legend: {
-                left: 'center',
-                textStyle: {
-                    color: isDark ? '#fff' : '#222'
-                }
-            },
-            series: [
-                {
-                    name: 'Invoice Status',
-                    type: 'pie',
-                    radius: ['40%', '70%'],
-                    avoidLabelOverlap: false,
-                    itemStyle: {
-                        borderRadius: 5,
-                    },
-                    label: { show: false, position: 'center' },
-                    emphasis: {
-                        label: {
-                            show: true,
-                            fontSize: 16,
-                            fontWeight: 'bold'
-                        }
-                    },
-                    labelLine: { show: false },
-                    data: data
-                }
-            ]
-        };
+    // Initialize charts with proper error handling and resize support
+    function initializeCharts() {
+        console.log('Initializing charts...');
+        
+        // Clean up existing charts first
+        cleanupCharts();
+        
+        // Initialize each chart with element waiting
+        waitForElement('monthlySales', () => initializeMonthlySales());
+        waitForElement('invoiceStatusChart', () => initializeInvoiceStatus());
+        waitForElement('expiringChart', () => initializeExpiringChart());
+        
+        isInitialized = true;
+    }
 
-        option && myChart.setOption(option);
-    });
+    function initializeMonthlySales() {
+        const chartDom = document.getElementById('monthlySales');
+        if (!chartDom) return;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const isDark = document.documentElement.classList.contains('dark');
-        const chart = echarts.init(document.getElementById('expiringChart'));
-        const option = {
-            dataset: {
-                source: @js($chartData)
-            },
-            grid: {
-                containLabel: true,
-                left: '3%',
-            },
-            xAxis: { name: 'Qty' },
-            yAxis: { type: 'category' },
-            visualMap: {
-                orient: 'horizontal',
-                left: 'center',
-                min: 0,
-                max: 7,
-                text: ['Expiring in 7 days', 'Expiring Soon'],
-                dimension: 0,
-                inRange: {
-                    color: ['#FF4C4C', '#FFD700', '#65B581']
+        try {
+            const accentColor = getCSSVariable('--color-accent') || '#ef4444';
+            const fontSans = getCSSVariable('--font-sans') || 'system-ui';
+            
+            charts.monthlySales = echarts.init(chartDom);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function (params) {
+                        const data = params[0];
+                        return `Monthly Sales: ${data.value}`;
+                    }
                 },
                 textStyle: {
-                    color: isDark ? '#fff' : '#222'
-                }
-            },
-            series: [
-                {
-                    type: 'bar',
-                    encode: {
-                        x: 'amount',
-                        y: 'product'
+                    fontFamily: fontSans 
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [
+                    {
+                        data: [150, 230, 224, 218, 135, 147, 260],
+                        type: 'line',
+                        lineStyle: {
+                            color: accentColor
+                        },
+                        itemStyle: {
+                            color: accentColor
+                        }
                     }
-                }
-            ]
-        };
+                ]
+            };
 
-        chart.setOption(option);
-    });</script>
+            charts.monthlySales.setOption(option);
+            console.log('Monthly Sales chart initialized');
+        } catch (error) {
+            console.error('Error initializing Monthly Sales chart:', error);
+        }
+    }
+
+    function initializeInvoiceStatus() {
+        const chartDom = document.getElementById('invoiceStatusChart');
+        if (!chartDom) return;
+
+        try {
+            const accentColor = getCSSVariable('--color-accent-2') || '#ef4444';
+            const fontSans = getCSSVariable('--font-sans') || 'system-ui';
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            charts.invoiceStatus = echarts.init(chartDom);
+
+            // Get data from PHP variables (these should be available in the global scope)
+            const invoiceData = window.invoiceStatusData || {
+                paid: {{ $invoiceStatusCounts['paid']['count'] ?? 0 }},
+                pending: {{ $invoiceStatusCounts['pending']['count'] ?? 0 }},
+                overdue: {{ $invoiceStatusCounts['overdue']['count'] ?? 0 }},
+                cancelled: {{ $invoiceStatusCounts['cancelled']['count'] ?? 0 }}
+            };
+
+            const { paid, pending, overdue, cancelled } = invoiceData;
+            const total = paid + pending + overdue + cancelled;
+
+            const colours = {
+                paid: '#4ade80',
+                pending: '#facc15',
+                overdue: accentColor,
+                cancelled: '#fb923c'
+            };
+
+            let data = [];
+            if (total === 0) {
+                data = [{ value: 1, name: 'No Invoice', itemStyle: { color: '#d1d5db' } }];
+            } else {
+                data = [
+                    {
+                        value: paid,
+                        name: 'Paid',
+                        itemStyle: { color: colours.paid },
+                        emphasis: { itemStyle: { color: colours.paid } }
+                    },
+                    {
+                        value: pending,
+                        name: 'Pending',
+                        itemStyle: { color: colours.pending },
+                        emphasis: { itemStyle: { color: colours.pending } }
+                    },
+                    {
+                        value: overdue,
+                        name: 'Overdue',
+                        itemStyle: { color: colours.overdue },
+                        emphasis: { itemStyle: { color: colours.overdue } }
+                    },
+                    {
+                        value: cancelled,
+                        name: 'Cancelled',
+                        itemStyle: { color: colours.cancelled },
+                        emphasis: { itemStyle: { color: colours.cancelled } }
+                    }
+                ];
+            }
+
+            const option = {
+                tooltip: { trigger: 'item' },
+                legend: {
+                    left: 'center',
+                    textStyle: {
+                        color: isDark ? '#fff' : '#222'
+                    }
+                },
+                textStyle: {
+                    fontFamily: fontSans 
+                },
+                series: [
+                    {
+                        name: 'Invoice Status',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 5,
+                        },
+                        label: { show: false, position: 'center' },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 16,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: { show: false },
+                        data: data
+                    }
+                ]
+            };
+
+            charts.invoiceStatus.setOption(option);
+            console.log('Invoice Status chart initialized');
+        } catch (error) {
+            console.error('Error initializing Invoice Status chart:', error);
+        }
+    }
+
+    function initializeExpiringChart() {
+        const chartDom = document.getElementById('expiringChart');
+        if (!chartDom) return;
+
+        try {
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            charts.expiring = echarts.init(chartDom);
+            
+            // Get chart data from global variable or PHP
+            const chartData = window.expiringChartData || @json($chartData);
+            
+            const option = {
+                dataset: {
+                    source: chartData
+                },
+                grid: {
+                    containLabel: true,
+                    left: '3%',
+                },
+                xAxis: { name: 'Qty' },
+                yAxis: { type: 'category' },
+                visualMap: {
+                    orient: 'horizontal',
+                    left: 'center',
+                    min: 0,
+                    max: 7,
+                    text: ['Expiring in 7 days', 'Expiring Soon'],
+                    dimension: 0,
+                    inRange: {
+                        color: ['#FF4C4C', '#FFD700', '#65B581']
+                    },
+                    textStyle: {
+                        color: isDark ? '#fff' : '#222'
+                    }
+                },
+                series: [
+                    {
+                        type: 'bar',
+                        encode: {
+                            x: 'amount',
+                            y: 'product'
+                        }
+                    }
+                ]
+            };
+
+            charts.expiring.setOption(option);
+            console.log('Expiring chart initialized');
+        } catch (error) {
+            console.error('Error initializing Expiring chart:', error);
+        }
+    }
+
+    // Resize handler
+    function handleResize() {
+        Object.values(charts).forEach(chart => {
+            if (chart && typeof chart.resize === 'function') {
+                try {
+                    chart.resize();
+                } catch (error) {
+                    console.error('Error resizing chart:', error);
+                }
+            }
+        });
+    }
+
+    // Debounced resize handler
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    const debouncedResize = debounce(handleResize, 250);
+
+    // Cleanup function
+    function cleanupCharts() {
+        Object.values(charts).forEach(chart => {
+            if (chart && typeof chart.dispose === 'function') {
+                try {
+                    chart.dispose();
+                } catch (error) {
+                    console.error('Error disposing chart:', error);
+                }
+            }
+        });
+        charts = {};
+        isInitialized = false;
+    }
+
+    // Event listeners for different scenarios
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM Content Loaded - initializing charts');
+        setTimeout(initializeCharts, 100);
+    });
+
+    window.addEventListener('load', function() {
+        if (!isInitialized) {
+            console.log('Window loaded - initializing charts');
+            setTimeout(initializeCharts, 200);
+        }
+    });
+
+    // Livewire-specific event listeners
+    if (window.Livewire) {
+        // When navigating to a new page
+        document.addEventListener('livewire:navigating', function() {
+            console.log('Livewire navigating - cleaning up charts');
+            cleanupCharts();
+            window.removeEventListener('resize', debouncedResize);
+        });
+
+        // When navigation is complete
+        document.addEventListener('livewire:navigated', function() {
+            console.log('Livewire navigated - reinitializing charts');
+            setTimeout(() => {
+                initializeCharts();
+                window.addEventListener('resize', debouncedResize);
+            }, 300);
+        });
+
+        // When Livewire component updates
+        document.addEventListener('livewire:updated', function() {
+            console.log('Livewire updated - checking charts');
+            setTimeout(() => {
+                // Only reinitialize if charts are missing
+                const needsReinit = ['monthlySales', 'invoiceStatusChart', 'expiringChart']
+                    .some(id => {
+                        const element = document.getElementById(id);
+                        return element && !charts[id.replace('Chart', '').replace('monthlySales', 'monthlySales')];
+                    });
+                
+                if (needsReinit) {
+                    initializeCharts();
+                }
+            }, 100);
+        });
+    }
+
+    // Add resize listener initially
+    window.addEventListener('resize', debouncedResize);
+
+    // Expose functions globally for debugging
+    window.chartDebug = {
+        initializeCharts,
+        cleanupCharts,
+        charts,
+        isInitialized: () => isInitialized
+    };
+</script>
+
+<!-- Add this script tag to pass PHP data to JavaScript -->
+<script>
+    // Pass PHP data to JavaScript
+    window.invoiceStatusData = {
+        paid: {{ $invoiceStatusCounts['paid']['count'] ?? 0 }},
+        pending: {{ $invoiceStatusCounts['pending']['count'] ?? 0 }},
+        overdue: {{ $invoiceStatusCounts['overdue']['count'] ?? 0 }},
+        cancelled: {{ $invoiceStatusCounts['cancelled']['count'] ?? 0 }}
+    };
+    
+    window.expiringChartData = @json($chartData);
+</script>
