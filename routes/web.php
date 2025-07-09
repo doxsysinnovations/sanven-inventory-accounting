@@ -79,6 +79,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Quotations
     Volt::route('quotations', 'quotations.index')->name('quotations');
+    Volt::route('quotations/create', 'quotations.create')->name('quotations.create');
 
     //Agents
     Volt::route('agents', 'agents.index')->name('agents');
