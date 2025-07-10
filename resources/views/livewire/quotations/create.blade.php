@@ -13,11 +13,8 @@ new class extends Component {
     use WithPagination;
 
     public $search = '';
-    public $showModal = false;
     public $quotation;
     public $isEditing = false;
-    public $confirmingDelete = false;
-    public $quotationToDelete;
 
     // Form fields
     public $quotation_number = '';
@@ -44,6 +41,7 @@ new class extends Component {
         $this->products = Product::all();
         $this->valid_until = now()->addDays(30)->format('Y-m-d');
         $this->addItem();
+        $this->generateQuotationNumber();
     }
 
     public function addItem()
@@ -96,13 +94,12 @@ new class extends Component {
         $this->quotation_number = 'QUO-' . strtoupper(Str::random(8)) . '-' . date('Ymd');
     }
 
-    public function create()
-    {
-        $this->resetForm();
-        $this->isEditing = false;
-        $this->generateQuotationNumber();
-        $this->showModal = true;
-    }
+    // public function create()
+    // {
+    //     $this->resetForm();
+    //     $this->isEditing = false;
+    //     $this->generateQuotationNumber();
+    // }
 
     public function edit(Quotation $quotation)
     {
@@ -129,24 +126,6 @@ new class extends Component {
             })
             ->toArray();
         $this->isEditing = true;
-        $this->showModal = true;
-    }
-
-    public function confirmDelete($quotationId)
-    {
-        $this->quotationToDelete = $quotationId;
-        $this->confirmingDelete = true;
-    }
-
-    public function delete()
-    {
-        $quotation = Quotation::find($this->quotationToDelete);
-        if ($quotation) {
-            $quotation->delete();
-            flash()->success('Quotation deleted successfully!');
-        }
-        $this->confirmingDelete = false;
-        $this->quotationToDelete = null;
     }
 
     public function updatedItems($value, $key)
@@ -202,7 +181,6 @@ new class extends Component {
             flash()->success('Quotation created successfully!');
         }
 
-        $this->showModal = false;
         $this->resetForm();
     }
 
@@ -210,28 +188,14 @@ new class extends Component {
     {
         $this->reset(['quotation_number', 'customer_id', 'agent_id', 'total_amount', 'tax', 'discount', 'notes', 'status', 'valid_until', 'quotation', 'items']);
         $this->resetValidation();
+        $this->isEditing = false;
+        $this->generateQuotationNumber();
         $this->addItem();
     }
 
-    #[Title('Quotations')]
-    public function with(): array
+    public function cancel() 
     {
-        return [
-            'quotations' => $this->quotations,
-        ];
-    }
-
-    public function getQuotationsProperty()
-    {
-        return Quotation::query()
-            ->with(['customer', 'agent'])
-            ->where(function ($query) {
-                $query->where('quotation_number', 'like', '%' . $this->search . '%')->orWhereHas('customer', function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%');
-                });
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $this->resetForm();
     }
 };
 ?>
@@ -254,7 +218,7 @@ new class extends Component {
                                 readonly class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                         @else
                             <flux:input wire:model="quotation_number" :label="__('Quotation Number')" type="text"
-                                class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                                readonly class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                         @endif
                     </div>
                     <div class="mb-4">
@@ -307,46 +271,72 @@ new class extends Component {
                                     <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
                                         wire:key="item-{{ $index }}">
                                         <td class="w-2/5 px-6 py-4">
-                                            <x-select-input
+                                            <flux:select
                                                 wire:model.live.debounce.500ms="items.{{ $index }}.product_id"
-                                                :options="$products"
-                                                placeholder="Select Product"
-                                            />
+                                                size="md"
+                                            >
+                                                <flux:select.option value="">Select Product...</flux:select.option>
+                                            
+                                                @foreach ($products as $product)
+                                                    <flux:select.option
+                                                        value="{{ $product['id'] }}"
+                                                    >
+                                                        {{ $product['name'] }}
+                                                    </flux:select.option>
+                                                @endforeach
+                                            </flux:select>
                                         </td>
                                         <td class="w-1/5 px-6 py-4">
                                             <div class="relative">
-                                                <input wire:model.live.debounce.500ms="items.{{ $index }}.quantity"
-                                                    type="number" min="1" placeholder="Qty"
-                                                    class="w-full rounded border border-gray-300 bg-white dark:bg-gray-800 pl-3 pr-12 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none dark:border-gray-600">
-                                                <span
-                                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">
-                                                    units
-                                                </span>
+                                                <flux:input
+                                                    type="number"
+                                                    wire:model.live="items.{{ $index }}.quantity"
+                                                    placeholder="Qty"
+                                                    :iconTrailing="false"
+                                                    min="1"
+                                                >
+                                                    <x-slot name="iconTrailing">
+                                                        <span class="text-gray-400 text-xs dark:text-zinc-400">units</span>
+                                                    </x-slot>
+                                                </flux:input>
                                             </div>
                                         </td>
                                         <td class="w-1/5 px-6 py-4">
                                             <div class="relative">
-                                                <span
-                                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₱</span>
-                                                <input wire:model="items.{{ $index }}.unit_price" type="number"
-                                                    step="0.01" min="0" placeholder="0.00"
-                                                    class="w-full rounded border border-gray-300 bg-white dark:bg-gray-800 pl-8 pr-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none dark:border-gray-600">
+                                                <flux:input
+                                                    type="number"
+                                                    wire:model.live="items.{{ $index }}.unit_price"
+                                                    placeholder="0.00"
+                                                    :iconLeading="false"
+                                                    step="0.01" 
+                                                    min="0"
+                                                >
+                                                    <x-slot name="iconLeading">
+                                                        <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
+                                                    </x-slot>
+                                                </flux:input>
                                             </div>
                                         </td>
                                         <td class="w-1/5 px-6 py-4">
                                             <div class="relative">
-                                                <span
-                                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₱</span>
-                                                <input wire:model="items.{{ $index }}.total_price" type="number"
-                                                    step="0.01" min="0" readonly placeholder="0.00"
-                                                    class="w-full rounded border border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 pl-8 pr-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-0 cursor-not-allowed">
+                                                <flux:input
+                                                    type="number"
+                                                    wire:model="items.{{ $index }}.total_price"
+                                                    placeholder="0.00"
+                                                    readonly
+                                                    :iconLeading="false"
+                                                >
+                                                    <x-slot name="iconLeading">
+                                                        <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
+                                                    </x-slot>
+                                                </flux:input>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
                                             @if ($index > 0)
                                                 <button type="button" wire:click="removeItem({{ $index }})"
                                                     class="invisible group-hover:visible inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:text-white hover:bg-red-600 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                    <ns="http://www.w3.org/2000/svg" class="h-5 w-5"
                                                         viewBox="0 0 20 20" fill="currentColor">
                                                         <path fill-rule="evenodd"
                                                             d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
@@ -381,13 +371,19 @@ new class extends Component {
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Agent
                         </label>
-                        <select wire:model="agent_id" id="agent_id"
-                            class="w-full rounded border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none dark:border-gray-600">
-                            <option value="">Select Agent</option>
+                        <flux:select
+                            wire:model="agent_id" id="agent_id"
+                        >
+                            <flux:select.option value="">Select Agent...</flux:select.option>
+                        
                             @foreach ($agents as $agent)
-                                <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                                <flux:select.option
+                                    value="{{ $agent->id }}"
+                                >
+                                    {{ $agent->name }}
+                                </flux:select.option>svg xml
                             @endforeach
-                        </select>
+                        </flux:select>
                     </div>
 
                     <div class="mb-4">
@@ -395,8 +391,17 @@ new class extends Component {
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Total Amount
                         </label>
-                        <input wire:model="total_amount" id="total_amount" type="number" step="0.01"
-                            class="w-full rounded border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none dark:border-gray-600">
+                        <flux:input
+                            type="number"
+                            wire:model="total_amount"
+                            placeholder="0.00"
+                            :iconLeading="false"
+                            id="total_amount"
+                        >
+                            <x-slot name="iconLeading">
+                                <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
+                            </x-slot>
+                        </flux:input>
                     </div>
 
                     <div class="mb-4">
@@ -404,8 +409,17 @@ new class extends Component {
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Tax (%)
                         </label>
-                        <input wire:model="tax" id="tax" type="number" step="0.01"
-                            class="w-full rounded border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none dark:border-gray-600">
+                        <flux:input
+                            type="number"
+                            wire:model="tax"
+                            placeholder="0.00"
+                            :iconLeading="false"
+                            id="tax"
+                        >
+                            <x-slot name="iconTrailing">
+                                <span class="text-sm text-zinc-500 dark:text-zinc-400">%</span>
+                            </x-slot>
+                        </flux:input>
                     </div>
 
                     <div class="mb-4">
@@ -413,8 +427,13 @@ new class extends Component {
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Discount
                         </label>
-                        <input wire:model="discount" id="discount" type="number" step="0.01"
-                            class="w-full rounded border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none dark:border-gray-600">
+                        <flux:input
+                            type="number"
+                            wire:model="discount"
+                            placeholder="0.00"
+                            id="discount"
+                        >
+                        </flux:input>
                     </div>
 
                     <div class="mb-4">
@@ -439,14 +458,8 @@ new class extends Component {
 
             </div>
             <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-1 sm:flex sm:flex-row-reverse sm:px-8">
-                
-                <x-primary-button action="create">
-                    {{ $isEditing ? 'Update' : 'Create' }}
-                </x-primary-button>
-
-                <x-secondary-button>
-                    Cancel
-                </x-secondary-button>
+                <flux:button variant="primary" wire:click="save">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
+                <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
             </div>
         </form>
     </div>
