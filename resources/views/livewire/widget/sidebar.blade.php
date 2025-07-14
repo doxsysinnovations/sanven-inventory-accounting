@@ -31,12 +31,6 @@ new class extends Component {
                         'permission' => 'invoicing.view',
                     ],
                     [
-                        'icon' => 'document-text',
-                        'route' => 'quotations',
-                        'label' => 'Quotations',
-                        'permission' => 'quotations.view',
-                    ],
-                    [
                         'icon' => 'user-group',
                         'route' => 'agents',
                         'label' => 'Agents',
@@ -49,6 +43,25 @@ new class extends Component {
                         'permission' => 'customers.view',
                     ],
                 ],
+            ],
+            [
+                'heading' => 'Quotations Management',
+                'permission' => 'products.view',
+                'items' => [
+                    [
+                        'icon' => 'plus',
+                        'route' => 'quotations.create',
+                        'label' => 'Create Quotations',
+                        'permission' => 'quotations.create',
+                    ],
+                    [
+                        'icon' => 'bolt',
+                        'route' => 'quotations',
+                        'label' => 'Quotations',
+                        'permission' => 'quotations.view',
+                    ],
+
+                ]
             ],
             [
                 'heading' => 'Stock Management',
@@ -78,12 +91,6 @@ new class extends Component {
                 'heading' => 'Products Management',
                 'permission' => 'products.view',
                 'items' => [
-                    [
-                        'icon' => 'bolt',
-                        'route' => 'products',
-                        'label' => 'Products',
-                        'permission' => 'products.view',
-                    ],
                     [
                         'icon' => 'plus',
                         'route' => 'products.create',
@@ -203,12 +210,23 @@ new class extends Component {
 
 <div>
     <flux:navlist variant="outline" searchable>
-        {{-- <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
+        {{--
+        <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
 
         @foreach ($menuItems as $group)
-        <flux:navlist.group :heading="__($group['heading'])" class="grid">
-            @if (isset($group['permission']))
-                @can($group['permission'])
+            <flux:navlist.group :heading="__($group['heading'])" class="grid">
+                @if (isset($group['permission']))
+                    @can($group['permission'])
+                        @foreach ($group['items'] as $item)
+                            @if (!$item['permission'] || auth()->user()->can($item['permission']))
+                                <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
+                                    :current="request()->routeIs($item['route'])" wire:navigate>
+                                    {{ __($item['label']) }}
+                                </flux:navlist.item>
+                            @endif
+                        @endforeach
+                    @endcan
+                @else
                     @foreach ($group['items'] as $item)
                         @if (!$item['permission'] || auth()->user()->can($item['permission']))
                             <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
@@ -217,18 +235,8 @@ new class extends Component {
                             </flux:navlist.item>
                         @endif
                     @endforeach
-                @endcan
-            @else
-                @foreach ($group['items'] as $item)
-                    @if (!$item['permission'] || auth()->user()->can($item['permission']))
-                        <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                            :current="request()->routeIs($item['route'])" wire:navigate>
-                            {{ __($item['label']) }}
-                        </flux:navlist.item>
-                    @endif
-                @endforeach
-            @endif
-        </flux:navlist.group>
-    @endforeach
+                @endif
+            </flux:navlist.group>
+        @endforeach
     </flux:navlist>
 </div>
