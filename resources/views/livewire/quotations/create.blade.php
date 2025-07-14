@@ -21,10 +21,10 @@ new class extends Component {
     public $customer_id = null;
     public $agent_id = null;
     public $total_amount = 0;
-    public $tax = 0;
-    public $discount = 0;
+    public $tax = null;
+    public $discount = null;
     public $notes = '';
-    public $status = 'draft';
+    public $status = '';
     public $valid_until = '';
 
     // Items fields
@@ -48,8 +48,8 @@ new class extends Component {
     {
         $this->items[] = [
             'product_id' => '',
-            'quantity' => 1,
-            'unit_price' => 0,
+            'quantity' => null,
+            'unit_price' => null,
             'total_price' => 0,
             'description' => '',
         ];
@@ -86,6 +86,32 @@ new class extends Component {
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.total_price' => 'required|numeric|min:0',
             'items.*.description' => 'nullable|string',
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'quotation_number.required' => 'Quotation number is required.',
+            'quotation_number.unique' => 'This quotation number already exists.',
+            'customer_id.exists' => 'Selected customer does not exist.',
+            'agent_id.exists' => 'Selected agent does not exist.',
+            'total_amount.required' => 'Total amount is required.',
+            'total_amount.min' => 'Total amount must be 0 or greater.',
+            'tax.required' => 'Tax is required.',
+            'discount.required' => 'Discount is required.',
+            'status.required' => 'Status is required.',
+            'status.in' => 'Status must be one of: draft, sent, accepted, rejected.',
+            'valid_until.required' => 'Valid until date is required.',
+            'valid_until.after_or_equal' => 'Valid until date must be today or later.',
+            'items.required' => 'At least one item is required.',
+            'items.*.product_id.required' => 'Please select a product.',
+            'items.*.product_id.exists' => 'Selected product does not exist.',
+            'items.*.quantity.required' => 'Quantity is required.',
+            'items.*.quantity.min' => 'Quantity must be at least 1.',
+            'items.*.unit_price.required' => 'Unit price is required.',
+            'items.*.unit_price.min' => 'Unit price must be 0 or greater.',
+            'items.*.total_price.required' => 'Total price is required.',
         ];
     }
 
@@ -202,7 +228,7 @@ new class extends Component {
 
 <div>    
     <div>
-        <form wire:submit="save">
+        <form wire:submit.prevent="save">
             <div class="bg-gray-50 p-6 flex items-center">
                 <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
                     {{ $isEditing ? 'Edit Quotation' : 'Create New Quotation' }}
@@ -222,7 +248,7 @@ new class extends Component {
                         @endif
                     </div>
                     <div class="mb-4">
-                        <flux:select wire:model.live="status" :label="__('Status')" size="md">
+                        <flux:select wire:model.live="status" :label="__('Status')" size="md" value="">
                             <flux:select.option value="">Choose Status...</flux:select.option>
                             <flux:select.option value="draft">Draft</flux:select.option>
                             <flux:select.option value="sent">Sent</flux:select.option>
@@ -268,12 +294,15 @@ new class extends Component {
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach ($items as $index => $item)
-                                    <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
-                                        wire:key="item-{{ $index }}">
-                                        <td class="w-2/5 px-6 py-4">
+                                <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                                    wire:key="item-{{ $index }}">
+                                    <td class="w-2/5 px-6 py-4 align-top">
+                                        <div class="space-y-1">
                                             <flux:select
                                                 wire:model.live.debounce.500ms="items.{{ $index }}.product_id"
+                                                name="items.{{ $index }}.product_id"
                                                 size="md"
+                                                :label="__('')"
                                             >
                                                 <flux:select.option value="">Select Product...</flux:select.option>
                                             
@@ -285,8 +314,10 @@ new class extends Component {
                                                     </flux:select.option>
                                                 @endforeach
                                             </flux:select>
-                                        </td>
-                                        <td class="w-1/5 px-6 py-4">
+                                        </div>
+                                    </td>
+                                    <td class="w-1/5 px-6 py-4 align-top">
+                                        <div class="space-y-1">
                                             <div class="relative">
                                                 <flux:input
                                                     type="number"
@@ -300,8 +331,10 @@ new class extends Component {
                                                     </x-slot>
                                                 </flux:input>
                                             </div>
-                                        </td>
-                                        <td class="w-1/5 px-6 py-4">
+                                        </div>
+                                    </td>
+                                    <td class="w-1/5 px-6 py-4 align-top">
+                                        <div class="space-y-1">
                                             <div class="relative">
                                                 <flux:input
                                                     type="number"
@@ -316,8 +349,10 @@ new class extends Component {
                                                     </x-slot>
                                                 </flux:input>
                                             </div>
-                                        </td>
-                                        <td class="w-1/5 px-6 py-4">
+                                        </div>
+                                    </td>
+                                    <td class="w-1/5 px-6 py-4 align-top">
+                                        <div class="space-y-1">
                                             <div class="relative">
                                                 <flux:input
                                                     type="number"
@@ -331,21 +366,26 @@ new class extends Component {
                                                     </x-slot>
                                                 </flux:input>
                                             </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            @if ($index > 0)
-                                                <button type="button" wire:click="removeItem({{ $index }})"
-                                                    class="invisible group-hover:visible inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:text-white hover:bg-red-600 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                                    <ns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                                                        viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd"
-                                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                                            clip-rule="evenodd" />
-                                                    </svg>
-                                                </button>
-                                            @endif
-                                        </td>
-                                    </tr>
+                                            
+                                            @error("items.{$index}.total_price")
+                                                <div class="text-red-600 text-xs mt-1">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 align-top">
+                                        @if ($index > 0)
+                                            <button type="button" wire:click="removeItem({{ $index }})"
+                                                class="invisible group-hover:visible inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:text-white hover:bg-red-600 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        @endif
+                                    </td>
+                                </tr>
                                 @endforeach
                             </tbody>
                         </table>
@@ -441,8 +481,11 @@ new class extends Component {
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Valid Until
                         </label>
-                        <input wire:model="valid_until" id="valid_until" type="date"
-                            class="w-full rounded border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none dark:border-gray-600">
+                        <flux:input
+                            type="date"
+                            wire:model="valid_until"
+                        >
+                        </flux:input>   
                     </div>
 
                     <div class="mb-4 md:col-span-3">
@@ -458,7 +501,7 @@ new class extends Component {
 
             </div>
             <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-1 sm:flex sm:flex-row-reverse sm:px-8">
-                <flux:button variant="primary" wire:click="save">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
+                <flux:button type="submit" variant="primary">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
                 <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
             </div>
         </form>
