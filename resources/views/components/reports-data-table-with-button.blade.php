@@ -61,7 +61,7 @@
     
     <div class="mt-6 text-right">
         <a href="{{ route('agingreports') }}"
-           class="inline-flex items-center px-4 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[#006499] dark:bg-indigo-500 dark:hover:bg-indigo-600">
+           class="inline-flex items-center font-medium px-4 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[#006499] dark:bg-indigo-500 dark:hover:bg-indigo-600">
             {{ $buttonLabel }}
         </a>
     </div>

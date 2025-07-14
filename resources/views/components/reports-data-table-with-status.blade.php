@@ -21,7 +21,7 @@
 
     <div class="overflow-auto rounded-sm dark:border-zinc-700">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
-            <thead class="{{ $headerBackgroundColor }} text-black text-left text-sm">
+            <thead class="{{ $headerBackgroundColor }}  text-black text-left text-sm">
                 <tr>
                     @foreach ($headers as $header)
                         <th class="px-4 py-2 font-semibold whitespace-nowrap border-b-1">{{ $header }}</th>
