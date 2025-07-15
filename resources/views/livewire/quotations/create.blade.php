@@ -71,7 +71,7 @@ new class extends Component {
 
         $total = $baseTotal + ($baseTotal * ($tax / 100)) - $discount;
 
-        $this->total_amount = number_format($total, 2, '.', '');
+        $this->total_amount = floatval(sprintf('%.2f', $total));
     }
 
     public function rules()

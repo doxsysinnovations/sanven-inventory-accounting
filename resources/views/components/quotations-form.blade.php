@@ -231,6 +231,7 @@
                         wire:model.live="tax"
                         placeholder="0.00"
                         :iconLeading="false"
+                        step="0.01" min="0"
                         id="tax"
                     >
                         <x-slot name="iconTrailing">
@@ -248,6 +249,7 @@
                         type="number"
                         wire:model.live="discount"
                         placeholder="0.00"
+                        step="0.01" min="0"
                         id="discount"
                     >
                     </flux:input>
@@ -262,6 +264,7 @@
                         type="number"
                         wire:model.live="total_amount"
                         placeholder="0.00"
+                        step="0.01" min="0"
                         id="total_amount"
                     >
                         <x-slot name="iconLeading">
