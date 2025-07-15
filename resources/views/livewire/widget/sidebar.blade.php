@@ -57,7 +57,7 @@ new class extends Component {
                     [
                         'icon' => 'bolt',
                         'route' => 'quotations',
-                        'label' => 'Quotations',
+                        'label' => 'Quotations List',
                         'permission' => 'quotations.view',
                     ],
 
