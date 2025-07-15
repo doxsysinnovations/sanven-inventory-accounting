@@ -22,7 +22,7 @@
                 <tr>
                     @foreach ($headers as $header)
                         <th class="px-4 py-2 font-semibold whitespace-nowrap border-b-1">{{ $header }}</th>
-                    @endforeach
+                    @endforeachgi
                 </tr>
             </thead>
            <tbody class="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
@@ -61,7 +61,7 @@
     
     <div class="mt-6 text-right">
         <a href="{{ route('agingreports') }}"
-           class="inline-flex items-center font-medium px-4 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[#006499] dark:bg-indigo-500 dark:hover:bg-indigo-600">
+           class="inline-flex items-center font-medium px-4 py-2 bg-(--color-accent) text-white rounded hover:bg-(--color-accent-alt) dark:bg-indigo-500 dark:hover:bg-indigo-600">
             {{ $buttonLabel }}
         </a>
     </div>

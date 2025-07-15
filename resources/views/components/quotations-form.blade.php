@@ -11,14 +11,13 @@
 
 <div>
     <form wire:submit.prevent="save">
-        <div class="bg-gray-50 p-6 flex items-center">
+        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
             <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
                 {{ $isEditing ? 'Edit Quotation' : 'Create New Quotation' }}
             </h3>
         </div>
         
         <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-6 sm:p-8 sm:pb-8">
-       
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="mb-4">
                     @if($isEditing)
@@ -150,14 +149,14 @@
                                         </div>
                                         
                                         @error("items.{$index}.total_price")
-                                            <div class="text-red-600 text-xs mt-1">{{ $message }}</div>
+                                            <div class="text-(--color-accent-2) text-xs mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 align-top">
                                     @if ($index > 0)
                                         <button type="button" wire:click="removeItem({{ $index }})"
-                                            class="invisible group-hover:visible inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:text-white hover:bg-red-600 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                            class="invisible group-hover:visible inline-flex items-center justify-center w-8 h-8 rounded-full text-(--color-accent-2) hover:text-white hover:bg-(--color-accent-2) transition-all focus:outline-none focus:ring-2 focus:ring-(--color-accent-2) focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
                                                 viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd"
@@ -281,7 +280,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-1 sm:flex sm:flex-row-reverse sm:px-8">
+        <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-1 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-lg">
             <flux:button type="submit" variant="primary">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
         </div>

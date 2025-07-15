@@ -27,8 +27,10 @@
     --color-red-1: #d86b59;
     --color-red-2: #c26353;
     --color-blue: #057bba;
+    --color-blue: #006499;
 
     --color-accent: var(--color-blue);
+    --color-accent-alt: var(--color-blue);
     --color-accent-2: var(--color-red-1);
     --color-accent-2-alt: var(--color-red-2);
     --color-accent-content: var(--color-white);
