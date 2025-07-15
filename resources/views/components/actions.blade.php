@@ -20,7 +20,7 @@
     ];
 @endphp
 
-<div class="flex items-center">
+<div class="flex items-center justify-center">
     @if ($viewAbility && $viewRoute)
         @can($viewAbility)
         <div>

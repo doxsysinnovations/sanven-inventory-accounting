@@ -149,7 +149,7 @@ new class extends Component {
             </svg>
         </x-stat-card>
         <x-stat-card :value="$totalProducts" label="Total Products" cardColor="bg-white" iconColor="text-white
-            text-white" iconBackgroundColor="bg-[var(--color-accent-2)]">
+            text-white" iconBackgroundColor="bg-[var(--color-accent)]">
             <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"

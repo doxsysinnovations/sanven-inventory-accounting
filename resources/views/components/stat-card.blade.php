@@ -6,7 +6,7 @@
     'iconBackgroundColor' => 'bg-[#358DBE]',
 ])
 
-<div class="relative p-6 {{ $cardColor }} rounded-xl text-gray-900 dark:bg-gray-800 dark:text-white overflow-hidden">
+<div class="relative p-6 {{ $cardColor }} rounded-md shadow-sm text-gray-900 dark:bg-gray-800 dark:text-white overflow-hidden">
     <div class="flex items-center gap-4 z-10 relative">
         @if (trim($slot))
             <div class="rounded-sm p-3 {{ $iconColor }} {{ $iconBackgroundColor }}">
