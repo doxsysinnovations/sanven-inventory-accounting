@@ -16,12 +16,20 @@ new class extends Component {
     public $quotation;
     public $confirmingDelete = false;
     public $quotationToDelete;
+    public $perPage = 5;
 
     public function mount()
     {
         $this->customers = Customer::all();
         $this->agents = Agent::all();
         $this->products = Product::all();
+        $this->perPage = session('perPage', 5);
+    }
+
+    public function updatedPerPage($value)
+    {
+        session(['perPage' => $value]);
+        $this->resetPage();
     }
 
     public function confirmDelete($quotationId)
@@ -58,7 +66,7 @@ new class extends Component {
                 });
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate($this->perPage);
     }
 };
 ?>
@@ -69,6 +77,10 @@ new class extends Component {
         :items="$quotations"
         searchPlaceholder="Search Quotations..."
         message="No quotations available."
+        :perPage="$perPage"
+        createButtonLabel="Create Quotations"
+        createButtonAbility="quotations.create"
+        createButtonRoute="quotations.create"
     >
          <x-list-table
             :headers="['Quotation #', 'Customer', 'Amount', 'Status', 'Valid Until', 'Actions']"

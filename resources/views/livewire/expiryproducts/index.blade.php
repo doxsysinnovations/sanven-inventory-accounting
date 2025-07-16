@@ -20,11 +20,11 @@ new class extends Component {
     public $brand = '';
     public $unit = '';
     public $productType = '';
-    public $perPage = 10;
+    public $perPage = 5;
 
     public function mount()
     {
-        $this->perPage = session('perPage', 10);
+        $this->perPage = session('perPage', 5);
     }
 
     public function updatedPerPage($value)
@@ -115,6 +115,13 @@ new class extends Component {
         :items="$stocks"
         searchPlaceholder="Search Expiry Products..."
         message="No stocks available."
+        createButtonLabel="Add / Receive Stock"
+        createButtonAbility="products.create"
+        createButtonRoute="stocks.create"
+        showNewCreateButtonIfEmpty="true"
+        createButtonLabelIfEmpty="Add Product"
+        createButtonAbilityIfEmpty="products.create"
+        createButtonRoute="stocks.create"
     >
         <x-slot:emptyIcon>
             <svg class="w-48 h-48 mb-2 text-gray-300 dark:text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
@@ -157,6 +164,7 @@ new class extends Component {
             editRoute="products.edit"
             deleteAbility="products.delete"
             deleteAction="confirmDelete"
+            
         />
     </x-view-layout>
 
