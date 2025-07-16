@@ -24,17 +24,24 @@
     --color-zinc-800: #262626;
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
+
     --color-red-1: #e7000b;
     --color-red-2: #c26353;
     --color-red-3: #ffeae8;
+
     --color-blue: #057bba;
     --color-blue-2: #006499;
 
+    --color-yellow-100: #fef9c2;
+    --color-yellow-400: #fcc800;
+
     --color-accent: var(--color-blue);
     --color-accent-alt: var(--color-blue-2);
+
     --color-accent-2: var(--color-red-1);
     --color-accent-2-alt: var(--color-red-2);
     --color-accent-2-muted: var(--color-red-3);
+
     --color-accent-content: var(--color-white);
     --color-accent-foreground: var(--color-white);
 }
