@@ -106,6 +106,7 @@
                                                 placeholder="Qty"
                                                 :iconTrailing="false"
                                                 min="1"
+                                                :label="__('')"
                                             >
                                                 <x-slot name="iconTrailing">
                                                     <span class="text-gray-400 text-xs dark:text-zinc-400">units</span>
@@ -124,6 +125,7 @@
                                                 :iconLeading="false"
                                                 step="0.01" 
                                                 min="0"
+                                                :label="__('')"
                                             >
                                                 <x-slot name="iconLeading">
                                                     <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
@@ -187,12 +189,8 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="mb-4">
-                    <label for="agent_id"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Agent
-                    </label>
                     <flux:select
-                        wire:model="agent_id" id="agent_id"
+                        wire:model="agent_id" id="agent_id" :label="__('Agent')"
                     >
                         <flux:select.option value="">Select Agent...</flux:select.option>
                     
@@ -207,13 +205,10 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="valid_until"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Valid Until
-                    </label>
                     <flux:input
                         type="date"
                         wire:model="valid_until"
+                        :label="__('Valid Until')"
                     >
                     </flux:input>   
                 </div>
@@ -222,10 +217,6 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 <div class="mb-4">
-                    <label for="tax"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Tax (%)
-                    </label>
                     <flux:input
                         type="number"
                         wire:model.live="tax"
@@ -233,6 +224,7 @@
                         :iconLeading="false"
                         step="0.01" min="0"
                         id="tax"
+                        :label="__('Tax (%)')"
                     >
                         <x-slot name="iconTrailing">
                             <span class="text-sm text-zinc-500 dark:text-zinc-400">%</span>
@@ -241,31 +233,25 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="discount"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Discount
-                    </label>
                     <flux:input
                         type="number"
                         wire:model.live="discount"
                         placeholder="0.00"
                         step="0.01" min="0"
                         id="discount"
+                        :label="__('Discount')"
                     >
                     </flux:input>
                 </div>
 
                 <div class="mb-4">
-                    <label for="total_amount"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Total Amount
-                    </label>
                     <flux:input
                         type="number"
                         wire:model.live="total_amount"
                         placeholder="0.00"
                         step="0.01" min="0"
                         id="total_amount"
+                        :label="__('Total Amount')"
                     >
                         <x-slot name="iconLeading">
                             <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
@@ -283,7 +269,8 @@
                 </div>
             </div>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-1 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-lg">
+        
+        <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-2 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-lg">
             <flux:button type="submit" variant="primary">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
         </div>
