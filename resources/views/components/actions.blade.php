@@ -10,9 +10,11 @@
 
 @php
     $actionClasses = [
-        'view' => 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200',
-        'edit' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
+        'view' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
                 text-(--color-accent) hover:text-white hover:bg-(--color-accent)
+                focus:outline-none focus:ring-2 focus:ring-(--color-accent) focus:ring-offset-2 dark:focus:ring-offset-gray-900',
+        'edit' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
+                text-(--color-yellow-400) hover:text-white hover:bg-(--color-yellow-400)
                 focus:outline-none focus:ring-2 focus:ring-(--color-accent) focus:ring-offset-2 dark:focus:ring-offset-gray-900',
         'delete' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
                 text-(--color-accent-2) hover:text-white hover:bg-(--color-accent-2)
@@ -20,20 +22,18 @@
     ];
 @endphp
 
-<div class="flex items-center justify-center">
+<div class="flex items-center justify-center gap-x-0.5">
     @if ($viewAbility && $viewRoute)
         @can($viewAbility)
-        <div>
+        <div class="mt-0.5">
             <a href="{{ route($viewRoute, $model->id) }}" class="{{ $actionClasses['view'] }}">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                <svg  xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" d="M4.998 7.78C6.729 6.345 9.198 5 12 5c2.802 0 5.27 1.345 7.002 2.78a12.713 12.713 0 0 1 2.096 2.183c.253.344.465.682.618.997.14.286.284.658.284 1.04s-.145.754-.284 1.04a6.6 6.6 0 0 1-.618.997 12.712 12.712 0 0 1-2.096 2.183C17.271 17.655 14.802 19 12 19c-2.802 0-5.27-1.345-7.002-2.78a12.712 12.712 0 0 1-2.096-2.183 6.6 6.6 0 0 1-.618-.997C2.144 12.754 2 12.382 2 12s.145-.754.284-1.04c.153-.315.365-.653.618-.997A12.714 12.714 0 0 1 4.998 7.78ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd"/>
                 </svg>
             </a>
         </div>
         @endcan
     @endif
-
     @if ($editAbility && $editRoute)
         @can($editAbility)
         <div>
