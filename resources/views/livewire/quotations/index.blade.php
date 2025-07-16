@@ -13,35 +13,18 @@ new class extends Component {
     use WithPagination;
 
     public $search = '';
-    public $showModal = false;
     public $quotation;
-    public $isEditing = false;
     public $confirmingDelete = false;
     public $quotationToDelete;
-
-    // Form fields
-    public $quotation_number = '';
-    public $customer_id = null;
-    public $agent_id = null;
-    public $total_amount = 0;
-    public $tax = 0;
-    public $discount = 0;
-    public $notes = '';
-    public $status = 'draft';
-    public $valid_until = '';
-
-    // Items fields
-    public $items = [];
-    public $products = [];
-
-    public $customers = [];
-    public $agents = [];
+    public $perPage = 5;
 
     public function mount()
     {
         $this->customers = Customer::all();
         $this->agents = Agent::all();
         $this->products = Product::all();
+        $this->perPage = session('perPage', 5);
+    }
         $this->valid_until = now()->addDays(30)->format('Y-m-d');
         $this->addItem();
     }
@@ -64,72 +47,10 @@ new class extends Component {
         $this->calculateTotal();
     }
 
-    public function calculateTotal()
+    public function updatedPerPage($value)
     {
-        $this->total_amount = collect($this->items)->sum('total_price');
-        $this->total_amount = $this->total_amount + $this->total_amount * ($this->tax / 100) - $this->discount;
-    }
-
-    public function rules()
-    {
-        return [
-            'quotation_number' => $this->isEditing ? 'required|string|unique:quotations,quotation_number,' . $this->quotation->id : 'required|string|unique:quotations,quotation_number',
-            'customer_id' => 'nullable|exists:customers,id',
-            'agent_id' => 'nullable|exists:agents,id',
-            'total_amount' => 'required|numeric|min:0',
-            'tax' => 'required|numeric|min:0',
-            'discount' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
-            'status' => 'required|in:draft,sent,accepted,rejected',
-            'valid_until' => 'required|date|after_or_equal:today',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.total_price' => 'required|numeric|min:0',
-            'items.*.description' => 'nullable|string',
-        ];
-    }
-
-    public function generateQuotationNumber()
-    {
-        $this->quotation_number = 'QUO-' . strtoupper(Str::random(8)) . '-' . date('Ymd');
-    }
-
-    public function create()
-    {
-        $this->resetForm();
-        $this->isEditing = false;
-        $this->generateQuotationNumber();
-        $this->showModal = true;
-    }
-
-    public function edit(Quotation $quotation)
-    {
-        $this->resetValidation();
-        $this->quotation = $quotation;
-        $this->quotation_number = $quotation->quotation_number;
-        $this->customer_id = $quotation->customer_id;
-        $this->agent_id = $quotation->agent_id;
-        $this->total_amount = $quotation->total_amount;
-        $this->tax = $quotation->tax;
-        $this->discount = $quotation->discount;
-        $this->notes = $quotation->notes;
-        $this->status = $quotation->status;
-        $this->valid_until = \Carbon\Carbon::parse($quotation->valid_until)->format('Y-m-d');
-        $this->items = $quotation->items
-            ->map(function ($item) {
-                return [
-                    'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'total_price' => $item->total_price,
-                    'description' => $item->description,
-                ];
-            })
-            ->toArray();
-        $this->isEditing = true;
-        $this->showModal = true;
+        session(['perPage' => $value]);
+        $this->resetPage();
     }
 
     public function confirmDelete($quotationId)
@@ -149,71 +70,6 @@ new class extends Component {
         $this->quotationToDelete = null;
     }
 
-    public function updatedItems($value, $key)
-    {
-        $index = explode('.', $key)[0];
-        $field = explode('.', $key)[1];
-
-        if ($field === 'product_id') {
-            $product = Product::find($value);
-            if ($product) {
-                $this->items[$index]['unit_price'] = $product->selling_price; // Changed from price to selling_price
-                $this->items[$index]['description'] = $product->description;
-                // Auto-calculate total when product changes
-                $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
-            }
-        }
-
-        if ($field === 'quantity' || $field === 'unit_price') {
-            $this->items[$index]['total_price'] = floatval($this->items[$index]['quantity']) * floatval($this->items[$index]['unit_price']);
-        }
-
-        $this->calculateTotal();
-    }
-
-    public function save()
-    {
-        $this->validate();
-
-        $data = [
-            'quotation_number' => $this->quotation_number,
-            'customer_id' => $this->customer_id,
-            'agent_id' => $this->agent_id,
-            'total_amount' => $this->total_amount,
-            'tax' => $this->tax,
-            'discount' => $this->discount,
-            'notes' => $this->notes,
-            'status' => $this->status,
-            'valid_until' => $this->valid_until,
-        ];
-
-        if ($this->isEditing) {
-            $this->quotation->update($data);
-            $this->quotation->items()->delete();
-            foreach ($this->items as $item) {
-                $this->quotation->items()->create($item);
-            }
-            flash()->success('Quotation updated successfully!');
-        } else {
-            $quotation = Quotation::create($data);
-            foreach ($this->items as $item) {
-                $quotation->items()->create($item);
-            }
-            flash()->success('Quotation created successfully!');
-        }
-
-        $this->showModal = false;
-        $this->resetForm();
-    }
-
-    private function resetForm()
-    {
-        $this->reset(['quotation_number', 'customer_id', 'agent_id', 'total_amount', 'tax', 'discount', 'notes', 'status', 'valid_until', 'quotation', 'items']);
-        $this->resetValidation();
-        $this->addItem();
-    }
-
-    #[Title('Quotations')]
     public function with(): array
     {
         return [
@@ -231,7 +87,7 @@ new class extends Component {
                 });
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate($this->perPage);
     }
 
     public function print($quotationId)
@@ -249,6 +105,33 @@ new class extends Component {
 ?>
 
 <div>
+    <x-view-layout
+        title="Quotation List"
+        :items="$quotations"
+        searchPlaceholder="Search Quotations..."
+        message="No quotations available."
+        :perPage="$perPage"
+        createButtonLabel="Create Quotations"
+        createButtonAbility="quotations.create"
+        createButtonRoute="quotations.create"
+    >
+         <x-list-table
+            :headers="['Quotation #', 'Customer', 'Amount', 'Status', 'Valid Until', 'Actions']"
+            :rows="$quotations->map(fn($quotation) => [
+                $quotation->quotation_number,
+                $quotation->customer->name ?? 'N/A',
+                number_format($quotation->total_amount, 2),
+                $quotation->status,
+                \Carbon\Carbon::parse($quotation->valid_until)->format('M d, Y'),
+                'actions-placeholder',
+                '__model' => $quotation
+            ])"
+            editAbility="quotations.edit"
+            editRoute="quotations.edit"
+            deleteAbility="quotations.delete"
+            deleteAction="confirmDelete"
+        />
+    </x-view-layout>
     <div class="mb-4">
         <nav class="flex justify-end" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -610,39 +493,10 @@ new class extends Component {
     @endif
 
     @if ($confirmingDelete)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
-                </div>
-                <div
-                    class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Quotation
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this quotation? This action cannot be undone.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button wire:click="delete"
-                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400 sm:ml-3 sm:w-auto sm:text-sm">
-                            Delete
-                        </button>
-                        <button wire:click="$set('confirmingDelete', false)"
-                            class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-delete-modal
+            title="Delete Quotation"
+            message="Are you sure you want to delete this quotation? This action cannot be undone."
+            onCancel="$set('confirmingDelete', false)"
+        />
     @endif
 </div>

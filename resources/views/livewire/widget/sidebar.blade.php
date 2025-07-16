@@ -31,24 +31,48 @@ new class extends Component {
                         'permission' => 'invoicing.view',
                     ],
                     [
-                        'icon' => 'document-text',
-                        'route' => 'quotations',
-                        'label' => 'Quotations',
-                        'permission' => 'quotations.view',
-                    ],
-                    [
                         'icon' => 'user-group',
                         'route' => 'agents',
                         'label' => 'Agents',
                         'permission' => 'agents.view',
                     ],
-                    [
-                        'icon' => 'user-group',
-                        'route' => 'customers',
-                        'label' => 'Customers',
-                        'permission' => 'customers.view',
+                ]
+            ],
+            [
+                'heading' => 'Customer Management',
+                'items' =>  [
+                        [
+                            'icon' => 'user-plus',
+                            'route' => 'customers.create',
+                            'label' => 'Add Customers',
+                            'permission' => 'customers.create',
+                        ],
+                        [
+                            'icon' => 'user-group',
+                            'route' => 'customers',
+                            'label' => 'Customers',
+                            'permission' => 'customers.create',
+                        ]
                     ],
-                ],
+            ],
+            [
+                'heading' => 'Quotations Management',
+                'permission' => 'products.view',
+                'items' => [
+                    [
+                        'icon' => 'plus',
+                        'route' => 'quotations.create',
+                        'label' => 'Create Quotations',
+                        'permission' => 'quotations.create',
+                    ],
+                    [
+                        'icon' => 'bolt',
+                        'route' => 'quotations',
+                        'label' => 'Quotations List',
+                        'permission' => 'quotations.view',
+                    ],
+
+                ]
             ],
             [
                 'heading' => 'Stock Management',
@@ -78,12 +102,6 @@ new class extends Component {
                 'heading' => 'Products Management',
                 'permission' => 'products.view',
                 'items' => [
-                    [
-                        'icon' => 'bolt',
-                        'route' => 'products',
-                        'label' => 'Products',
-                        'permission' => 'products.view',
-                    ],
                     [
                         'icon' => 'plus',
                         'route' => 'products.create',
