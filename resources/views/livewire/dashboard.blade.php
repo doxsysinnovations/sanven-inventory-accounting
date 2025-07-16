@@ -256,6 +256,7 @@ new class extends Component {
                 '₱' . number_format($report->total_amount, 2),
                 $report->status,
             ])"
+            route="agingreports"
         />
 
         <!-- Top Customers / Top Suppliers -->
@@ -271,8 +272,9 @@ new class extends Component {
                     $supplier->delivery_count,
                     $i + 1
                 ])"
-                emptyMessage="No suppliers found for the month of {{ $currentMonth }}"
-                buttonLabel="All Customers"
+                emptyMessage="No suppliers found for the month of {{ $currentMonth }}."
+                buttonLabel="All Suppliers"
+                route="suppliers"
             />
 
             <!-- Top Customers by Total Spent -->
@@ -288,13 +290,18 @@ new class extends Component {
                 ])"
                 emptyMessage="No suppliers found for the month of {{ $currentMonth }}"
                 buttonLabel="All Customers"
+                route="customers"
             />
 
             <!-- Monthly Sales -->
             <div class="md:row-span-2 md:col-start-2">
                 <div
-                    class="relative h-full overflow-hidden rounded-xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Monthly Sales</h3>
+                    class="relative h-full overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
+                    
+                    <div class="p-4 bg-gray-50">
+                         <h3 class="text-lg font-semibold text-(--color-accent) dark:text-gray-100">Monthly Sales</h3>
+                    </div>
+
                     <div id="monthlySales" class="w-full h-full"></div>
                 </div>
             </div>
@@ -303,46 +310,48 @@ new class extends Component {
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Invoice Status -->
-            <div
-            class="relative overflow-hidden rounded-xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Invoice Status</h3>
-            <div class="flex flex-col items-center">
-                <div id="invoiceStatusChart" class="-mb-5" style="width: 100%; height: 300px;"></div>
-                <div class="flex flex-row gap-5 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-3 h-3 rounded-full bg-green-400"></span>
-                        <span class="text-gray-700 dark:text-gray-300">Paid:
-                            {{ $invoiceStatusCounts['paid']['percent'] }}%</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-3 h-3 rounded-full bg-yellow-400"></span>
-                        <span class="text-gray-700 dark:text-gray-300">Pending:
-                            {{ $invoiceStatusCounts['pending']['percent'] }}%</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-3 h-3 rounded-full bg-[var(--color-accent-2)]"></span>
-                        <span class="text-gray-700 dark:text-gray-300">Overdue:
-                            {{ $invoiceStatusCounts['overdue']['percent'] }}%</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-3 h-3 rounded-full bg-orange-400"></span>
-                        <span class="text-gray-700 dark:text-gray-300">Cancelled:
-                            {{ $invoiceStatusCounts['cancelled']['percent'] }}%</span>
+        <div class="relative overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
+                <div class="mb-4 p-4 bg-gray-50">
+                        <h3 class="text-lg font-semibold text-(--color-accent) dark:text-gray-100">Invoice Status</h3>
+                </div>
+                <div class="flex flex-col items-center pb-6">
+                    <div id="invoiceStatusChart" class="-mb-5 p-6" style="width: 100%; height: 300px;"></div>
+                    <div class="flex flex-row gap-5 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-green-400"></span>
+                            <span class="text-gray-700 dark:text-gray-300">Paid:
+                                {{ $invoiceStatusCounts['paid']['percent'] }}%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-(--color-yellow-400)"></span>
+                            <span class="text-gray-700 dark:text-gray-300">Pending:
+                                {{ $invoiceStatusCounts['pending']['percent'] }}%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-[var(--color-accent-2)]"></span>
+                            <span class="text-gray-700 dark:text-gray-300">Overdue:
+                                {{ $invoiceStatusCounts['overdue']['percent'] }}%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-orange-400"></span>
+                            <span class="text-gray-700 dark:text-gray-300">Cancelled:
+                                {{ $invoiceStatusCounts['cancelled']['percent'] }}%</span>
+                        </div>
                     </div>
                 </div>
-            </div>
         </div>
 
         <!-- Expiring Products Soon -->
-        <div
-            class="relative overflow-hidden rounded-xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Expiring Products Soon</h3>
+        <div class="relative overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
+           <div class="mb-4 p-4 bg-gray-50">
+                <h3 class="text-lg font-semibold text-(--color-accent) dark:text-gray-100">Expiring Products Soon</h3>
+            </div>
             @if(count($chartData) <= 1)
-                <div class="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
+                <div class="p-6 text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
                     No products expiring within 7 days.
                 </div>
             @else
-                <div id="expiringChart" style="width: 100%; height: 320px;"></div>
+                <div class="p-6" id="expiringChart" style="width: 100%; height: 320px;"></div>
             @endif
         </div>
     </div>
@@ -460,12 +469,13 @@ new class extends Component {
 
         try {
             const accentColor = getCSSVariable('--color-accent-2') || '#ef4444';
+            const yellowColor = getCSSVariable('--color-yellow-400') || '#fcc800';
             const fontSans = getCSSVariable('--font-sans') || 'system-ui';
             const isDark = document.documentElement.classList.contains('dark');
             
             charts.invoiceStatus = echarts.init(chartDom);
 
-            // Get data from PHP variables (these should be available in the global scope)
+            // Get data from PHP variables
             const invoiceData = window.invoiceStatusData || {
                 paid: {{ $invoiceStatusCounts['paid']['count'] ?? 0 }},
                 pending: {{ $invoiceStatusCounts['pending']['count'] ?? 0 }},
@@ -478,7 +488,7 @@ new class extends Component {
 
             const colours = {
                 paid: '#4ade80',
-                pending: '#facc15',
+                pending: yellowColor,
                 overdue: accentColor,
                 cancelled: '#fb923c'
             };
@@ -586,7 +596,7 @@ new class extends Component {
                     text: ['Expiring in 7 days', 'Expiring Soon'],
                     dimension: 0,
                     inRange: {
-                        color: ['#FF4C4C', '#FFD700', '#65B581']
+                        color: ['#e7000b', '#FFD700', '#65B581']
                     },
                     textStyle: {
                         color: isDark ? '#fff' : '#222'
