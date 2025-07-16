@@ -36,13 +36,24 @@ new class extends Component {
                         'label' => 'Agents',
                         'permission' => 'agents.view',
                     ],
-                    [
-                        'icon' => 'user-group',
-                        'route' => 'customers',
-                        'label' => 'Customers',
-                        'permission' => 'customers.view',
+                ]
+            ],
+            [
+                'heading' => 'Customer Management',
+                'items' =>  [
+                        [
+                            'icon' => 'user-plus',
+                            'route' => 'customers.create',
+                            'label' => 'Add Customers',
+                            'permission' => 'customers.create',
+                        ],
+                        [
+                            'icon' => 'user-group',
+                            'route' => 'customers',
+                            'label' => 'Customers',
+                            'permission' => 'customers.create',
+                        ]
                     ],
-                ],
             ],
             [
                 'heading' => 'Quotations Management',
