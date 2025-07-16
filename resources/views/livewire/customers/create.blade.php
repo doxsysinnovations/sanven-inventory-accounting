@@ -53,17 +53,6 @@ new class extends Component {
         $this->isEditing = false;
     }
 
-    public function edit(Customer $customer)
-    {
-        $this->resetValidation();
-        $this->customer = $customer;
-        $this->name = $customer->name;
-        $this->email = $customer->email;
-        $this->phone = $customer->phone;
-        $this->address = $customer->address;
-        $this->isEditing = true;
-    }
-
     public function save()
     {
         $this->validate();
