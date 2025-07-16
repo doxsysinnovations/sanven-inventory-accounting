@@ -84,7 +84,7 @@ new class extends Component {
                     </div>
                 </div> 
                 <div>
-                    <a href="{{ route('customers.create') }}">
+                    <a href="{{ route('customers.edit') }}">
                         <flux:button variant="primary" icon="pencil">Edit Profile</flux:button>                                
                     </a>
                 </div>
