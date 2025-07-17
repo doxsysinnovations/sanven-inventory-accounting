@@ -32,18 +32,18 @@ new class extends Component {
     {
         return [
             'name.required' => 'Please enter the customer\'s name.',
-            'name.string' => 'The name should only contain letters and spaces.',
-            'name.max' => 'The name is too long. Please keep it under 255 characters.',
+            'name.string' => 'Name should only contain letters and spaces.',
+            'name.max' => 'Name is too long.',
 
-            'email.required' => 'Please enter an email address.',
-            'email.email' => 'Hmm... that doesn’t look like a valid email.',
-            'email.unique' => 'That email is already in use. Try another one.',
+            'email.required' => 'Please enter the customer\'s email address.',
+            'email.email' => 'That doesn’t look like a valid email. Please check it again.',
+            'email.unique' => 'This email is already being used by another customer.',
 
-            'phone.string' => 'The phone number must be plain text.',
-            'phone.max' => 'That phone number is too long.',
+            'phone.string' => 'Please enter a valid phone number.',
+            'phone.max' => 'The phone number is too long.',
 
-            'address.string' => 'The address should only contain letters, numbers, and symbols.',
-            'address.max' => 'The address is too long. Keep it under 255 characters.',
+            'address.string' => 'Please enter a valid address.',
+            'address.max' => 'The address is too long. Please shorten it.',
         ];
     }
 
