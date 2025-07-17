@@ -9,9 +9,7 @@ new class extends Component {
     use WithPagination;
 
     public $search = '';
-    public $showModal = false;
     public $supplier;
-    public $isEditing = false;
     public $confirmingDelete = false;
     public $supplierToDelete;
     public $name = '';
@@ -20,10 +18,18 @@ new class extends Component {
     public $email = '';
     public $trade_name = '';
     public $identification_number = '';
+    public $perPage = 5;
 
-    public $infoModal = false;
-    public $supplierInfo;
-    public $activeTab = 'basic';
+    public function mount()
+    {
+        $this->perPage = session('perPage', 5);
+    }
+
+    public function updatedPerPage($value)
+    {
+        session(['perPage' => $value]);
+        $this->resetPage();
+    }
 
     public function rules()
     {
@@ -35,63 +41,6 @@ new class extends Component {
             'address' => 'nullable|string|max:500',
             'email' => $this->isEditing ? 'nullable|email|unique:suppliers,email,' . $this->supplier->id : 'nullable|email|unique:suppliers,email',
         ];
-    }
-
-    public function create()
-    {
-        $this->resetForm();
-        $this->isEditing = false;
-        $this->showModal = true;
-    }
-
-    public function edit(Supplier $supplier)
-    {
-        $this->infoModal = false;
-        $this->resetValidation();
-        $this->supplier = $supplier;
-        $this->name = $supplier->name;
-        $this->trade_name = $supplier->trade_name;
-        $this->identification_number = $supplier->identification_number;
-        $this->contact_number = $supplier->contact_number;
-        $this->address = $supplier->address;
-        $this->email = $supplier->email;
-        $this->isEditing = true;
-        $this->showModal = true;
-    }
-
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-
-    public function save()
-    {
-        $this->validate();
-
-        if ($this->isEditing) {
-            $this->supplier->update([
-                'name' => $this->name,
-                'trade_name' => $this->trade_name,
-                'identification_number' => $this->identification_number,
-                'contact_number' => $this->contact_number,
-                'address' => $this->address,
-                'email' => $this->email,
-            ]);
-            flash()->success('Supplier updated successfully!');
-        } else {
-            Supplier::create([
-                'name' => $this->name,
-                'trade_name' => $this->trade_name,
-                'identification_number' => $this->identification_number,
-                'contact_number' => $this->contact_number,
-                'address' => $this->address,
-                'email' => $this->email,
-            ]);
-            flash()->success('Supplier created successfully!');
-        }
-
-        $this->showModal = false;
-        $this->resetForm();
     }
 
     public function confirmDelete($supplierId)
@@ -109,18 +58,6 @@ new class extends Component {
         }
         $this->confirmingDelete = false;
         $this->supplierToDelete = null;
-    }
-
-    private function resetForm()
-    {
-        $this->name = '';
-        $this->trade_name = '';
-        $this->identification_number = '';
-        $this->contact_number = '';
-        $this->address = '';
-        $this->email = '';
-        $this->supplier = null;
-        $this->resetValidation();
     }
 
     #[Title('Suppliers')]
@@ -145,346 +82,53 @@ new class extends Component {
             ->orWhere('name', 'like', '%' . $this->search . '%')
             ->orWhere('trade_name', 'like', '%' . $this->search . '%')
             ->orWhere('email', 'like', '%' . $this->search . '%')
-            ->paginate(10);
+            ->paginate($this->perPage);
     }
 };
 
 ?>
 
 <div>
-    <div class="mb-4">
-        <nav class="flex justify-end" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Suppliers</span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
-
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="flex items-center justify-between">
-            <div class="w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search suppliers..."
-                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600">
-            </div>
-        </div>
-        @if ($suppliers->isEmpty())
-            <div class="flex flex-col items-center justify-center p-8">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">No suppliers found</p>
-                @can('suppliers.create')
-                    <button wire:click="create"
-                        class="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white transition-all duration-200 ease-in-out hover:bg-green-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 active:bg-green-800 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="my-auto mr-2 h-5 w-5" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add Supplier
-                    </button>
-                @endcan
-            </div>
-        @else
-            <div class="flex justify-end">
-                @can('suppliers.create')
-                    <button wire:click="create"
-                        class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add Supplier
-                    </button>
-                @endcan
-
-            </div>
-            <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                ID</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Name</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Trade Name</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Contact Number</th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Email</th>
-                            {{-- <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Address</th> --}}
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                        @foreach ($suppliers as $supplier)
-                            <tr class="dark:hover:bg-gray-800" wire:key="supplier-{{ $supplier->id ?? uniqid() }}">
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->identification_number }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->trade_name }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                    {{ $supplier->contact_number }}</td>
-                                <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->email }}</td>
-                                {{-- <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $supplier->address }}</td> --}}
-                                <td class="whitespace-nowrap px-6 py-4 space-x-2">
-                                    @can('suppliers.info')
-                                        <button wire:click="info({{ $supplier->id }})"
-                                            class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                                            View
-                                        </button>
-                                    @endcan
-                                    @can('suppliers.edit')
-                                        <button wire:click="edit({{ $supplier->id }})"
-                                            class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
-                                    @endcan
-                                    @can('suppliers.delete')
-                                        <button wire:click="confirmDelete({{ $supplier->id }})"
-                                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-4">
-                {{ $suppliers->links() }}
-            </div>
-        @endif
-    </div>
-
-    @if ($showModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
-                </div>
-                <div
-                    class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <form wire:submit="save">
-                        <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-
-                            <div class="mb-4">
-                                <flux:input wire:model="name" :label="__('Name')" type="text"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="trade_name" :label="__('Trade Name')" type="text"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="identification_number" :label="__('Identification Number')"
-                                    type="text" class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="contact_number" :label="__('Contact Number')" type="text"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:input wire:model="email" :label="__('Email')" type="email"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                            <div class="mb-4">
-                                <flux:textarea wire:model="address" :label="__('Address')"
-                                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                            <flux:button type="submit" class="sm:ml-3 sm:w-auto sm:text-sm" variant="primary">
-                                {{ $isEditing ? 'Update' : 'Create' }}
-                            </flux:button>
-                            <button type="button" wire:click="$set('showModal', false)"
-                                class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    @if($infoModal && $supplierInfo)
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <!-- Background overlay -->
-                <div class="fixed inset-0 bg-gray-500 dark:bg-gray-800 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-
-                <!-- Modal content -->
-                <div class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle">
-                    <!-- Banner -->
-                    <div class="relative h-32 w-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800">
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <h3 class="text-xl font-bold text-white dark:text-gray-100">Supplier Profile</h3>
-                        </div>
-                    </div>
-
-                    <!-- Profile section -->
-                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="flex">
-                            <!-- Profile Picture -->
-                            <div class="relative -mt-16 mr-6">
-                                <div class="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                                    <svg class="h-full w-full text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Supplier name -->
-                            <div class="mt-2">
-                                <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                    {{ $supplierInfo->name }}
-                                </h3>
-                                <p class="text-gray-500 dark:text-gray-400">ID: {{ $supplierInfo->identification_number }}</p>
-                                <p class="text-gray-500 dark:text-gray-400">{{ $supplierInfo->trade_name }}</p>
-                            </div>
-                        </div>
-
-                        <!-- Tabs -->
-                        <div class="mt-6 border-b border-gray-200 dark:border-gray-700">
-                            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                                <button wire:click="$set('activeTab', 'basic')"
-                                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium {{ $activeTab === 'basic' ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
-                                    Basic Info
-                                </button>
-                                <button wire:click="$set('activeTab', 'contact')"
-                                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium {{ $activeTab === 'contact' ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
-                                    Contact Details
-                                </button>
-                            </nav>
-                        </div>
-
-                        <!-- Tab content -->
-                        <div class="mt-4">
-                            @if($activeTab === 'basic')
-                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $supplierInfo->name }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Trade Name</label>
-                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $supplierInfo->trade_name }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Identification Number</label>
-                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $supplierInfo->identification_number }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Created At</label>
-                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $supplierInfo->created_at?->format('M d, Y h:i A') ?? 'Not provided' }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @else
-                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
-                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $supplierInfo->email ?? 'Not provided' }}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Number</label>
-                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $supplierInfo->contact_number ?? 'Not provided' }}
-                                        </p>
-                                    </div>
-                                    <div class="sm:col-span-2">
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
-                                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $supplierInfo->address ?? 'Not provided' }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Modal footer -->
-                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="button" wire:click="$set('infoModal', false)"
-                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 sm:ml-3 sm:w-auto sm:text-sm">
-                            Close
-                        </button>
-                        @can('suppliers.edit')
-                            <button wire:click="edit({{ $supplierInfo->id }})" type="button"
-                                class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                Edit Supplier
-                            </button>
-                        @endcan
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+    <x-view-layout
+        title="Suppliers"
+        :items="$suppliers"
+        :perPage="$perPage"
+        searchPlaceholder="Search Suppliers..."
+        message="No exisiting suppliers."
+        createButtonLabel="Add Suppliers"
+        createButtonAbility="suppliers.create"
+        createButtonRoute="suppliers.create"
+    >
+        <x-slot:emptyIcon>
+            <svg class="w-48 h-48 mb-2 text-gray-300 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+            </svg>
+        </x-slot:emptyIcon>
+        <x-list-table
+            :headers="['ID', 'Name', 'Trade Name', 'Contact Number', 'Email', 'Actions']"
+            :rows="$suppliers->map(fn($supplier) => [
+                $supplier->identification_number,
+                $supplier->name,
+                !empty($supplier->trade_name) ? $supplier->trade_name : 'No trade number available.',
+                !empty($supplier->contact_number) ?  $supplier->contact_number : 'No contact number available.',
+                !empty($supplier->email) ?  $supplier->email : 'No email available.',
+                '__model' => $supplier
+            ])"
+            viewAbility="suppliers.view"
+            viewRoute="suppliers.view"
+            editAbility="suppliers.edit"
+            editParameter="supplier"
+            editRoute="suppliers.edit"
+            deleteAbility="suppliers.delete"
+            deleteAction="confirmDelete"
+        />
+    </x-view-layout>
 
     @if ($confirmingDelete)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
-                </div>
-                <div
-                    class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Supplier
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this supplier? This action cannot be undone.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button wire:click="delete"
-                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400 sm:ml-3 sm:w-auto sm:text-sm">
-                            Delete
-                        </button>
-                        <button wire:click="$set('confirmingDelete', false)"
-                            class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-delete-modal 
+            title="Delete Supplier"
+            message="Are you sure you want to delete this supplier? This action cannot be undone."
+            onCancel="$set('confirmingDelete', false)"
+        />
     @endif
 </div>
