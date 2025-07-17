@@ -61,6 +61,9 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Suppliers
     Volt::route('suppliers', 'suppliers.index')->name('suppliers');
+    Volt::route('suppliers/create', 'suppliers.create')->name('suppliers.create');
+    Volt::route('suppliers/edit/{supplier}', 'suppliers.edit')->name('suppliers.edit');
+    Volt::route('suppliers/view/{id}', 'suppliers.view')->name('suppliers.view');
 
     //Aging
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
@@ -84,6 +87,9 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Agents
     Volt::route('agents', 'agents.index')->name('agents');
+    Volt::route('agents/create', 'agents.create')->name('agents.create');
+    Volt::route('agents/view/{id}', 'agents.view')->name('agents.view');
+    Volt::route('agents/edit/{agent}', 'agents.edit')->name('agents.edit');
 
     //Customers
     Volt::route('customers', 'customers.index')->name('customers');
@@ -99,9 +105,6 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('invoicing/create', 'invoicing.create')->name('invoicing.create');
     Volt::route('invoicing/show', 'invoicing.create')->name('invoicing.show');
     Volt::route('invoicing/{id}/edit', 'invoicing.edit')->name('invoicing.edit');
-
-
-
 });
 
 Route::middleware(['auth'])->group(function () {
