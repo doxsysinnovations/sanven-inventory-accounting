@@ -21,6 +21,7 @@ new class extends Component {
     public function mount(Customer $customer) 
     {
         $this->isEditing = true;
+        $this->resetValidation();
         $this->customer = $customer;
         $this->name = $customer->name;
         $this->email = $customer->email;
@@ -55,12 +56,6 @@ new class extends Component {
             'address.string' => 'The address should only contain letters, numbers, and symbols.',
             'address.max' => 'Address is too long. Keep it under 255 characters.',
         ];
-    }
-
-    public function create()
-    {
-        $this->resetForm();
-        $this->isEditing = false;
     }
 
     public function save()
