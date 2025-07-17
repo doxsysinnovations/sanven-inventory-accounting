@@ -29,13 +29,24 @@ new class extends Component {
                         'route' => 'invoicing',
                         'label' => 'Invoicing',
                         'permission' => 'invoicing.view',
+                    ]
+                ]
+            ],
+            [
+                'heading' => 'Agent Management',
+                'items' => [
+                    [
+                        'icon' => 'user-plus',
+                        'route' => 'agents.create',
+                        'label' => 'Add Agents',
+                        'permission' => 'agents.create'
                     ],
                     [
-                        'icon' => 'user-group',
+                        'icon' => 'users',
                         'route' => 'agents',
                         'label' => 'Agents',
-                        'permission' => 'agents.view',
-                    ],
+                        'permission' => 'agents.view'
+                    ]
                 ]
             ],
             [
@@ -56,7 +67,7 @@ new class extends Component {
                     ],
             ],
             [
-                'heading' => 'Quotations Management',
+                'heading' => 'Quotation Management',
                 'permission' => 'products.view',
                 'items' => [
                     [
@@ -139,7 +150,13 @@ new class extends Component {
                 'permission' => 'suppliers.view',
                 'items' => [
                     [
-                        'icon' => 'user-group',
+                        'icon' => 'plus',
+                        'route' => 'suppliers.create',
+                        'label' => 'Add Suppliers',
+                        'permission' => 'suppliers.create',
+                    ],
+                    [
+                        'icon' => 'truck',
                         'route' => 'suppliers',
                         'label' => 'Suppliers',
                         'permission' => 'suppliers.view',
