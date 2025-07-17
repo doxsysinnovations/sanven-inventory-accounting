@@ -6,7 +6,7 @@
     <form wire:submit.prevent="save">
         <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
             <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
-                {{ $isEditing ? 'Edit Customer' : 'Create New Customer' }}
+                {{ $isEditing ? 'Edit Customer Profile' : 'Add New Customer' }}
             </h3>
         </div>
         <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
