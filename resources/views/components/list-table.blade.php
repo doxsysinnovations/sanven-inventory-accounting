@@ -9,7 +9,8 @@
     'editAbility' => '',
     'editRoute' => '',
     'deleteAbility' => '',
-    'deleteAction' => ''
+    'deleteAction' => '',
+    'editParameter' => '$id'
 ])
 
 <div>
@@ -48,6 +49,7 @@
                                         :viewAbility="$viewAbility"
                                         :viewRoute="$viewRoute"
                                         :editAbility="$editAbility"
+                                        :editRouteParameter="$editParameter"
                                         :editRoute="$editRoute"
                                         :deleteAbility="$deleteAbility"
                                         :deleteAction="$deleteAction"

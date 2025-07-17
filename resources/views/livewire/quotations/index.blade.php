@@ -94,6 +94,7 @@ new class extends Component {
                 '__model' => $quotation
             ])"
             editAbility="quotations.edit"
+            editParameter="quotation"
             editRoute="quotations.edit"
             deleteAbility="quotations.delete"
             deleteAction="confirmDelete"
