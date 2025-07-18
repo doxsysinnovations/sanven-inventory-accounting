@@ -126,6 +126,12 @@ new class extends Component {
                         'permission' => 'products.view',
                     ],
                     [
+                        'icon' => 'plus',
+                        'route' => 'brands.create',
+                        'label' => 'Add Brand',
+                        'permission' => 'brands.create',
+                    ],
+                    [
                         'icon' => 'tag',
                         'route' => 'brands',
                         'label' => 'Brands',
