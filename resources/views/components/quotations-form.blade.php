@@ -49,7 +49,9 @@
                 </div>
             </div>
             <div class="mt-4 mb-4">
-                <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Items</h4>
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2">
+                    Items
+                </h4>
                 <div class="space-y-6">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-800">
