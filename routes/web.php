@@ -99,6 +99,8 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Locations
     Volt::route('locations', 'locations.index')->name('locations');
+    Volt::route('locations/create', 'locations.create')->name('locations.create');
+    Volt::route('locations/edit/{location}', 'locations.edit')->name('locations.edit');
 
     //Invoicing
     Volt::route('invoicing', 'invoicing.index')->name('invoicing');

@@ -198,6 +198,12 @@ new class extends Component {
                         'permission' => 'audittrail.view',
                     ],
                     [
+                        'icon' => 'plus',
+                        'route' => 'locations.create',
+                        'label' => 'Add Locations',
+                        'permission' => 'locations.create',
+                    ],
+                    [
                         'icon' => 'map-pin',
                         'route' => 'locations',
                         'label' => 'Locations',
