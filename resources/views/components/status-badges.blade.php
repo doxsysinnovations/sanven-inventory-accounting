@@ -37,11 +37,13 @@
     $badgeClass = $badgeClasses[$group] ?? 'bg-gray-100 dark:bg-gray-700';
 @endphp
 
-<div class="flex flex-col items-center gap-1">
-    <span class="text-md font-bold {{ $textClass }}">
-        {{ $date }}
-    </span>
-    <span class="inline-block whitespace-nowrap px-2 py-0.5 text-xs font-semibold rounded-full {{ $badgeClass }} {{ $textClass }}">
-        {{ ucfirst($status) }}
-    </span>
+<div class="flex">
+    <div class="flex flex-col items-center gap-1">
+        <span class="text-md font-bold {{ $textClass }}">
+            {{ $date }}
+        </span>
+        <span class="inline-block whitespace-nowrap px-2 py-0.5 text-xs font-semibold rounded-full {{ $badgeClass }} {{ $textClass }}">
+            {{ ucfirst($status) }}
+        </span>
+    </div>
 </div>

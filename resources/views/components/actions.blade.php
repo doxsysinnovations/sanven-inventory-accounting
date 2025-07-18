@@ -23,7 +23,7 @@
     ];
 @endphp
 
-<div class="flex items-center justify-center gap-x-0.5">
+<div class="flex items-left gap-x-0.5">
     @if ($viewAbility && $viewRoute)
         @can($viewAbility)
         <div class="mt-0.5">

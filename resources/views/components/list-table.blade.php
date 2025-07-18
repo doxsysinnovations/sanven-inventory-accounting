@@ -18,7 +18,7 @@
         <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
                 @foreach ($headers as $header)
-                    <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         {{ $header }}
                     </th>
                 @endforeach
@@ -35,7 +35,7 @@
                         @php
                             $cell = $row[$i] ?? null;
                         @endphp
-                        <td class="text-center px-6 py-4 dark:text-gray-300">
+                        <td class="text-left px-6 py-4 dark:text-gray-300">
                             @if (strtolower($header) === 'status' || strtolower($header) === 'expiry date')
                                @if (is_array($cell) && isset($cell['date'], $cell['status']))
                                     <x-status-badges :date="$cell['date']" :status="$cell['status']" />
@@ -63,7 +63,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ count($headers) }}" class="px-6 py-4 text-center text-gray-400">
+                    <td colspan="{{ count($headers) }}" class="px-6 py-4 text-left text-gray-400">
                         {{ $emptyMessage }}
                     </td>
                 </tr>
