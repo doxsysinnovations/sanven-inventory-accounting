@@ -34,6 +34,5 @@
             <flux:button type="submit" variant="primary">{{ $isEditing ? 'Update' : 'Create' }}</flux:button>
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
         </div>
-
     </form>
 </div>
