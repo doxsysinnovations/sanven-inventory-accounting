@@ -73,7 +73,7 @@ new class extends Component {
             :perPage="$perPage"
             searchPlaceholder="Search Customers..."
             message="No existing customers."
-            createButtonLabel="Add Customers"
+            createButtonLabel="Add Customer"
             createButtonAbility="customers.create"
             createButtonRoute="customers.create"
         >

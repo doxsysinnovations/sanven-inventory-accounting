@@ -95,7 +95,7 @@ new class extends Component {
         :perPage="$perPage"
         searchPlaceholder="Search Suppliers..."
         message="No exisiting suppliers."
-        createButtonLabel="Add Suppliers"
+        createButtonLabel="Add Supplier"
         createButtonAbility="suppliers.create"
         createButtonRoute="suppliers.create"
     >

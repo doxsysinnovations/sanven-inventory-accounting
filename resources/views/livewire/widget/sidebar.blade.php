@@ -38,7 +38,7 @@ new class extends Component {
                     [
                         'icon' => 'user-plus',
                         'route' => 'agents.create',
-                        'label' => 'Add Agents',
+                        'label' => 'Add Agent',
                         'permission' => 'agents.create'
                     ],
                     [
@@ -55,7 +55,7 @@ new class extends Component {
                         [
                             'icon' => 'user-plus',
                             'route' => 'customers.create',
-                            'label' => 'Add Customers',
+                            'label' => 'Add Customer',
                             'permission' => 'customers.create',
                         ],
                         [
@@ -73,7 +73,7 @@ new class extends Component {
                     [
                         'icon' => 'plus',
                         'route' => 'quotations.create',
-                        'label' => 'Create Quotations',
+                        'label' => 'Create Quotation',
                         'permission' => 'quotations.create',
                     ],
                     [
@@ -92,7 +92,7 @@ new class extends Component {
                     [
                         'icon' => 'plus',
                         'route' => 'stocks.create',
-                        'label' => 'Receive Stocks',
+                        'label' => 'Receive Stock',
                         'permission' => 'stocks.create',
                     ],
                     [
@@ -152,7 +152,7 @@ new class extends Component {
                     [
                         'icon' => 'plus',
                         'route' => 'suppliers.create',
-                        'label' => 'Add Suppliers',
+                        'label' => 'Add Supplier',
                         'permission' => 'suppliers.create',
                     ],
                     [
@@ -200,7 +200,7 @@ new class extends Component {
                     [
                         'icon' => 'plus',
                         'route' => 'locations.create',
-                        'label' => 'Add Locations',
+                        'label' => 'Add Location',
                         'permission' => 'locations.create',
                     ],
                     [

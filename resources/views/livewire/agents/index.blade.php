@@ -88,7 +88,7 @@ new class extends Component {
         :perPage="$perPage"
         searchPlaceholder="Search Agents..."
         message="No exisiting agents."
-        createButtonLabel="Add Agents"
+        createButtonLabel="Add Agent"
         createButtonAbility="agents.create"
         createButtonRoute="agents.create"
     >

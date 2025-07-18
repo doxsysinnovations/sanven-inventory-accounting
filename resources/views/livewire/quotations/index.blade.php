@@ -78,7 +78,7 @@ new class extends Component {
         searchPlaceholder="Search Quotations..."
         message="No quotations available."
         :perPage="$perPage"
-        createButtonLabel="Create Quotations"
+        createButtonLabel="Create Quotation"
         createButtonAbility="quotations.create"
         createButtonRoute="quotations.create"
     >
