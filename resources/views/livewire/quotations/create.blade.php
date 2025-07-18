@@ -187,7 +187,7 @@ new class extends Component {
             flash()->success('Quotation created successfully!');
         }
 
-        $this->resetForm();
+        return redirect()->route('quotations');
     }
 
     private function resetForm()

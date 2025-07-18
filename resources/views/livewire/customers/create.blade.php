@@ -75,7 +75,7 @@ new class extends Component {
             flash()->success('Customer created successfully!');
         }
 
-        $this->resetForm();
+        return redirect()->route('customers');
     }
 
     private function resetForm()

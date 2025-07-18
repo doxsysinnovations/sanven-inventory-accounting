@@ -89,7 +89,7 @@ new class extends Component {
             flash()->success('Supplier created successfully!');
         }
 
-        $this->resetForm();
+        return redirect()->route('suppliers');
     }
 
     private function resetForm()

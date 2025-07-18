@@ -94,7 +94,7 @@ new class extends Component {
             flash()->success('Agent created successfully!');
         }
 
-        $this->resetForm();
+        return redirect()->route('agents');
     }
 
     private function resetForm()
