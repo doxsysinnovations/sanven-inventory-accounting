@@ -65,7 +65,7 @@
                                             type="checkbox"
                                             value="{{ $id }}"
                                             wire:model.live="selectedLocations"
-                                            class="text-blue-600 border-gray-300 rounded shadow-sm focus:ring-blue-500"
+                                            class="accent-(--color-accent-alt) text-blue-600 border-gray-300 rounded shadow-sm focus:ring-blue-500"
                                         />
                                         <span class="text-gray-900 dark:text-gray-100">{{ $name }}</span>
                                     </label>
@@ -75,13 +75,13 @@
                     </div>
                 </div>
                 @error('selectedLocations')
-                    <span class="text-red-600 text-xs mt-1 block">{{ $message }}</span>
+                    <span class="text-(--color-accent-2) text-xs mt-1 block">{{ $message }}</span>
                 @enderror
             </div>
 
             <div class="mb-4">
                 <label class="inline-flex items-center">
-                    <input type="checkbox" wire:model="is_active" class="form-checkbox">
+                    <input class="accent-(--color-accent-alt)" type="checkbox" wire:model="is_active" class="form-checkbox">
                     <span class="ml-2">Active</span>
                 </label>
             </div>
