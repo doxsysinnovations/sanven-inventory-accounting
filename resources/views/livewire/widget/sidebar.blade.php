@@ -110,14 +110,20 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Products Management',
+                'heading' => 'Product Management',
                 'permission' => 'products.view',
                 'items' => [
                     [
                         'icon' => 'plus',
                         'route' => 'products.create',
-                        'label' => 'Add New',
+                        'label' => 'Create Product',
                         'permission' => 'products.create',
+                    ],
+                    [
+                        'icon' => 'rectangle-group',
+                        'route' => 'products',
+                        'label' => 'Products List',
+                        'permission' => 'products.view',
                     ],
                     [
                         'icon' => 'tag',
