@@ -17,13 +17,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-
 // Route::view('dashboard', 'dashboard')
 //     ->middleware(['auth','check.active', 'verified','2fa'])
 //     ->name('dashboard');
-
-
-
 
 Route::middleware(['auth','check.active','2fa'])->group(function () {
 
@@ -51,10 +47,14 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('brands/create', 'brands.create')->name('brands.create');
     Volt::route('brands/edit/{brand}', 'brands.edit')->name('brands.edit');
 
-    //Types
-    Volt::route('types', 'types.index')->name('types');
     //Categories
     Volt::route('categories', 'categories.index')->name('categories');
+    Volt::route('categories/create', 'categories.create')->name('categories.create');
+    Volt::route('categories/edit/{category}', 'categories.edit')->name('categories.edit');
+
+    //Types
+    Volt::route('types', 'types.index')->name('types');
+    
     //Units
     Volt::route('units', 'units.index')->name('units');
     

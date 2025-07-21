@@ -138,6 +138,12 @@ new class extends Component {
                         'permission' => 'brands.view',
                     ],
                     [
+                        'icon' => 'plus',
+                        'route' => 'categories.create',
+                        'label' => 'Add Category',
+                        'permission' => 'categories.create',
+                    ],
+                    [
                         'icon' => 'folder',
                         'route' => 'categories',
                         'label' => 'Categories',
