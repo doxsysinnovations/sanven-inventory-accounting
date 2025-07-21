@@ -54,7 +54,9 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Types
     Volt::route('types', 'types.index')->name('types');
-    
+    Volt::route('types/create', 'types.create')->name('types.create');
+    Volt::route('types/edit/{type}', 'types.edit')->name('types.edit');
+
     //Units
     Volt::route('units', 'units.index')->name('units');
     

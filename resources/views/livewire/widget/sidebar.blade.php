@@ -150,6 +150,12 @@ new class extends Component {
                         'permission' => 'categories.view',
                     ],
                     [
+                        'icon' => 'plus',
+                        'route' => 'types.create',
+                        'label' => 'Add Type',
+                        'permission' => 'types.create',
+                    ],
+                    [
                         'icon' => 'cube',
                         'route' => 'types',
                         'label' => 'Types',
