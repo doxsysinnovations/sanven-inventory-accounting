@@ -162,6 +162,12 @@ new class extends Component {
                         'permission' => 'types.view',
                     ],
                     [
+                        'icon' => 'plus',
+                        'route' => 'units.create',
+                        'label' => 'Add Unit',
+                        'permission' => 'units.create',
+                    ],
+                    [
                         'icon' => 'scale',
                         'route' => 'units',
                         'label' => 'Units',
