@@ -22,6 +22,12 @@ new class extends Component {
         $this->perPage = session('perPage', 10);
     }
 
+    public function updatedPerPage($value) 
+    {
+        session(['perPage' => $value]);
+        $this->resetPage();
+    }
+
     public function rules()
     {
         return [
