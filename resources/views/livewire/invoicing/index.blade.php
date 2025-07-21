@@ -111,45 +111,54 @@ new class extends Component {
         $this->reset(['selectedInvoice', 'showInvoiceModal']);
     }
 
-    public function getTotalInvoicesCountProperty()
-    {
-        return Invoice::count();
-    }
+  
+public function getTotalInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->count();
+}
 
-    public function getTotalInvoicesAmountProperty()
-    {
-        return Invoice::sum('grand_total');
-    }
-    public function getToDeliverInvoicesCountProperty()
-    {
-        return Invoice::where('status', 'to_deliver')->count();
-    }
+public function getTotalInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->sum('grand_total');
+}
 
-    public function getToDeliverInvoicesAmountProperty()
-    {
-        return Invoice::where('status', 'to_deliver')->sum('grand_total');
-    }
+public function getToDeliverInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'to_deliver')->count();
+}
 
-    public function getDeliveredInvoicesCountProperty()
-    {
-        return Invoice::where('status', 'delivered')->count();
-    }
+public function getToDeliverInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'to_deliver')->sum('grand_total');
+}
 
-    public function getDeliveredInvoicesAmountProperty()
-    {
-        return Invoice::where('status', 'delivered')->sum('grand_total');
-    }
+public function getDeliveredInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'delivered')->count();
+}
 
-    public function getPendingInvoicesCountProperty()
-    {
-        return Invoice::where('status', 'pending')->count();
-    }
+public function getDeliveredInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'delivered')->sum('grand_total');
+}
 
-    public function getPendingInvoicesAmountProperty()
-    {
-        return Invoice::where('status', 'pending')->sum('grand_total');
-    }
+public function getPendingInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'pending')->count();
+}
+
+public function getPendingInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'pending')->sum('grand_total');
+}
     public function getInvoicesProperty()
+    {
+        return $this->filteredInvoicesQuery()
+        ->latest()
+        ->paginate($this->perPage);
+    }
+
+    protected function filteredInvoicesQuery()
     {
         return Invoice::with('customer')
             ->when($this->search, function ($query) {
@@ -167,9 +176,7 @@ new class extends Component {
             })
             ->when($this->endDate && !$this->startDate, function ($query) {
                 $query->where('issued_date', '<=', $this->endDate);
-            })
-            ->latest()
-            ->paginate($this->perPage);
+            });
     }
 }; ?>
 
