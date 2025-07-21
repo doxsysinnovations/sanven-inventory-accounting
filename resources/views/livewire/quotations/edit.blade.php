@@ -12,27 +12,31 @@ use Illuminate\Support\Str;
 new class extends Component {
     use WithPagination;
 
+    public $search = '';
     public $quotation;
     public $isEditing = false;
 
     // Form fields
-    public $quotation_number;
-    public $customer_id;
-    public $agent_id;
-    public $total_amount;
-    public $tax;
-    public $discount;
-    public $notes;
-    public $status;
-    public $valid_until;
+    public $quotation_number = '';
+    public $customer_id = null;
+    public $agent_id = null;
+    public $total_amount = 0;
+    public $total_vat = 0;
+    public $tax = null;
+    public $discount = null;
+    public $notes = '';
+    public $status = '';
+    public $valid_until = '';
+    public $is_vatable = false;
 
     // Items fields
     public $items = [];
     public $products = [];
+
     public $customers = [];
     public $agents = [];
 
-    public function mount(Quotation $quotation)
+     public function mount(Quotation $quotation)
     {
         
         $this->customers = Customer::all();
@@ -52,15 +56,52 @@ new class extends Component {
         $this->valid_until = \Carbon\Carbon::parse($quotation->valid_until)->format('Y-m-d');
         $this->items = $quotation->items
             ->map(function ($item) {
+                $product = $item->product; 
+        
                 return [
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
+                    'is_vatable' => $product->is_vatable ?? false,
+                    'vat_tax' => $item->vat_tax,
                     'total_price' => $item->total_price,
                     'description' => $item->description,
                 ];
             })
             ->toArray();
+    }
+
+
+    public function addItem()
+    {
+        $this->items[] = [
+            'product_id' => '',
+            'quantity' => null,
+            'unit_price' => 0,
+            'is_vatable' => null,
+            'vat_tax' => 0,
+            'total_price' => 0,
+            'description' => '',
+        ];
+    }
+
+    public function removeItem($index)
+    {
+        unset($this->items[$index]);
+        $this->items = array_values($this->items);
+        $this->calculateTotal();
+    }
+    
+    public function calculateTotal()
+    {
+        $baseTotal = collect($this->items)->sum('total_price');
+        $this->tax = collect($this->items)->sum('vat_tax');
+
+        $discount = floatval($this->discount ?? 0);
+
+        $total = $baseTotal - $discount;
+
+        $this->total_amount = floatval(sprintf('%.2f', $total));
     }
 
     public function rules()
@@ -70,6 +111,7 @@ new class extends Component {
             'customer_id' => 'nullable|exists:customers,id',
             'agent_id' => 'nullable|exists:agents,id',
             'total_amount' => 'required|numeric|min:0',
+            'total_vat' => 'required|numeric|min:0',
             'tax' => 'required|numeric|min:0',
             'discount' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
@@ -93,6 +135,8 @@ new class extends Component {
             'agent_id.exists' => 'Selected agent does not exist.',
             'total_amount.required' => 'Total amount is required.',
             'total_amount.min' => 'Total amount must be 0 or greater.',
+            'total_vat.required' => 'Total VAT is required.',
+            'total_vat.min' => 'Total VAT must be 0 or greater.',
             'tax.required' => 'Tax is required.',
             'discount.required' => 'Discount is required.',
             'status.required' => 'Status is required.',
@@ -115,36 +159,49 @@ new class extends Component {
         $this->quotation_number = 'QUO-' . strtoupper(Str::random(8)) . '-' . date('Ymd');
     }
 
-    public function addItem()
+    public function updatedItems($value, $key)
     {
-        $this->items[] = [
-            'product_id' => '',
-            'quantity' => null,
-            'unit_price' => null,
-            'total_price' => 0,
-            'description' => '',
-        ];
-    }
+        $index = explode('.', $key)[0];
+        $field = explode('.', $key)[1];
 
-    public function removeItem($index)
-    {
-        unset($this->items[$index]);
-        $this->items = array_values($this->items);
+        if ($field === 'product_id') {
+            $product = Product::find($value);
+            if ($product) {
+                $this->items[$index]['unit_price'] = $product->selling_price;
+                $this->items[$index]['description'] = $product->description;
+                $this->items[$index]['is_vatable'] = $product->is_vatable;
+            }
+        }
+
+        if (in_array($field, ['quantity', 'unit_price', 'product_id'])) {
+            $quantity = floatval($this->items[$index]['quantity'] ?? 1);
+            $unitPrice = floatval($this->items[$index]['unit_price'] ?? 0);
+            $isVatable = $this->items[$index]['is_vatable'] ?? false;
+
+            $subtotal = $quantity * $unitPrice;
+
+            if ($isVatable) {
+                $vat = $subtotal * 0.12;
+                $this->items[$index]['vat_tax'] = round($vat, 2);
+                $this->items[$index]['total_price'] = round($subtotal + $vat, 2);
+            } else {
+                $this->items[$index]['vat_tax'] = 0;
+                $this->items[$index]['total_price'] = round($subtotal, 2);
+            }
+        }
+
+        $this->tax = collect($this->items)->sum('vat_tax');
         $this->calculateTotal();
     }
-    
-    public function calculateTotal()
-    {
-        $baseTotal = collect($this->items)->sum('total_price');
 
-        $tax = floatval($this->tax ?? 0);
-        $discount = floatval($this->discount ?? 0);
-
-        $total = $baseTotal + ($baseTotal * ($tax / 100)) - $discount;
-
-        $this->total_amount = number_format($total, 2, '.', '');
+    public function updatedTax(){
+        $this->calculateTotal();
     }
-    
+
+    public function updatedDiscount() {
+        $this->calculateTotal();
+    }
+
     public function save()
     {
         $this->validate();
@@ -165,12 +222,14 @@ new class extends Component {
             $this->quotation->update($data);
             $this->quotation->items()->delete();
             foreach ($this->items as $item) {
+                unset($item['is_vatable']); 
                 $this->quotation->items()->create($item);
             }
             flash()->success('Quotation updated successfully!');
         } else {
             $quotation = Quotation::create($data);
             foreach ($this->items as $item) {
+                unset($item['is_vatable']); 
                 $quotation->items()->create($item);
             }
             flash()->success('Quotation created successfully!');
@@ -179,34 +238,13 @@ new class extends Component {
         return redirect()->route('quotations');
     }
 
-    public function updatedItems($value, $key)
+    private function resetForm()
     {
-        $index = explode('.', $key)[0];
-        $field = explode('.', $key)[1];
-
-        if ($field === 'product_id') {
-            $product = Product::find($value);
-            if ($product) {
-                $this->items[$index]['unit_price'] = $product->selling_price; // Changed from price to selling_price
-                $this->items[$index]['description'] = $product->description;
-                // Auto-calculate total when product changes
-                $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
-            }
-        }
-
-        if ($field === 'quantity' || $field === 'unit_price') {
-            $this->items[$index]['total_price'] = floatval($this->items[$index]['quantity']) * floatval($this->items[$index]['unit_price']);
-        }
-
-        $this->calculateTotal();
-    }
-
-    public function updatedTax(){
-        $this->calculateTotal();
-    }
-
-    public function updatedDiscount() {
-        $this->calculateTotal();
+        $this->reset(['quotation_number', 'customer_id', 'agent_id', 'total_amount', 'tax', 'discount', 'notes', 'status', 'valid_until', 'quotation', 'items']);
+        $this->resetValidation();
+        $this->isEditing = false;
+        $this->generateQuotationNumber();
+        $this->addItem();
     }
 
     public function cancel() 
@@ -218,9 +256,12 @@ new class extends Component {
 };
 ?>
 
-<x-quotations-form
-    :is-editing="true"
-    :customers="$customers"
-    :products="$products"
-    :agents="$agents"
-/>
+<div>    
+    <x-quotations-form
+        :is-editing="false"
+        :customers="$customers"
+        :products="$products"
+        :agents="$agents"
+        :withVAT="isset($product) && $product->is_vatable"
+    />
+</div>

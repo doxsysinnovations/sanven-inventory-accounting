@@ -21,11 +21,13 @@ new class extends Component {
     public $customer_id = null;
     public $agent_id = null;
     public $total_amount = 0;
+    public $total_vat = 0;
     public $tax = null;
     public $discount = null;
     public $notes = '';
     public $status = '';
     public $valid_until = '';
+    public $is_vatable = false;
 
     // Items fields
     public $items = [];
@@ -42,6 +44,7 @@ new class extends Component {
         $this->valid_until = now()->addDays(30)->format('Y-m-d');
         $this->addItem();
         $this->generateQuotationNumber();
+        $this->product = Product::first();
     }
 
     public function addItem()
@@ -49,7 +52,9 @@ new class extends Component {
         $this->items[] = [
             'product_id' => '',
             'quantity' => null,
-            'unit_price' => null,
+            'unit_price' => 0,
+            'is_vatable' => null,
+            'vat_tax' => 0,
             'total_price' => 0,
             'description' => '',
         ];
@@ -65,11 +70,11 @@ new class extends Component {
     public function calculateTotal()
     {
         $baseTotal = collect($this->items)->sum('total_price');
+        $this->tax = collect($this->items)->sum('vat_tax');
 
-        $tax = floatval($this->tax ?? 0);
         $discount = floatval($this->discount ?? 0);
 
-        $total = $baseTotal + ($baseTotal * ($tax / 100)) - $discount;
+        $total = $baseTotal - $discount;
 
         $this->total_amount = floatval(sprintf('%.2f', $total));
     }
@@ -81,6 +86,7 @@ new class extends Component {
             'customer_id' => 'nullable|exists:customers,id',
             'agent_id' => 'nullable|exists:agents,id',
             'total_amount' => 'required|numeric|min:0',
+            'total_vat' => 'required|numeric|min:0',
             'tax' => 'required|numeric|min:0',
             'discount' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
@@ -104,6 +110,8 @@ new class extends Component {
             'agent_id.exists' => 'Selected agent does not exist.',
             'total_amount.required' => 'Total amount is required.',
             'total_amount.min' => 'Total amount must be 0 or greater.',
+            'total_vat.required' => 'Total VAT is required.',
+            'total_vat.min' => 'Total VAT must be 0 or greater.',
             'tax.required' => 'Tax is required.',
             'discount.required' => 'Discount is required.',
             'status.required' => 'Status is required.',
@@ -134,17 +142,30 @@ new class extends Component {
         if ($field === 'product_id') {
             $product = Product::find($value);
             if ($product) {
-                $this->items[$index]['unit_price'] = $product->selling_price; // Changed from price to selling_price
+                $this->items[$index]['unit_price'] = $product->selling_price;
                 $this->items[$index]['description'] = $product->description;
-                // Auto-calculate total when product changes
-                $this->items[$index]['total_price'] = $this->items[$index]['quantity'] * $this->items[$index]['unit_price'];
+                $this->items[$index]['is_vatable'] = $product->is_vatable;
             }
         }
 
-        if ($field === 'quantity' || $field === 'unit_price') {
-            $this->items[$index]['total_price'] = floatval($this->items[$index]['quantity']) * floatval($this->items[$index]['unit_price']);
+        if (in_array($field, ['quantity', 'unit_price', 'product_id'])) {
+            $quantity = floatval($this->items[$index]['quantity'] ?? 1);
+            $unitPrice = floatval($this->items[$index]['unit_price'] ?? 0);
+            $isVatable = $this->items[$index]['is_vatable'] ?? false;
+
+            $subtotal = $quantity * $unitPrice;
+
+            if ($isVatable) {
+                $vat = $subtotal * 0.12;
+                $this->items[$index]['vat_tax'] = round($vat, 2);
+                $this->items[$index]['total_price'] = round($subtotal + $vat, 2);
+            } else {
+                $this->items[$index]['vat_tax'] = 0;
+                $this->items[$index]['total_price'] = round($subtotal, 2);
+            }
         }
 
+        $this->tax = collect($this->items)->sum('vat_tax');
         $this->calculateTotal();
     }
 
@@ -176,18 +197,21 @@ new class extends Component {
             $this->quotation->update($data);
             $this->quotation->items()->delete();
             foreach ($this->items as $item) {
+                unset($item['is_vatable']); 
                 $this->quotation->items()->create($item);
             }
             flash()->success('Quotation updated successfully!');
         } else {
             $quotation = Quotation::create($data);
             foreach ($this->items as $item) {
+                unset($item['is_vatable']); 
                 $quotation->items()->create($item);
             }
             flash()->success('Quotation created successfully!');
         }
 
-        return redirect()->route('quotations');
+        $this->resetValidation();
+        $this->resetForm();
     }
 
     private function resetForm()
@@ -212,5 +236,6 @@ new class extends Component {
         :customers="$customers"
         :products="$products"
         :agents="$agents"
+        :withVAT="isset($product) && $product->is_vatable"
     />
 </div>
