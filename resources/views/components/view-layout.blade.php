@@ -2,6 +2,8 @@
     'title',
     'description' => null,
     'searchPlaceholder' => null,
+    'withFilter' => false,
+    'filterItems',
     'items',
     'message',
     'perPage' => 5,
@@ -27,18 +29,33 @@
             </div>
 
             <div class="px-8 pb-4">
-
                 <div class="flex my-5">
-                    <div class="flex gap-2 items-center">
-                        <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300">Per Page:</label>
-                        <flux:select wire:model.live="perPage" id="perPage" :label="__('')" size="md">
-                            <flux:select.option value="5">5</flux:select.option>
-                            <flux:select.option value="10">10</flux:select.option>
-                            <flux:select.option value="25">25</flux:select.option>
-                            <flux:select.option value="50">50</flux:select.option>
-                        </flux:select>
-                    </div>
+                    <div class="flex gap-x-4">
+                        <div class="flex gap-2 items-center">
+                            <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300">Per Page:</label>
+                            <flux:select wire:model.live="perPage" id="perPage" :label="__('')" size="md">
+                                <flux:select.option value="5">5</flux:select.option>
+                                <flux:select.option value="10">10</flux:select.option>
+                                <flux:select.option value="25">25</flux:select.option>
+                                <flux:select.option value="50">50</flux:select.option>
+                            </flux:select>
+                        </div>
 
+                        @if($withFilter)
+                            <div class="flex items-center gap-2 min-w-fit">
+                                <label for="categoryFilter" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                    Category:
+                                </label>
+                                <flux:select wire:model.live="selectedCategory" id="categoryFilter">
+                                    <flux:select.option value="">All Categories</flux:select.option>
+                                    @foreach ($filterItems as $filterItem)
+                                        <flux:select.option value="{{ $filterItem->id }}">{{ $filterItem->name }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                            </div>
+                        @endif
+                    </div>
+                  
                     <div class="ml-auto w-1/3 relative">
                         <x-search-bar placeholder="{{ $searchPlaceholder }}" />
                     </div>
