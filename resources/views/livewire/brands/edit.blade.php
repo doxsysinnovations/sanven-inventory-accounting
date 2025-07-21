@@ -43,13 +43,6 @@ new class extends Component {
         ];
     }
 
-    public function create()
-    {
-        $this->resetForm();
-        $this->isEditing = false;
-        $this->showModal = true;
-    }
-
     public function updatedName($value)
     {
         $this->slug = Str::slug($value);
@@ -109,6 +102,6 @@ new class extends Component {
 
 <div>
    <x-brands-form 
-        :is-editing="$isEditing"
+        :is-editing="true"
     />
 </div>

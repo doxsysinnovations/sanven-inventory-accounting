@@ -9,7 +9,6 @@ new class extends Component {
     use WithPagination;
 
     public $search = '';
-    public $showModal = false;
     public $brand;
     public $isEditing = false;
     public $confirmingDelete = false;
@@ -38,7 +37,6 @@ new class extends Component {
     {
         $this->resetForm();
         $this->isEditing = false;
-        $this->showModal = true;
     }
 
     public function updatedName($value)
