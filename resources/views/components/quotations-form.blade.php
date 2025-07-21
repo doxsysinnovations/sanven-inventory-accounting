@@ -3,6 +3,7 @@
     'customers' => [],
     'products' => [],
     'agents' => [],
+    'withVAT' => false,
 ])
 
 @php
@@ -57,19 +58,23 @@
                         <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
                                 <th
-                                    class="w-2/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-2/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Product
                                 </th>
                                 <th
-                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Quantity
                                 </th>
                                 <th
-                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Unit Price
                                 </th>
                                 <th
-                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    VAT (0.12%)
+                                </th>
+                                <th
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Total
                                 </th>
                                 <th class="px-6 py-3"></th>
@@ -79,7 +84,7 @@
                             @foreach ($items as $index => $item)
                             <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
                                 wire:key="item-{{ $index }}">
-                                <td class="w-2/5 px-6 py-4 align-top">
+                                <td class="w-2/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <flux:select
                                             wire:model.live.debounce.500ms="items.{{ $index }}.product_id"
@@ -99,13 +104,13 @@
                                         </flux:select>
                                     </div>
                                 </td>
-                                <td class="w-1/5 px-6 py-4 align-top">
+                                <td class="w-1/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <div class="relative">
                                             <flux:input
                                                 type="number"
                                                 wire:model.live="items.{{ $index }}.quantity"
-                                                placeholder="Qty"
+                                                placeholder="0"
                                                 :iconTrailing="false"
                                                 min="1"
                                                 :label="__('')"
@@ -117,7 +122,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="w-1/5 px-6 py-4 align-top">
+                                <td class="w-1/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <div class="relative">
                                             <flux:input
@@ -136,7 +141,22 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="w-1/5 px-6 py-4 align-top">
+                                <td class="w-1/6 px-6 py-4 align-top">
+                                    <div class="space-y-1">
+                                        <div class="relative">
+                                          <label class="inline-flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                class="form-checkbox accent-[--color-accent-alt]"
+                                                disabled
+                                                {{ (isset($items[$index]['is_vatable']) && ($items[$index]['is_vatable'] == 1 || $items[$index]['is_vatable'] === true)) ? 'checked' : '' }}
+                                            >
+                                                <span class="ml-2">Subject to VAT</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="w-1/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <div class="relative">
                                             <flux:input
@@ -223,13 +243,13 @@
                         type="number"
                         wire:model.live="tax"
                         placeholder="0.00"
-                        :iconLeading="false"
                         step="0.01" min="0"
                         id="tax"
-                        :label="__('Tax (%)')"
+                        readonly
+                        :label="__('Total VAT')"
                     >
-                        <x-slot name="iconTrailing">
-                            <span class="text-sm text-zinc-500 dark:text-zinc-400">%</span>
+                        <x-slot name="iconLeading">
+                            <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
                         </x-slot>
                     </flux:input>
                 </div>
