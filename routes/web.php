@@ -3,6 +3,8 @@
 use Livewire\Volt\Volt;
 use App\Livewire\TwoFactorVerify;
 use Illuminate\Support\Facades\Route;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Quotation;
 
 //For testing low stock notification
 use App\Models\Stock;
@@ -92,6 +94,17 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('quotations', 'quotations.index')->name('quotations');
     Volt::route('quotations/create', 'quotations.create')->name('quotations.create');
     Volt::route('quotations/edit/{quotation}', 'quotations.edit')->name('quotations.edit');
+    Volt::route('quotations/view/{id}', 'quotations.view')->name('quotations.view');
+    Volt::route('quotations/pdf/{quotation}', 'quotations.pdf')->name('quotations.pdf');
+    Route::get('/quotations/{quotation}/stream-pdf', function (Quotation $quotation) {
+        $quotation->load(['customer', 'agent', 'items.product']);
+
+        $pdf = Pdf::loadView('livewire.quotations.pdf', [
+            'quotation' => $quotation,
+        ]);
+
+        return $pdf->stream('quotation-' . $quotation->quotation_number . '.pdf');
+    })->name('quotations.stream-pdf');
 
     //Agents
     Volt::route('agents', 'agents.index')->name('agents');
