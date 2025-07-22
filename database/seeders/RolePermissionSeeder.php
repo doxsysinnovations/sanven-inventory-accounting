@@ -161,6 +161,21 @@ class RolePermissionSeeder extends Seeder
             'invoicing.create',
             'invoicing.edit',
             'invoicing.delete',
+
+            //Purchase Requests
+            'purchase-requests.view',
+            'purchase-requests.show',
+            'purchase-requests.create',
+            'purchase-requests.edit',
+            'purchase-requests.delete',
+
+            //Purchase Orders
+            'purchase-orders.view',
+            'purchase-orders.show',
+            'purchase-orders.create',
+            'purchase-orders.edit',
+            'purchase-orders.delete',
+            'purchase-orders.update-status',
         ];
 
         foreach ($permissions as $permission) {

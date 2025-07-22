@@ -304,23 +304,23 @@ new class extends Component {
                                 Customer
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Amount
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Date
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Status
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Payment
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -340,13 +340,13 @@ new class extends Component {
                                         {{ $invoice->customer->email }}</div>
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-gray-100">
+                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900 dark:text-gray-100">
                                     Php {{ number_format($invoice->grand_total, 2) }}
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400">
                                     {{ \Carbon\Carbon::parse($invoice->issued_date)->format('M d, Y') }} </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <td class="px-6 py-4 whitespace-nowrap text-left">
                                     <span @class([
                                         'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
                                         'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' =>
@@ -362,11 +362,11 @@ new class extends Component {
                                     </span>
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400">
                                     {{ ucfirst(str_replace('_', ' ', $invoice->payment_method)) }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div class="flex justify-end space-x-2">
+                                <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                                    <div class="flex space-x-2">
                                         @can('invoicing.show')
                                             <button wire:click="showInvoice({{ $invoice->id }})"
                                                 class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
