@@ -114,6 +114,7 @@
                                                 :iconTrailing="false"
                                                 min="1"
                                                 :label="__('')"
+                                                :disabled="!$item['product_id']"
                                             >
                                                 <x-slot name="iconTrailing">
                                                     <span class="text-gray-400 text-xs dark:text-zinc-400">units</span>
@@ -133,6 +134,7 @@
                                                 step="0.01" 
                                                 min="0"
                                                 :label="__('')"
+                                                :disabled="!$item['product_id']"
                                             >
                                                 <x-slot name="iconLeading">
                                                     <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
@@ -293,7 +295,8 @@
         </div>
         
         <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-2 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-lg">
-            <flux:button type="submit" variant="primary">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
+            <flux:button variant="primary" type="submit">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
+            <flux:button variant="primary" color="green" icon="printer" wire:click="print">Save & Print</flux:button>                     
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
         </div>
     </form>
