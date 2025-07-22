@@ -8,6 +8,7 @@ use App\Models\Agent;
 use App\Models\Product;
 use Livewire\Attributes\Title;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 new class extends Component {
     use WithPagination;
@@ -28,6 +29,7 @@ new class extends Component {
     public $status = '';
     public $valid_until = '';
     public $is_vatable = false;
+    public $showPrintPreview = false;
 
     // Items fields
     public $items = [];
@@ -197,21 +199,22 @@ new class extends Component {
             $this->quotation->update($data);
             $this->quotation->items()->delete();
             foreach ($this->items as $item) {
-                unset($item['is_vatable']); 
+                unset($item['is_vatable']);
                 $this->quotation->items()->create($item);
             }
             flash()->success('Quotation updated successfully!');
+            return redirect()->return('quotations');
         } else {
-            $quotation = Quotation::create($data);
+            $this->quotation = Quotation::create($data);
             foreach ($this->items as $item) {
-                unset($item['is_vatable']); 
-                $quotation->items()->create($item);
+                unset($item['is_vatable']);
+                $this->quotation->items()->create($item);
             }
             flash()->success('Quotation created successfully!');
+            $quotation = $this->quotation;
+            $this->resetForm();
+            return $quotation;
         }
-
-        $this->resetValidation();
-        $this->resetForm();
     }
 
     private function resetForm()
@@ -227,10 +230,55 @@ new class extends Component {
     {
         $this->resetForm();
     }
+
+    public function print()
+    {
+        $this->quotation = $this->save();
+        $this->showPrintPreview = true;
+        $this->dispatch('open-print-dialog');
+    }
+
+    public function downloadPDF()
+    {
+        if (!$this->quotation) {
+            return;
+        }
+
+        $pdf = PDF::loadView('livewire.quotations.pdf', [
+            'quotation' => $this->quotation->load(['customer', 'agent', 'items.product']),
+        ]);
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'SANVEN-QUOTATION-' . $this->quotation->quotation_number . '.pdf');
+    }
+
+    public function streamPDF()
+    {
+        if (!$this->quotation) {
+            $this->quotation = $this->save();
+        }
+
+        $pdf = PDF::loadView('livewire.quotations.pdf', [
+            'quotation' => $this->quotation->load(['customer', 'agent', 'items.product']),
+        ]);
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'quotation-preview-' . $this->quotation->quotation_number . '.pdf', [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="quotation-preview-' . $this->quotation->quotation_number . '.pdf"'
+        ]);
+    }
+
+    public function closePrintPreview()
+    {
+        $this->showPrintPreview = false;
+    }
 };
 ?>
 
-<div>    
+<div x-data="{ showPreview: @entangle('showPrintPreview') }">    
     <x-quotations-form
         :is-editing="false"
         :customers="$customers"
@@ -238,4 +286,52 @@ new class extends Component {
         :agents="$agents"
         :withVAT="isset($product) && $product->is_vatable"
     />
+
+    <div x-show="showPreview" 
+        x-cloak
+        class="fixed inset-0 z-50 flex"
+        @open-print-dialog.window="showPreview = true"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100">
+        
+        <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
+
+        <div class="relative z-50 my-8 mx-auto p-5 w-11/12 max-w-6xl shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Print Preview - {{ $quotation->quotation_number ?? '' }}
+                </h3>
+                <button wire:click="closePrintPreview" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mb-4 flex space-x-2">
+                <flux:button variant="primary" icon="printer" onclick="printIframe()">Print</flux:button>
+                <flux:button variant="primary" color="green" icon="document" wire:click="downloadPDF">Download PDF</flux:button>
+            </div>
+
+            @if ($quotation)
+                <div class="h-[100vh] border border-gray-300 rounded-lg overflow-hidden">
+                    <iframe id="pdfPreview"
+                            src="{{ route('quotations.stream-pdf', $quotation->id) }}"
+                            width="100%"
+                            height="100%"
+                            class="w-full h-full"
+                            frameborder="0">
+                        Your browser does not support PDFs. Please download the PDF to view it.
+                    </iframe>
+                </div>
+            @endif
+        </div>
+    </div>
+    <script>
+        function printIframe() {
+            const iframe = document.getElementById('pdfPreview');
+            iframe.contentWindow.print();
+        }
+    </script>
 </div>
