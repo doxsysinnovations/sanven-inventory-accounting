@@ -213,7 +213,7 @@
                                 </th>
                                 <td class="px-6 py-4 text-(--color-accent) font-bold">
                                     <span style="font-family: Arial;">&#8369;</span> 
-                                    {{ number_format(($quotation->total_amount ?? 0) - ($quotation->tax ?? 0) - ($quotation->discount ?? 0), 2) }}
+                                    {{ number_format(($quotation->items->sum('total_price')), 2) }}
                                 </td>
                             </tr>
                             <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
@@ -232,6 +232,7 @@
                                     Discount ({{ number_format($rate, 2) }}%)
                                 </th>
                                 <td class="px-6 py-4 text-(--color-accent-2)">
+                                    -
                                     <span style="font-family: Arial;">&#8369;</span> 
                                     {{ number_format($discount, 2) }}
                                 </td>

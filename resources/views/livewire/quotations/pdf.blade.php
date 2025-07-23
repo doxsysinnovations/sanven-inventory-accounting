@@ -498,7 +498,7 @@
                             <tbody>
                                 <tr>
                                     <th>Subtotal</th>
-                                    <td><span class="currency">₱</span> {{ number_format(($quotation->total_amount ?? 0) - ($quotation->tax ?? 0) - ($quotation->discount ?? 0), 2) }}</td>
+                                    <td><span class="currency">₱</span>{{ number_format(($quotation->items->sum('total_price')), 2) }}</td>
                                 </tr>
                                 <tr>
                                     @php
@@ -513,7 +513,7 @@
                                         }
                                     @endphp
                                     <th>Discount ({{ number_format($rate, 2) }}%)</th>
-                                    <td class="discount-color"><span class="currency">₱</span> {{ number_format($discount, 2) }}</td>
+                                    <td class="discount-color">-<span class="currency">₱</span>{{ number_format($discount, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <th>Total VAT</th>
