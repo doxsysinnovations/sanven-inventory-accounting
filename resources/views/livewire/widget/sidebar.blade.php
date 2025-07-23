@@ -222,7 +222,7 @@ new class extends Component {
                         'permission' => 'roles.view',
                     ],
                     [
-                        'icon' => 'clipboard-document-list',
+                        'icon' => 'finger-print',
                         'route' => 'audittrail',
                         'label' => 'Audit Trail',
                         'permission' => 'audittrail.view',
