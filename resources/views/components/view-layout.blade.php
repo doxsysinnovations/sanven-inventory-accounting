@@ -19,13 +19,37 @@
 <div>
     <div class="flex h-full w-full flex-1 flex-col gap-4">
         <div class="flex flex-col bg-white rounded-lg">
-            <div class="bg-gray-50 p-6 flex flex-col rounded-t-lg">
-                <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
-                    {{ $title }}
-                </h3>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                   {{ $description }}
-                </span>
+            <div class="bg-gray-50 p-6 flex justify-between items-center rounded-t-lg">
+                <div>
+                    <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+                        {{ $title }}
+                    </h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ $description }}
+                    </span>
+                </div>
+
+                @if (!$items->isEmpty() || $showNewCreateButtonIfEmpty)
+                    @php
+                        $ability = $items->isEmpty()
+                            ? ($createButtonAbilityIfEmpty ?? $createButtonAbility)
+                            : $createButtonAbility;
+                        
+                        $route = $items->isEmpty()
+                            ? ($createButtonRouteIfEmpty ?? $createButtonRoute)
+                            : $createButtonRoute;
+                    @endphp
+
+                    @can($ability)
+                        <div>
+                            <a href="{{ route($route) }}">
+                                <flux:button variant="primary" color="blue" icon="plus">
+                                    {{ $items->isEmpty() ? ($createButtonLabelIfEmpty ?? $createButtonLabel) : $createButtonLabel }}
+                                </flux:button>
+                            </a>
+                        </div>
+                    @endcan
+                @endif
             </div>
 
             <div class="px-8 pb-4">
@@ -60,28 +84,6 @@
                         <x-search-bar placeholder="{{ $searchPlaceholder }}" />
                     </div>
                 </div>
-
-                @if (!$items->isEmpty() || $showNewCreateButtonIfEmpty)
-
-                    @php
-                        $ability = $items->isEmpty()
-                            ? ($createButtonAbilityIfEmpty ?? $createButtonAbility)
-                            : $createButtonAbility;
-                        
-                        $route = $items->isEmpty()
-                            ? ($createButtonRouteIfEmpty ?? $createButtonRoute)
-                            : $createButtonRoute;
-                        
-                    @endphp
-
-                    @can($ability)
-                        <div class="flex justify-end mb-4">
-                          <a href="{{ route($route) }}">
-                                <flux:button variant="primary" icon="plus">{{ $items->isEmpty() ? ($createButtonLabelIfEmpty ?? $createButtonLabel) : $createButtonLabel }}</flux:button>                                
-                            </a>
-                        </div>
-                    @endcan
-                @endif
 
                 <div>
                     @if ($items->isEmpty())
