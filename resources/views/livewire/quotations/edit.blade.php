@@ -8,6 +8,7 @@ use App\Models\Agent;
 use App\Models\Product;
 use Livewire\Attributes\Title;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 new class extends Component {
     use WithPagination;
@@ -23,11 +24,15 @@ new class extends Component {
     public $total_amount = 0;
     public $total_vat = 0;
     public $tax = null;
-    public $discount = null;
+    public $discount = 0;
+    public $discount_type = '';
+    public $total_discount = 0;
     public $notes = '';
     public $status = '';
     public $valid_until = '';
     public $is_vatable = false;
+    public $showPrintPreview = false;
+    public $loadingPDFPreview = false;
 
     // Items fields
     public $items = [];
@@ -36,7 +41,7 @@ new class extends Component {
     public $customers = [];
     public $agents = [];
 
-     public function mount(Quotation $quotation)
+    public function mount(Quotation $quotation)
     {
         
         $this->customers = Customer::all();
@@ -51,6 +56,7 @@ new class extends Component {
         $this->total_amount = $quotation->total_amount;
         $this->tax = $quotation->tax;
         $this->discount = $quotation->discount;
+        $this->discount_type = $quotation->discount_type;
         $this->notes = $quotation->notes;
         $this->status = $quotation->status;
         $this->valid_until = \Carbon\Carbon::parse($quotation->valid_until)->format('Y-m-d');
@@ -70,7 +76,6 @@ new class extends Component {
             })
             ->toArray();
     }
-
 
     public function addItem()
     {
@@ -97,9 +102,9 @@ new class extends Component {
         $baseTotal = collect($this->items)->sum('total_price');
         $this->tax = collect($this->items)->sum('vat_tax');
 
-        $discount = floatval($this->discount ?? 0);
+        $discountAmount = $this->computeDiscount();
 
-        $total = $baseTotal - $discount;
+        $total = $baseTotal - $discountAmount;
 
         $this->total_amount = floatval(sprintf('%.2f', $total));
     }
@@ -202,6 +207,26 @@ new class extends Component {
         $this->calculateTotal();
     }
 
+    public function updatedDiscountType()
+    {
+        $this->discount = 0;
+        $this->calculateTotal();
+    }
+
+    public function computeDiscount()
+    {
+        $discount = (float)$this->discount;
+        $baseTotal = (float) collect($this->items)->sum('total_price');
+
+        if ($this->discount_type === 'percentage') {
+            $this->total_discount = $baseTotal * ($discount / 100);
+        } else {
+            $this->total_discount = $discount;
+        }
+
+        return $this->total_discount;
+    }
+
     public function save()
     {
         $this->validate();
@@ -213,6 +238,7 @@ new class extends Component {
             'total_amount' => $this->total_amount,
             'tax' => $this->tax,
             'discount' => $this->discount,
+            'discount_type' => $this->discount_type,
             'notes' => $this->notes,
             'status' => $this->status,
             'valid_until' => $this->valid_until,
@@ -222,20 +248,21 @@ new class extends Component {
             $this->quotation->update($data);
             $this->quotation->items()->delete();
             foreach ($this->items as $item) {
-                unset($item['is_vatable']); 
+                unset($item['is_vatable']);
                 $this->quotation->items()->create($item);
             }
             flash()->success('Quotation updated successfully!');
         } else {
-            $quotation = Quotation::create($data);
+            $this->quotation = Quotation::create($data);
             foreach ($this->items as $item) {
-                unset($item['is_vatable']); 
-                $quotation->items()->create($item);
+                unset($item['is_vatable']);
+                $this->quotation->items()->create($item);
             }
             flash()->success('Quotation created successfully!');
+            $quotation = $this->quotation;
+            $this->resetForm();
+            return $quotation;
         }
-
-        return redirect()->route('quotations');
     }
 
     private function resetForm()
@@ -249,19 +276,147 @@ new class extends Component {
 
     public function cancel() 
     {
-        if($this->isEditing) {
-            return redirect()->route('quotations');
+        return redirect()->route('quotations');
+    }
+
+    public function print()
+    {
+        $this->save();
+        $this->showPrintPreview = true;
+        $this->dispatch('open-print-dialog');
+        $this->dispatch('start-pdf-loading');
+    }
+
+    public function downloadPDF()
+    {
+        if (!$this->quotation) {
+            return;
         }
+
+        $pdf = PDF::loadView('livewire.quotations.pdf', [
+            'quotation' => $this->quotation->load(['customer', 'agent', 'items.product']),
+        ]);
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'SANVEN-' . $this->quotation->quotation_number . '.pdf');
+    }
+
+    public function streamPDF()
+    {
+
+        $this->loadingPDFPreview = true;
+        $this->dispatch('pdf-loading-started');
+
+        if (!$this->quotation) {
+            $this->quotation = $this->save();
+        }
+
+        $pdf = PDF::loadView('livewire.quotations.pdf', [
+            'quotation' => $this->quotation->load(['customer', 'agent', 'items.product']),
+        ]);
+
+        $this->loadingPDFPreview = false;
+        $this->dispatch('pdf-generation-complete'); 
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'quotation-preview-' . $this->quotation->quotation_number . '.pdf', [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="quotation-preview-' . $this->quotation->quotation_number . '.pdf"'
+        ]);
+    }
+
+    public function closePrintPreview()
+    {
+        $this->showPrintPreview = false;
     }
 };
 ?>
 
-<div>    
+<div x-data="{ 
+        showPreview: @entangle('showPrintPreview'), 
+        isLoading: false,
+        isIframeLoaded: false
+    }">    
     <x-quotations-form
-        :is-editing="false"
+        :is-editing="true"
         :customers="$customers"
         :products="$products"
         :agents="$agents"
         :withVAT="isset($product) && $product->is_vatable"
+        :discount_type="$discount_type"
+        :modelInstance="$quotation"
     />
+
+    <div x-show="showPreview" 
+        x-cloak
+        class="fixed inset-0 z-50 flex"
+        @open-print-dialog.window="showPreview = true"
+        @pdf-loading-started.window="isLoading = true"
+        @pdf-generation-complete.window="isLoading = false"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100">
+        
+        <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
+
+        <div class="relative z-50 my-8 mx-auto p-5 w-11/12 max-w-6xl shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Print Preview - {{ $quotation->quotation_number ?? '' }}
+                </h3>
+                <button wire:click="closePrintPreview" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mb-4 flex space-x-2">
+                <flux:button variant="primary" color="blue" icon="printer" onclick="printIframe()">Print</flux:button>
+                <flux:button variant="primary" color="green" icon="document" wire:click="downloadPDF">Download PDF</flux:button>
+            </div>
+
+            @if ($quotation)
+                <div x-show="isLoading" class="flex items-center justify-center h-64 text-gray-600">
+                    <svg class="animate-spin h-6 w-6 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Generating PDF preview...
+                </div>
+
+                <div x-show="!isLoading" class="h-[100vh] border border-gray-300 rounded-lg overflow-hidden">
+                    <iframe 
+                        id="pdfPreview"
+                        src="{{ route('quotations.stream-pdf', $quotation->id) }}"
+                        width="100%" 
+                        height="100%"
+                        class="w-full h-full"
+                        frameborder="0"
+                        @load="isIframeLoaded = true"
+                        x-init="isIframeLoaded = false"
+                        x-show="isIframeLoaded"
+                    >
+                        Your browser does not support PDFs. Please download the PDF to view it.
+                    </iframe>
+                    
+                    <div x-show="!isIframeLoaded && !isLoading" class="flex items-center justify-center h-full text-gray-600">
+                        <svg class="animate-spin h-6 w-6 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        Loading PDF preview...
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+    <script>
+        function printIframe() {
+            const iframe = document.getElementById('pdfPreview');
+            iframe.contentWindow.print();
+        }
+    </script>
 </div>

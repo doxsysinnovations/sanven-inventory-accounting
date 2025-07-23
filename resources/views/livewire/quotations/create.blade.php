@@ -24,12 +24,15 @@ new class extends Component {
     public $total_amount = 0;
     public $total_vat = 0;
     public $tax = null;
-    public $discount = null;
+    public $discount = 0;
+    public $discount_type = '';
+    public $total_discount = 0;
     public $notes = '';
     public $status = '';
     public $valid_until = '';
     public $is_vatable = false;
     public $showPrintPreview = false;
+    public $loadingPDFPreview = false;
 
     // Items fields
     public $items = [];
@@ -74,9 +77,9 @@ new class extends Component {
         $baseTotal = collect($this->items)->sum('total_price');
         $this->tax = collect($this->items)->sum('vat_tax');
 
-        $discount = floatval($this->discount ?? 0);
+        $discountAmount = $this->computeDiscount();
 
-        $total = $baseTotal - $discount;
+        $total = $baseTotal - $discountAmount;
 
         $this->total_amount = floatval(sprintf('%.2f', $total));
     }
@@ -179,6 +182,26 @@ new class extends Component {
         $this->calculateTotal();
     }
 
+    public function updatedDiscountType()
+    {
+        $this->discount = 0;
+        $this->calculateTotal();
+    }
+
+    public function computeDiscount()
+    {
+        $discount = (float)$this->discount;
+        $baseTotal = (float) collect($this->items)->sum('total_price');
+
+        if ($this->discount_type === 'percentage') {
+            $this->total_discount = $baseTotal * ($discount / 100);
+        } else {
+            $this->total_discount = $discount;
+        }
+
+        return $this->total_discount;
+    }
+
     public function save()
     {
         $this->validate();
@@ -190,6 +213,7 @@ new class extends Component {
             'total_amount' => $this->total_amount,
             'tax' => $this->tax,
             'discount' => $this->discount,
+            'discount_type' => $this->discount_type,
             'notes' => $this->notes,
             'status' => $this->status,
             'valid_until' => $this->valid_until,
@@ -203,7 +227,7 @@ new class extends Component {
                 $this->quotation->items()->create($item);
             }
             flash()->success('Quotation updated successfully!');
-            return redirect()->return('quotations');
+            return redirect()->route('quotations');
         } else {
             $this->quotation = Quotation::create($data);
             foreach ($this->items as $item) {
@@ -236,6 +260,7 @@ new class extends Component {
         $this->quotation = $this->save();
         $this->showPrintPreview = true;
         $this->dispatch('open-print-dialog');
+        $this->dispatch('start-pdf-loading');
     }
 
     public function downloadPDF()
@@ -250,11 +275,15 @@ new class extends Component {
 
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->stream();
-        }, 'SANVEN-QUOTATION-' . $this->quotation->quotation_number . '.pdf');
+        }, 'SANVEN-' . $this->quotation->quotation_number . '.pdf');
     }
 
     public function streamPDF()
     {
+
+        $this->loadingPDFPreview = true;
+        $this->dispatch('pdf-loading-started');
+
         if (!$this->quotation) {
             $this->quotation = $this->save();
         }
@@ -262,6 +291,9 @@ new class extends Component {
         $pdf = PDF::loadView('livewire.quotations.pdf', [
             'quotation' => $this->quotation->load(['customer', 'agent', 'items.product']),
         ]);
+
+        $this->loadingPDFPreview = false;
+        $this->dispatch('pdf-generation-complete'); 
 
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->stream();
@@ -278,19 +310,26 @@ new class extends Component {
 };
 ?>
 
-<div x-data="{ showPreview: @entangle('showPrintPreview') }">    
+<div x-data="{ 
+        showPreview: @entangle('showPrintPreview'), 
+        isLoading: false,
+        isIframeLoaded: false
+    }">    
     <x-quotations-form
         :is-editing="false"
         :customers="$customers"
         :products="$products"
         :agents="$agents"
         :withVAT="isset($product) && $product->is_vatable"
+        :discount_type="$discount_type"
     />
 
     <div x-show="showPreview" 
         x-cloak
         class="fixed inset-0 z-50 flex"
         @open-print-dialog.window="showPreview = true"
+        @pdf-loading-started.window="isLoading = true"
+        @pdf-generation-complete.window="isLoading = false"
         x-transition:enter="ease-out duration-300"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100">
@@ -310,20 +349,41 @@ new class extends Component {
             </div>
 
             <div class="mb-4 flex space-x-2">
-                <flux:button variant="primary" icon="printer" onclick="printIframe()">Print</flux:button>
+                <flux:button variant="primary" color="blue" icon="printer" onclick="printIframe()">Print</flux:button>
                 <flux:button variant="primary" color="green" icon="document" wire:click="downloadPDF">Download PDF</flux:button>
             </div>
 
             @if ($quotation)
-                <div class="h-[100vh] border border-gray-300 rounded-lg overflow-hidden">
-                    <iframe id="pdfPreview"
-                            src="{{ route('quotations.stream-pdf', $quotation->id) }}"
-                            width="100%"
-                            height="100%"
-                            class="w-full h-full"
-                            frameborder="0">
+                <div x-show="isLoading" class="flex items-center justify-center h-64 text-gray-600">
+                    <svg class="animate-spin h-6 w-6 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Generating PDF preview...
+                </div>
+
+                <div x-show="!isLoading" class="h-[100vh] border border-gray-300 rounded-lg overflow-hidden">
+                    <iframe 
+                        id="pdfPreview"
+                        src="{{ route('quotations.stream-pdf', $quotation->id) }}"
+                        width="100%" 
+                        height="100%"
+                        class="w-full h-full"
+                        frameborder="0"
+                        @load="isIframeLoaded = true"
+                        x-init="isIframeLoaded = false"
+                        x-show="isIframeLoaded"
+                    >
                         Your browser does not support PDFs. Please download the PDF to view it.
                     </iframe>
+                    
+                    <div x-show="!isIframeLoaded && !isLoading" class="flex items-center justify-center h-full text-gray-600">
+                        <svg class="animate-spin h-6 w-6 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        Loading PDF preview...
+                    </div>
                 </div>
             @endif
         </div>
