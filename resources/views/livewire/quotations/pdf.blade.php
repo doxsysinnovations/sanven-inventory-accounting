@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quotation</title>
     <style>
         @page {
             size: letter;
-            margin: 1in;
         }
 
         * {
@@ -22,13 +21,12 @@
             line-height: 1.4;
             color: #333;
             background-color: white;
+            margin: 0.5in 0in;
         }
 
         .container {
             width: 100%;
             max-width: 7.5in;
-            margin-top: 50px;
-            margin-bottom: 50px;
         }
 
         .header {
@@ -116,7 +114,6 @@
             border: 1px solid #057bba;
         }
 
-        /* Customer Section */
         .customer-section {
             margin-bottom: 20px;
         }
@@ -174,7 +171,7 @@
             text-transform: uppercase;
             font-size: 9px;
             font-weight: bold;
-            padding: 8px 6px;
+            padding: 8px 12px;
             text-align: left;
         }
 
@@ -225,10 +222,6 @@
             padding: 0;
             vertical-align: top;
            
-        }
-        
-        .bottom-table td:first-child {
-            padding-right: 10px;
         }
         
         .notes-cell {
@@ -378,7 +371,7 @@
             <table class="header-table">
                 <tr>
                     <td style="width: 50%;">
-                       <img src="{{ public_path('images/sanven-logo-2.svg') }}" alt="Sanven Logo" height="40">
+                        <img src="{{ public_path('images/sanven-logo-3.png') }}" alt="Sanven" height="40">
                     </td>
                     <td style="width: 50%;">
                         <div class="title">Quotation</div>
@@ -508,11 +501,22 @@
                                     <td><span class="currency">₱</span> {{ number_format(($quotation->total_amount ?? 0) - ($quotation->tax ?? 0) - ($quotation->discount ?? 0), 2) }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Discount</th>
-                                    <td class="discount-color"><span class="currency">₱</span> {{ number_format($quotation->discount, 2) }}</td>
+                                    @php
+                                        $base = $quotation->items->sum('total_price');
+
+                                        if ($quotation->discount_type === 'percentage') {
+                                            $rate = $quotation->discount;
+                                            $discount = ($rate / 100) * $base; 
+                                        } else {
+                                            $discount = $quotation->discount; 
+                                            $rate = $base > 0 ? ($discount / $base) * 100 : 0;
+                                        }
+                                    @endphp
+                                    <th>Discount ({{ number_format($rate, 2) }}%)</th>
+                                    <td class="discount-color"><span class="currency">₱</span> {{ number_format($discount, 2) }}</td>
                                 </tr>
                                 <tr>
-                                    <th>VAT</th>
+                                    <th>Total VAT</th>
                                     <td class="discount-color"><span class="currency">₱</span> {{ number_format($quotation->tax ?? 0, 2) }}</td>
                                 </tr>
                                 <tr class="grand-total-row">
