@@ -2,10 +2,10 @@
     'quotation' => 'null'
 ])
 
-<div class="bg-white p-15 flex flex-col space-y-10">
+<div class="bg-white p-15 rounded-lg flex flex-col space-y-10">
     <div class="flex justify-between gap-5">
             <div><x-app-logo-icon class="h-10 w-auto"/></div>
-            <div class="text-5xl font-bold text-(--color-accent)">Quotation</div>
+            <div class="text-3xl md:text-5xl font-bold text-(--color-accent)">Quotation</div>
     </div>
 
     <div class="flex justify-between">
@@ -96,7 +96,7 @@
             </thead>
             <tbody>
                 @if (!empty($quotation->customer->name))
-                <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
                     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                         Customer Name
                     </th>
@@ -107,7 +107,7 @@
                 @endif
 
                 @if (!empty($quotation->customer->email))
-                <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
                     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                         Email
                     </th>
@@ -118,7 +118,7 @@
                 @endif
 
                 @if (!empty($quotation->customer->phone))
-                <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
                     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                         Phone
                     </th>
@@ -157,7 +157,7 @@
             </thead>
             <tbody>
                 @foreach($quotation->items as $item)
-                    <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                    <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
                         <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                             <span>{{ $item->product->name ?? '' }}</span>
                         </th>
@@ -168,15 +168,15 @@
                             <span>{{ $item->quantity ?? 0 }}</span>
                         </td>
                         <td class="px-6 py-4 text-zinc-700 ">
-                            <span style="font-family: DejaVu Sans;">&#8369;</span> 
+                            <span style="font-family: Arial;">&#8369;</span> 
                             <span>{{ number_format($item->unit_price, 2) ?? 0 }}</span>
                         </td>
                         <td class="px-6 py-4 text-zinc-700 ">
-                            <span style="font-family: DejaVu Sans;">&#8369;</span> 
+                            <span style="font-family: Arial;">&#8369;</span> 
                             <span>{{ number_format($item->vat_tax) ?? 0.00  }}</span>
                         </td>
                         <td class="px-6 py-4 text-zinc-700 ">
-                            <span style="font-family: DejaVu Sans;">&#8369;</span> 
+                            <span style="font-family: Arial;">&#8369;</span> 
                             <span>{{ number_format($item->total_price, 2) ?? 0.00 }}</span>
                         </td>
                     </tr>
@@ -207,39 +207,50 @@
                 <div class="relative overflow-x-auto">
                     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                         <tbody>
-                            <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                            <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
                                 <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                     Subtotal
                                 </th>
                                 <td class="px-6 py-4 text-(--color-accent) font-bold">
-                                    <span style="font-family: DejaVu Sans;">&#8369;</span> 
+                                    <span style="font-family: Arial;">&#8369;</span> 
                                     {{ number_format(($quotation->total_amount ?? 0) - ($quotation->tax ?? 0) - ($quotation->discount ?? 0), 2) }}
                                 </td>
                             </tr>
-                            <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                            <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
+                                @php
+                                    $base = $quotation->items->sum('total_price');
+
+                                    if ($quotation->discount_type === 'percentage') {
+                                        $rate = $quotation->discount;
+                                        $discount = ($rate / 100) * $base; 
+                                    } else {
+                                        $discount = $quotation->discount; 
+                                        $rate = $base > 0 ? ($discount / $base) * 100 : 0;
+                                    }
+                                @endphp
                                 <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                    Discount
+                                    Discount ({{ number_format($rate, 2) }}%)
                                 </th>
                                 <td class="px-6 py-4 text-(--color-accent-2)">
-                                    <span style="font-family: DejaVu Sans;">&#8369;</span> 
-                                    {{ number_format($quotation->discount, 2) }}
+                                    <span style="font-family: Arial;">&#8369;</span> 
+                                    {{ number_format($discount, 2) }}
                                 </td>
                             </tr>
-                            <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                            <tr class="bg-white border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
                                 <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                     VAT
                                 </th>
                                 <td class="px-6 py-4 text-(--color-accent-2)">
-                                    <span style="font-family: DejaVu Sans;">&#8369;</span> 
+                                    <span style="font-family: Arial;">&#8369;</span> 
                                     {{ number_format($quotation->tax ?? 0, 2) }}
                                 </td>
                             </tr>
-                            <tr class="bg-(--color-accent) border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-300">
+                            <tr class="bg-(--color-accent) border-l border-r border-b dark:bg-gray-800 dark:border-gray-700 border-zinc-400">
                                 <th scope="row" class="px-6 py-4 font-bold text-white whitespace-nowrap dark:text-white">
                                     GRAND TOTAL
                                 </th>
                                 <td class="px-6 py-4 text-white font-bold">
-                                    <span class="text-base" style="font-family: DejaVu Sans;">&#8369;</span> 
+                                    <span class="text-base" style="font-family: Arial;">&#8369;</span> 
                                     {{ number_format($quotation->total_amount ?? 0, 2) }}
                                 </td>
                             </tr>
@@ -279,8 +290,12 @@
         </div>
     </div>
 
-    <div class="flex flex-col w-full justify-center items-center text-center">
-        <p>If you have any question please contact:</p>
-        <p>Thank you for your business!</p>
+    <div class="flex flex-col w-full justify-center items-center">
+        <div> 
+            <span>If you have any question please contact: <span class="font-bold">&lt;insert contact information here&gt;</span></span>
+        </div>
+        <div> 
+            <span>Thank you for your business!</span>
+        </div>
     </div>
 </div>
