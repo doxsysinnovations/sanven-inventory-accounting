@@ -158,7 +158,7 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Invoices</span>
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Recievables</span>
                     </div>
                 </li>
             </ol>
@@ -168,10 +168,10 @@ new class extends Component {
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h2 class="text-lg font-semibold">Invoice List</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-300">Manage all your invoices in one place</p>
+            <h2 class="text-lg font-semibold">Account Recievables List</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-300">View all your recievables in one place</p>
         </div>
-        <div>
+        <!-- <div>
             <a href="{{ route('invoicing.create') }}"
                 class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -181,7 +181,7 @@ new class extends Component {
                 </svg>
                 Create Invoice
             </a>
-        </div>
+        </div> -->
     </div>
 
     <!-- Filters -->
@@ -276,8 +276,8 @@ new class extends Component {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">No invoices found</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new invoice.</p>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">No recievables found</h3>
+                <!-- <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new invoice.</p>
                 <div class="mt-6">
                     <a href="{{ route('invoicing.create') }}"
                         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors">
@@ -288,7 +288,7 @@ new class extends Component {
                         </svg>
                         Create Invoice
                     </a>
-                </div>
+                </div> -->
             </div>
         @else
             <div class="overflow-x-auto">
@@ -313,11 +313,23 @@ new class extends Component {
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Due
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Days Overdue
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Status
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Payment
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Agent
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -340,13 +352,30 @@ new class extends Component {
                                         {{ $invoice->customer->email }}</div>
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900 dark:text-gray-100">
-                                    Php {{ number_format($invoice->grand_total, 2) }}
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                    ₱ {{ number_format($invoice->grand_total, 2) }}
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400">
-                                    {{ \Carbon\Carbon::parse($invoice->issued_date)->format('M d, Y') }} </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-left">
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ \Carbon\Carbon::parse($invoice->issued_date)->format('M d, Y') }} 
+                                </td>
+                                <td
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }} 
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    @php
+                                        $due = \Carbon\Carbon::parse($invoice->due_date);
+                                        $now = now();
+                                        $daysOverdue = $now->isAfter($due) ? $due->diffInDays($now) : 0;
+                                    @endphp
+                                    @if($daysOverdue > 0)
+                                        <span class="text-red-600 font-semibold">{{ (int) $daysOverdue }} day/s</span>
+                                    @else
+                                        <span class="text-green-600 font-semibold">On-time</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <span @class([
                                         'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
                                         'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' =>
@@ -362,10 +391,16 @@ new class extends Component {
                                     </span>
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400">
+                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                     {{ ucfirst(str_replace('_', ' ', $invoice->payment_method)) }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900 dark:text-gray-100">
+                                        {{ $invoice->agent->name }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $invoice->agent->email }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex space-x-2">
                                         @can('invoicing.show')
                                             <button wire:click="showInvoice({{ $invoice->id }})"
@@ -379,8 +414,8 @@ new class extends Component {
                                                 </svg>
                                             </button>
                                         @endcan
-                                        @can('invoicing.edit')
-                                            <a href="{{ route('invoicing.edit', $invoice->id) }}"
+                                        <!-- @can('invoicing.edit')
+                                            <a href="{{ route('invoicing.show', $invoice->id) }}"
                                                 class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -398,7 +433,7 @@ new class extends Component {
                                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
                                             </button>
-                                        @endcan
+                                        @endcan -->
 
                                     </div>
                                 </td>
@@ -469,6 +504,15 @@ new class extends Component {
                                             d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                                     </svg>
                                     Customer: {{ $selectedInvoice->customer->name ?? '' }}
+                                </div>
+                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        aria-hidden="true">
+                                        <path
+                                            d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                    </svg>
+                                    Agent: {{ $selectedInvoice->agent->name ?? '' }}
                                 </div>
                             </div>
                         </div>

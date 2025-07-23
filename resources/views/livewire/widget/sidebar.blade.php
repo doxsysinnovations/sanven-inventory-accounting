@@ -71,6 +71,18 @@ new class extends Component {
                         'label' => 'Quotations List',
                         'permission' => 'quotations.view',
                     ],
+                    // [
+                    //     'icon' => 'pencil-square',
+                    //     'route' => 'purchase-requests',
+                    //     'label' => 'Purchase Requests',
+                    //     'permission' => 'purchase-requests.view',
+                    // ],
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'purchase-orders',
+                        'label' => 'Purchase Orders',
+                        'permission' => 'purchase-orders.view',
+                    ],
 
                 ]
             ],
@@ -154,6 +166,12 @@ new class extends Component {
                         'icon' => 'user-group',
                         'route' => 'agingreports',
                         'label' => 'Aging Reports',
+                        'permission' => 'suppliers.view',
+                    ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'recievables',
+                        'label' => 'Receivables',
                         'permission' => 'suppliers.view',
                     ],
                 ],
