@@ -85,10 +85,10 @@ $classes = Flux::classes()
             : Flux::applyInset($inset, top: '-mt-1', right: '-me-2', bottom: '-mb-1', left: '-ms-2'),
     } : '')
     ->add(match ($variant) { // Background color...
-        'primary' => 'bg-[var(--color-accent)] hover:bg-[#006499]',
+        'primary' => 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]',
         'filled' => 'bg-zinc-800/5 hover:bg-zinc-800/10 dark:bg-white/10 dark:hover:bg-white/20',
         'outline' => 'bg-white hover:bg-zinc-50 dark:bg-zinc-700 dark:hover:bg-zinc-600/75',
-        'danger' => 'bg-[var(--color-accent-2)] hover:bg-[var(--color-accent-2-alt)] dark:bg-red-600 dark:hover:bg-red-500',
+        'danger' => 'bg-[var(--color-accent-2)] hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500',
         'ghost' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
         'subtle' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
     })
@@ -140,12 +140,29 @@ $classes = Flux::classes()
         'amber' => '[--color-accent:var(--color-amber-400)] [--color-accent-content:var(--color-amber-600)] [--color-accent-foreground:var(--color-amber-950)] dark:[--color-accent:var(--color-amber-400)] dark:[--color-accent-content:var(--color-amber-400)] dark:[--color-accent-foreground:var(--color-amber-950)]',
         'yellow' => '[--color-accent:var(--color-yellow-400)] [--color-accent-content:var(--color-yellow-600)] [--color-accent-foreground:var(--color-yellow-950)] dark:[--color-accent:var(--color-yellow-400)] dark:[--color-accent-content:var(--color-yellow-400)] dark:[--color-accent-foreground:var(--color-yellow-950)]',
         'lime' => '[--color-accent:var(--color-lime-400)] [--color-accent-content:var(--color-lime-600)] [--color-accent-foreground:var(--color-lime-900)] dark:[--color-accent:var(--color-lime-400)] dark:[--color-accent-content:var(--color-lime-400)] dark:[--color-accent-foreground:var(--color-lime-950)]',
-        'green' => '[--color-accent:var(--color-green-600)] [--color-accent-content:var(--color-green-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-green-600)] dark:[--color-accent-content:var(--color-green-400)] dark:[--color-accent-foreground:var(--color-white)]',
+        'green' => '[--color-accent:var(--color-green-600)]
+                [--color-accent-hover:var(--color-green-700)]  
+                [--color-accent-content:var(--color-white)]
+                [--color-accent-foreground:var(--color-white)]
+                dark:[--color-accent:var(--color-green-800)]
+                dark:[--color-accent-hover:var(--color-green-200)] 
+                dark:[--color-accent-content:var(--color-green-400)]
+                dark:[--color-accent-foreground:var(--color-white)]
+                hover:[--color-accent-foreground:var(--color-white]
+                dark:hover:[--color-accent-foreground:var(--color-green-800)]',
         'emerald' => '[--color-accent:var(--color-emerald-600)] [--color-accent-content:var(--color-emerald-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-emerald-600)] dark:[--color-accent-content:var(--color-emerald-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'teal' => '[--color-accent:var(--color-teal-600)] [--color-accent-content:var(--color-teal-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-teal-600)] dark:[--color-accent-content:var(--color-teal-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'cyan' => '[--color-accent:var(--color-cyan-600)] [--color-accent-content:var(--color-cyan-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-cyan-600)] dark:[--color-accent-content:var(--color-cyan-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'sky' => '[--color-accent:var(--color-sky-600)] [--color-accent-content:var(--color-sky-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-sky-600)] dark:[--color-accent-content:var(--color-sky-400)] dark:[--color-accent-foreground:var(--color-white)]',
-        'blue' => '[--color-accent:var(--color-blue-500)] [--color-accent-content:var(--color-blue-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-blue-500)] dark:[--color-accent-content:var(--color-blue-400)] dark:[--color-accent-foreground:var(--color-white)]',
+        'blue' => '[--color-accent:#057bba]  
+                [--color-accent-content:var(--color-white)] 
+                [--color-accent-hover:var(--color-accent-alt)] 
+                [--color-accent-foreground:var(--color-white)] 
+                hover:[--color-accent-foreground:var(--color-white)] 
+                dark:[--color-accent:var(--color-blue-500)] 
+                dark:[--color-accent-content:var(--color-blue-400)] 
+                dark:[--color-accent-hover:var(--color-accent-alt)] 
+                dark:[--color-accent-foreground:var(--color-white)]',
         'indigo' => '[--color-accent:var(--color-indigo-500)] [--color-accent-content:var(--color-indigo-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-indigo-500)] dark:[--color-accent-content:var(--color-indigo-300)] dark:[--color-accent-foreground:var(--color-white)]',
         'violet' => '[--color-accent:var(--color-violet-500)] [--color-accent-content:var(--color-violet-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-violet-500)] dark:[--color-accent-content:var(--color-violet-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'purple' => '[--color-accent:var(--color-purple-500)] [--color-accent-content:var(--color-purple-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-purple-500)] dark:[--color-accent-content:var(--color-purple-300)] dark:[--color-accent-foreground:var(--color-white)]',
