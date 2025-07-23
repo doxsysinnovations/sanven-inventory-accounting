@@ -31,7 +31,7 @@
         </div>
         <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
             <flux:button class="sm:w-auto" variant="danger" wire:click="cancel">Cancel</flux:button>
-            <flux:button class="sm:w-auto" type="submit" variant="primary">
+            <flux:button class="sm:w-auto" variant="primary" color="blue" type="submit" >
                 {{ $isEditing ? 'Update' : 'Create' }}
             </flux:button>
         </div>

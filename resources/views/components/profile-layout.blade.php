@@ -15,7 +15,7 @@
     ],
     'withStatus' => false,
     'status' => null,
-    'locationsConfig' => null // New prop for locations configuration
+    'locationsConfig' => null
 ])
 
 @php
