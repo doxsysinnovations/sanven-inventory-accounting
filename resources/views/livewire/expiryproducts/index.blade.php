@@ -161,6 +161,7 @@ new class extends Component {
                 ];
             })"
             editAbility="products.edit"
+            editParameter="id"
             editRoute="products.edit"
             deleteAbility="products.delete"
             deleteAction="confirmDelete"
