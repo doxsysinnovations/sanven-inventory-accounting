@@ -376,18 +376,76 @@ new class extends Component {
                         @endif
                     </div>
                     @if ($showAddSupplierForm)
-                        <div class="p-4 border rounded bg-white dark:bg-gray-800 mt-2">
-                            <label>Name (Contact Person)</label>
-                            <input type="text" wire:model="newSupplier.name" class="w-full mb-2" />
-                            <label>Trade Name (Company)</label>
-                            <input type="text" wire:model="newSupplier.trade_name" class="w-full mb-2" />
-                            <label>Contact Number</label>
-                            <input type="text" wire:model="newSupplier.contact_number" class="w-full mb-2" />
-                            <label>Address</label>
-                            <input type="text" wire:model="newSupplier.address" class="w-full mb-2" />
-                            <label>Email</label>
-                            <input type="email" wire:model="newSupplier.email" class="w-full mb-2" />
-                            <button type="button" wire:click="saveSupplier" class="px-4 py-2 bg-green-600 text-white rounded">Save Supplier</button>
+                        <div class="space-y-4 mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                            <h3 class="text-md font-medium">New Supplier Details</h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Name (Contact Person) <span class="text-red-500">*</span>
+                                    </label>
+                                    <input wire:model="newSupplier.name" type="text"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                    @error('newSupplier.name')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Trade Name (Company) <span class="text-red-500">*</span>
+                                    </label>
+                                    <input wire:model="newSupplier.trade_name" type="text"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                    @error('newSupplier.trade_name')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Contact Number
+                                    </label>
+                                    <input wire:model="newSupplier.contact_number" type="text"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                    @error('newSupplier.contact_number')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Email
+                                    </label>
+                                    <input wire:model="newSupplier.email" type="email"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                    @error('newSupplier.email')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Address <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea wire:model="newSupplier.address" rows="2"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200"></textarea>
+                                    @error('newSupplier.address')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between pt-4">
+                                <button wire:click="$set('showAddSupplierForm', false)" type="button"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="button" wire:click="saveSupplier"
+                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors">
+                                    Save Supplier
+                                </button>
+                            </div>
                         </div>
                     @endif
                     <div class="flex justify-end mt-6">
@@ -430,14 +488,50 @@ new class extends Component {
                         @endif
                     </div>
                     @if ($showAddProductForm)
-                        <div class="p-4 border rounded bg-white dark:bg-gray-800 mt-2">
-                            <label>Product Code</label>
-                            <input type="text" wire:model="newProduct.product_code" class="w-full mb-2" /> 
-                            <label>Product Name</label>
-                            <input type="text" wire:model="newProduct.name" class="w-full mb-2" />
-                            <label>Description</label>
-                            <textarea wire:model="newProduct.description" class="w-full mb-2"></textarea>
-                            <button type="button" wire:click="saveProduct" class="px-4 py-2 bg-green-600 text-white rounded">Save Product</button>
+                        <div class="space-y-4 mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 mt-2">
+                            <h3 class="text-md font-medium">New Product Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Product Code <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" wire:model="newProduct.product_code"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1">
+                                    @error('newProduct.product_code')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Product Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" wire:model="newProduct.name"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1">
+                                    @error('newProduct.name')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea wire:model="newProduct.description" rows="2"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1"></textarea>
+                                    @error('newProduct.description')
+                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="flex justify-between pt-4">
+                                <button wire:click="$set('showAddProductForm', false)" type="button"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="button" wire:click="saveProduct"
+                                    class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-colors">
+                                    Save Product
+                                </button>
+                            </div>
                         </div>
                     @endif
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
