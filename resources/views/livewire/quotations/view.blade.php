@@ -27,6 +27,8 @@ new class extends Component {
     public $valid_until = '';
     public $is_vatable = false;
     public $quotationInfo;
+    public $showPrintPreview = false;
+    public $loadingPDFPreview = false;
     
     // Items fields
     public $items = [];
@@ -44,7 +46,64 @@ new class extends Component {
 
         $this->quotation = $id;
     }
+    
+    public function print()
+    {
+        $this->quotation;
+        $this->showPrintPreview = true;
+        $this->dispatch('open-print-dialog');
+        $this->dispatch('start-pdf-loading');
+    }
+
+    public function downloadPDF()
+    {
+        if (!$this->quotation) {
+            return;
+        }
+
+        $pdf = PDF::loadView('livewire.quotations.pdf', [
+            'quotation' => $this->quotation->load(['customer', 'agent', 'items.product']),
+        ]);
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'SANVEN-' . $this->quotation->quotation_number . '.pdf');
+    }
+
+    public function streamPDF()
+    {
+
+        $this->loadingPDFPreview = true;
+        $this->dispatch('pdf-loading-started');
+
+        if (!$this->quotation) {
+            $this->quotation;
+        }
+
+        $pdf = PDF::loadView('livewire.quotations.pdf', [
+            'quotation' => $this->quotation->load(['customer', 'agent', 'items.product']),
+        ]);
+
+        $this->loadingPDFPreview = false;
+        $this->dispatch('pdf-generation-complete'); 
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'quotation-preview-' . $this->quotation->quotation_number . '.pdf', [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="quotation-preview-' . $this->quotation->quotation_number . '.pdf"'
+        ]);
+    }
+
+    public function closePrintPreview()
+    {
+        $this->showPrintPreview = false;
+    }
 };
 ?>
 
-<x-quotation-preview :quotation="$quotation" />
+<div>
+    <x-print-pop-up :quotation="$quotation" modelInstance="quotation">
+        <x-quotation-preview :quotation="$quotation" />
+    </x-print-pop-up>
+</div>
