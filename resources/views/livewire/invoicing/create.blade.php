@@ -377,11 +377,13 @@ new class extends Component {
                 'tax' => $this->tax,
                 'grand_total' => $this->total,
                 'status' => 'pending',
+                'payment_terms' => $this->payment_terms,
                 'payment_method' => $this->payment_method,
                 'due_date' => $this->due_date,
                 'issued_date' => $this->invoice_date,
                 'notes' => $this->notes,
                 'created_by' => auth()->id(),
+                'agent_id' => $this->assigned_agent,
             ]);
 
             // Add invoice items
