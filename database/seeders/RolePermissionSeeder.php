@@ -90,6 +90,7 @@ class RolePermissionSeeder extends Seeder
             'quotations.create',
             'quotations.edit',
             'quotations.delete',
+            'quotations.pdf',
 
             //Purchases
             'purchases.view',

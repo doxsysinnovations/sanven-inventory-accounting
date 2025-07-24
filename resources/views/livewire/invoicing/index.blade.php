@@ -111,7 +111,54 @@ new class extends Component {
         $this->reset(['selectedInvoice', 'showInvoiceModal']);
     }
 
+  
+public function getTotalInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->count();
+}
+
+public function getTotalInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->sum('grand_total');
+}
+
+public function getToDeliverInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'to_deliver')->count();
+}
+
+public function getToDeliverInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'to_deliver')->sum('grand_total');
+}
+
+public function getDeliveredInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'delivered')->count();
+}
+
+public function getDeliveredInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'delivered')->sum('grand_total');
+}
+
+public function getPendingInvoicesCountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'pending')->count();
+}
+
+public function getPendingInvoicesAmountProperty()
+{
+    return $this->filteredInvoicesQuery()->where('status', 'pending')->sum('grand_total');
+}
     public function getInvoicesProperty()
+    {
+        return $this->filteredInvoicesQuery()
+        ->latest()
+        ->paginate($this->perPage);
+    }
+
+    protected function filteredInvoicesQuery()
     {
         return Invoice::with('customer')
             ->when($this->search, function ($query) {
@@ -129,9 +176,7 @@ new class extends Component {
             })
             ->when($this->endDate && !$this->startDate, function ($query) {
                 $query->where('issued_date', '<=', $this->endDate);
-            })
-            ->latest()
-            ->paginate($this->perPage);
+            });
     }
 }; ?>
 
@@ -252,6 +297,92 @@ new class extends Component {
         </div>
     </div>
 
+    <div class="flex justify-between overflow-x-auto mb-8 gap-6">
+        <!-- Total -->
+        <div
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            <div class="h-14 w-14 rounded-full border-2 border-blue-500 text-blue-500 flex justify-center items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-linecap="round" stroke-width="1.5">
+                    <path
+                        d="M13.358 21c2.227 0 3.341 0 4.27-.533c.93-.532 1.52-1.509 2.701-3.462l.681-1.126c.993-1.643 1.49-2.465 1.49-3.379s-.497-1.736-1.49-3.379l-.68-1.126c-1.181-1.953-1.771-2.93-2.701-3.462C16.699 4 15.585 4 13.358 4h-2.637C9.683 4 8.783 4 8 4.024m-4.296 1.22C2.5 6.49 2.5 8.495 2.5 12.5s0 6.01 1.204 7.255c.998 1.033 2.501 1.209 5.196 1.239M7.5 7.995V17">
+                    </path>
+                </svg>
+            </div>
+            <div>
+                <h5 class="text-base font-medium">Total</h5>
+                <p class="text-sm opacity-80">{{ $this->totalInvoicesCount }} invoices</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($this->totalInvoicesAmount, 2) }}</h6>
+            </div>
+        </div>
+
+        <!-- Shipped -->
+        <div
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            <div
+                class="h-14 w-14 rounded-full border-2 border-green-500 text-green-500 flex justify-center items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path
+                        d="M3 10.417c0-3.198 0-4.797.378-5.335c.377-.537 1.88-1.052 4.887-2.081l.573-.196C10.405 2.268 11.188 2 12 2s1.595.268 3.162.805l.573.196c3.007 1.029 4.51 1.544 4.887 2.081C21 5.62 21 7.22 21 10.417v1.574c0 5.638-4.239 8.375-6.899 9.536C13.38 21.842 13.02 22 12 22s-1.38-.158-2.101-.473C7.239 20.365 3 17.63 3 11.991z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M16 11.55L12.6 9a1 1 0 0 0-1.2 0L8 11.55m6 2.5l-2-1.5l-2 1.5"></path>
+                </svg>
+            </div>
+            <div>
+                <h5 class="text-base font-medium">To Deliver</h5>
+                <p class="text-sm opacity-80">{{ $this->toDeliverInvoicesCount }} invoices</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($this->toDeliverInvoicesAmount, 2) }}</h6>
+            </div>
+        </div>
+
+        <!-- Delivered -->
+        <div
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            <div
+                class="h-14 w-14 rounded-full border-2 border-purple-500 text-purple-500 flex justify-center items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path
+                        d="M5 8.515C5 4.917 8.134 2 12 2s7 2.917 7 6.515c0 3.57-2.234 7.735-5.72 9.225a3.28 3.28 0 0 1-2.56 0C7.234 16.25 5 12.084 5 8.515Z">
+                    </path>
+                    <path d="M14 9a2 2 0 1 1-4 0a2 2 0 0 1 4 0Z"></path>
+                    <path stroke-linecap="round"
+                        d="M20.96 15.5c.666.602 1.04 1.282 1.04 2c0 2.485-4.477 4.5-10 4.5S2 19.985 2 17.5c0-.718.374-1.398 1.04-2">
+                    </path>
+                </svg>
+            </div>
+            <div>
+                <h5 class="text-base font-medium">Delivered</h5>
+                <p class="text-sm opacity-80">{{ $this->deliveredInvoicesCount }} invoices</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($this->deliveredInvoicesAmount, 2) }}</h6>
+            </div>
+        </div>
+
+        <!-- Pending -->
+        <div
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            <div
+                class="h-14 w-14 rounded-full border-2 border-yellow-500 text-yellow-500 flex justify-center items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5">
+                    <path stroke-linejoin="round"
+                        d="m14.52 10.68l-.28-.28a3.168 3.168 0 1 0 .907 2.6m-.627-2.32L13 11m1.52-.32V9"></path>
+                    <path
+                        d="M2 13.364c0-3.065 0-4.597.749-5.697a4.4 4.4 0 0 1 1.226-1.204c.72-.473 1.622-.642 3.003-.702c.659 0 1.226-.49 1.355-1.125A2.064 2.064 0 0 1 10.366 3h3.268c.988 0 1.839.685 2.033 1.636c.129.635.696 1.125 1.355 1.125c1.38.06 2.282.23 3.003.702c.485.318.902.727 1.226 1.204c.749 1.1.749 2.632.749 5.697s0 4.596-.749 5.697a4.4 4.4 0 0 1-1.226 1.204C18.904 21 17.343 21 14.222 21H9.778c-3.121 0-4.682 0-5.803-.735A4.4 4.4 0 0 1 2.75 19.06A3.4 3.4 0 0 1 2.277 18">
+                    </path>
+                </svg>
+            </div>
+            <div>
+                <h5 class="text-base font-medium">Pending</h5>
+                <p class="text-sm opacity-80">{{ $this->pendingInvoicesCount }} invoices</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($this->pendingInvoicesAmount, 2) }}</h6>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Per Page Selector -->
     <div class="flex justify-end mb-4">
         <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -271,8 +402,9 @@ new class extends Component {
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         @if ($invoices->isEmpty())
             <div class="p-8 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -340,8 +472,13 @@ new class extends Component {
                                         {{ $invoice->customer->email }}</div>
                                 </td>
                                 <td
+<<<<<<< HEAD
                                     class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900 dark:text-gray-100">
                                     Php {{ number_format($invoice->grand_total, 2) }}
+=======
+                                    class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-gray-100">
+                                    ₱{{ number_format($invoice->grand_total, 2) }}
+>>>>>>> b0e8b3b9d4ad00fa685caa14bd73c24baca1baf4
                                 </td>
                                 <td
                                     class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400">
@@ -355,7 +492,7 @@ new class extends Component {
                                             $invoice->status === 'paid',
                                         'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' =>
                                             $invoice->status === 'overdue',
-                                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100' =>
+                                        'bg-gray-50 text-gray-800 dark:bg-gray-700 dark:text-gray-100' =>
                                             $invoice->status === 'cancelled',
                                     ])>
                                         {{ ucfirst($invoice->status) }}
@@ -481,7 +618,7 @@ new class extends Component {
                                     isset($selectedInvoice) && $selectedInvoice->status === 'paid',
                                 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' =>
                                     isset($selectedInvoice) && $selectedInvoice->status === 'overdue',
-                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100' =>
+                                'bg-gray-50 text-gray-800 dark:bg-gray-700 dark:text-gray-100' =>
                                     isset($selectedInvoice) && $selectedInvoice->status === 'cancelled',
                             ])>
                                 {{ isset($selectedInvoice) ? ucfirst($selectedInvoice->status) : '' }}
@@ -518,7 +655,7 @@ new class extends Component {
                         <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">INVOICE ITEMS</h4>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-100 dark:bg-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
                                     <tr>
                                         <th scope="col"
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -563,19 +700,19 @@ new class extends Component {
                                             </td>
                                             <td
                                                 class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                Php {{ number_format($item->price, 2) }}
+                                                ₱{{ number_format($item->price, 2) }}
                                             </td>
                                             <td
                                                 class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                Php {{ number_format($item->discount ?? 0, 2) }}
+                                                ₱{{ number_format($item->discount ?? 0, 2) }}
                                             </td>
                                             <td
                                                 class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                Php {{ number_format($item->tax ?? 0, 2) }}
+                                                ₱{{ number_format($item->tax ?? 0, 2) }}
                                             </td>
                                             <td
                                                 class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100 font-medium">
-                                                Php {{ number_format($item->total, 2) }}
+                                                ₱{{ number_format($item->total, 2) }}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -590,24 +727,24 @@ new class extends Component {
                             <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                 <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
                                     <span>Subtotal</span>
-                                    <span>Php {{ number_format($selectedInvoice->total_amount ?? 0, 2) }}</span>
+                                    <span>₱{{ number_format($selectedInvoice->total_amount ?? 0, 2) }}</span>
                                 </div>
                                 @if ($selectedInvoice->discount ?? 0 > 0)
                                     <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
                                         <span>Discount</span>
-                                        <span>- Php {{ number_format($selectedInvoice->discount ?? 0, 2) }}</span>
+                                        <span>- ₱{{ number_format($selectedInvoice->discount ?? 0, 2) }}</span>
                                     </div>
                                 @endif
                                 @if ($selectedInvoice->tax ?? 0 > 0)
                                     <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
                                         <span>Tax</span>
-                                        <span>Php {{ number_format($selectedInvoice->tax ?? 0, 2) }}</span>
+                                        <span>₱{{ number_format($selectedInvoice->tax ?? 0, 2) }}</span>
                                     </div>
                                 @endif
                                 <div
                                     class="flex justify-between py-2 text-lg font-medium text-gray-900 dark:text-gray-100 border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
                                     <span>Total</span>
-                                    <span>Php {{ number_format($selectedInvoice->grand_total ?? 0, 2) }}</span>
+                                    <span>₱{{ number_format($selectedInvoice->grand_total ?? 0, 2) }}</span>
                                 </div>
                                 <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
                                     <span>Payment Method</span>

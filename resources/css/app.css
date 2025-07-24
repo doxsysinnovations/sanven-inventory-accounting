@@ -31,12 +31,14 @@
 
     --color-blue: #057bba;
     --color-blue-2: #006499;
+    --color-blue-3: #dbeafe;
 
     --color-yellow-100: #fef9c2;
     --color-yellow-400: #fcc800;
 
     --color-accent: var(--color-blue);
     --color-accent-alt: var(--color-blue-2);
+    --color-accent-muted: var(--color-blue-3);
 
     --color-accent-2: var(--color-red-1);
     --color-accent-2-alt: var(--color-red-2);

@@ -3,6 +3,8 @@
 use Livewire\Volt\Volt;
 use App\Livewire\TwoFactorVerify;
 use Illuminate\Support\Facades\Route;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Quotation;
 
 //For testing low stock notification
 use App\Models\Stock;
@@ -17,14 +19,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-
-
 // Route::view('dashboard', 'dashboard')
 //     ->middleware(['auth','check.active', 'verified','2fa'])
 //     ->name('dashboard');
-
-
-
 
 Route::middleware(['auth','check.active','2fa'])->group(function () {
 
@@ -44,24 +41,45 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('settings/seeders', 'settings.seeders')->name('settings.seeders');
 
     Volt::route('users', 'users.index')->name('users');
+    Volt::route('users/create', 'users.create')->name('users.create');
+    Volt::route('users/edit/{user}', 'users.edit')->name('users.edit');
+
     Volt::route('roles', 'roles.index')->name('roles');
+    Volt::route('roles/create', 'roles.create')->name('roles.create');
+    Volt::route('roles/edit/{role}', 'roles.edit')->name('roles.edit');
+
     Volt::route('audit-trail', 'audittrail.index')->name('audittrail');
 
     //Brands
     Volt::route('brands', 'brands.index')->name('brands');
-    //Types
-    Volt::route('types', 'types.index')->name('types');
+    Volt::route('brands/create', 'brands.create')->name('brands.create');
+    Volt::route('brands/edit/{brand}', 'brands.edit')->name('brands.edit');
+
     //Categories
     Volt::route('categories', 'categories.index')->name('categories');
+    Volt::route('categories/create', 'categories.create')->name('categories.create');
+    Volt::route('categories/edit/{category}', 'categories.edit')->name('categories.edit');
+
+    //Types
+    Volt::route('types', 'types.index')->name('types');
+    Volt::route('types/create', 'types.create')->name('types.create');
+    Volt::route('types/edit/{type}', 'types.edit')->name('types.edit');
+
     //Units
     Volt::route('units', 'units.index')->name('units');
+    Volt::route('units/create', 'units.create')->name('units.create');
+    Volt::route('units/edit/{unit}', 'units.edit')->name('units.edit');
+
     //Products
     Volt::route('products', 'products.index')->name('products');
     Volt::route('products/create', 'products.create')->name('products.create');
-    Volt::route('products/{productId}/edit', 'products.edit')->name('products.edit');
+    Volt::route('products/edit/{id}', 'products.edit')->name('products.edit');
 
     //Suppliers
     Volt::route('suppliers', 'suppliers.index')->name('suppliers');
+    Volt::route('suppliers/create', 'suppliers.create')->name('suppliers.create');
+    Volt::route('suppliers/edit/{supplier}', 'suppliers.edit')->name('suppliers.edit');
+    Volt::route('suppliers/view/{id}', 'suppliers.view')->name('suppliers.view');
 
     //Aging
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
@@ -85,9 +103,23 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('quotations', 'quotations.index')->name('quotations');
     Volt::route('quotations/create', 'quotations.create')->name('quotations.create');
     Volt::route('quotations/edit/{quotation}', 'quotations.edit')->name('quotations.edit');
+    Volt::route('quotations/view/{id}', 'quotations.view')->name('quotations.view');
+    Volt::route('quotations/pdf/{quotation}', 'quotations.pdf')->name('quotations.pdf');
+    Route::get('/quotations/{quotation}/stream-pdf', function (Quotation $quotation) {
+        $quotation->load(['customer', 'agent', 'items.product']);
+
+        $pdf = Pdf::loadView('livewire.quotations.pdf', [
+            'quotation' => $quotation,
+        ]);
+
+        return $pdf->stream('quotation-' . $quotation->quotation_number . '.pdf');
+    })->name('quotations.stream-pdf');
 
     //Agents
     Volt::route('agents', 'agents.index')->name('agents');
+    Volt::route('agents/create', 'agents.create')->name('agents.create');
+    Volt::route('agents/view/{id}', 'agents.view')->name('agents.view');
+    Volt::route('agents/edit/{agent}', 'agents.edit')->name('agents.edit');
 
     //Customers
     Volt::route('customers', 'customers.index')->name('customers');
@@ -97,26 +129,14 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Locations
     Volt::route('locations', 'locations.index')->name('locations');
+    Volt::route('locations/create', 'locations.create')->name('locations.create');
+    Volt::route('locations/edit/{location}', 'locations.edit')->name('locations.edit');
 
     //Invoicing
     Volt::route('invoicing', 'invoicing.index')->name('invoicing');
     Volt::route('invoicing/create', 'invoicing.create')->name('invoicing.create');
     Volt::route('invoicing/show', 'invoicing.create')->name('invoicing.show');
-    Volt::route('invoicing/{invoice}/edit', 'invoicing.edit')->name('invoicing.edit');
-
-    //Special Features
-    Volt::route('pdf-binding', 'special-features.pdf-binding')->name('pdf-binding');
-    
-    //Purchase Requests
-    Volt::route('purchase-requests', 'purchase-requests.index')->name('purchase-requests');
-    Volt::route('purchase-requests/create', 'purchase-requests.create')->name('purchase-requests.create');
-    Volt::route('purchase-requests/{id}/edit', 'purchase-requests.edit')->name('purchase-requests.edit');
-
-    //Purchase Orders
-    Volt::route('purchase-orders', 'purchase-orders.index')->name('purchase-orders');
-    Volt::route('purchase-orders/create', 'purchase-orders.create')->name('purchase-orders.create');
-    Volt::route('purchase-orders/{id}/edit', 'purchase-orders.edit')->name('purchase-orders.edit');
-
+    Volt::route('invoicing/{id}/edit', 'invoicing.edit')->name('invoicing.edit');
 });
 
 Route::middleware(['auth'])->group(function () {

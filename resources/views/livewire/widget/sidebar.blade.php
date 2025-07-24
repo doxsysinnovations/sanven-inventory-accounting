@@ -29,13 +29,24 @@ new class extends Component {
                         'route' => 'invoicing',
                         'label' => 'Invoicing',
                         'permission' => 'invoicing.view',
+                    ]
+                ]
+            ],
+            [
+                'heading' => 'Agent Management',
+                'items' => [
+                    [
+                        'icon' => 'user-plus',
+                        'route' => 'agents.create',
+                        'label' => 'Add Agent',
+                        'permission' => 'agents.create'
                     ],
                     [
-                        'icon' => 'user-group',
+                        'icon' => 'users',
                         'route' => 'agents',
                         'label' => 'Agents',
-                        'permission' => 'agents.view',
-                    ],
+                        'permission' => 'agents.view'
+                    ]
                 ]
             ],
             [
@@ -44,7 +55,7 @@ new class extends Component {
                         [
                             'icon' => 'user-plus',
                             'route' => 'customers.create',
-                            'label' => 'Add Customers',
+                            'label' => 'Add Customer',
                             'permission' => 'customers.create',
                         ],
                         [
@@ -56,13 +67,13 @@ new class extends Component {
                     ],
             ],
             [
-                'heading' => 'Quotations Management',
+                'heading' => 'Quotation Management',
                 'permission' => 'products.view',
                 'items' => [
                     [
                         'icon' => 'plus',
                         'route' => 'quotations.create',
-                        'label' => 'Create Quotations',
+                        'label' => 'Create Quotation',
                         'permission' => 'quotations.create',
                     ],
                     [
@@ -93,7 +104,7 @@ new class extends Component {
                     [
                         'icon' => 'plus',
                         'route' => 'stocks.create',
-                        'label' => 'Receive Stocks',
+                        'label' => 'Receive Stock',
                         'permission' => 'stocks.create',
                     ],
                     [
@@ -111,14 +122,26 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Products Management',
+                'heading' => 'Product Management',
                 'permission' => 'products.view',
                 'items' => [
                     [
                         'icon' => 'plus',
                         'route' => 'products.create',
-                        'label' => 'Add New',
+                        'label' => 'Create Product',
                         'permission' => 'products.create',
+                    ],
+                    [
+                        'icon' => 'rectangle-group',
+                        'route' => 'products',
+                        'label' => 'Products List',
+                        'permission' => 'products.view',
+                    ],
+                    [
+                        'icon' => 'plus',
+                        'route' => 'brands.create',
+                        'label' => 'Add Brand',
+                        'permission' => 'brands.create',
                     ],
                     [
                         'icon' => 'tag',
@@ -127,16 +150,34 @@ new class extends Component {
                         'permission' => 'brands.view',
                     ],
                     [
+                        'icon' => 'plus',
+                        'route' => 'categories.create',
+                        'label' => 'Add Category',
+                        'permission' => 'categories.create',
+                    ],
+                    [
                         'icon' => 'folder',
                         'route' => 'categories',
                         'label' => 'Categories',
                         'permission' => 'categories.view',
                     ],
                     [
+                        'icon' => 'plus',
+                        'route' => 'types.create',
+                        'label' => 'Add Type',
+                        'permission' => 'types.create',
+                    ],
+                    [
                         'icon' => 'cube',
                         'route' => 'types',
                         'label' => 'Types',
                         'permission' => 'types.view',
+                    ],
+                    [
+                        'icon' => 'plus',
+                        'route' => 'units.create',
+                        'label' => 'Add Unit',
+                        'permission' => 'units.create',
                     ],
                     [
                         'icon' => 'scale',
@@ -151,7 +192,13 @@ new class extends Component {
                 'permission' => 'suppliers.view',
                 'items' => [
                     [
-                        'icon' => 'user-group',
+                        'icon' => 'plus',
+                        'route' => 'suppliers.create',
+                        'label' => 'Add Supplier',
+                        'permission' => 'suppliers.create',
+                    ],
+                    [
+                        'icon' => 'truck',
                         'route' => 'suppliers',
                         'label' => 'Suppliers',
                         'permission' => 'suppliers.view',
@@ -181,10 +228,22 @@ new class extends Component {
                 'permission' => 'users.view',
                 'items' => [
                     [
+                        'icon' => 'user-plus',
+                        'route' => 'users.create',
+                        'label' => 'Add User',
+                        'permission' => 'users.create',
+                    ],
+                    [
                         'icon' => 'user-group',
                         'route' => 'users',
                         'label' => 'Users',
                         'permission' => 'users.view',
+                    ],
+                    [
+                        'icon' => 'plus',
+                        'route' => 'roles.create',
+                        'label' => 'Add Role',
+                        'permission' => 'roles.create',
                     ],
                     [
                         'icon' => 'shield-check',
@@ -193,10 +252,16 @@ new class extends Component {
                         'permission' => 'roles.view',
                     ],
                     [
-                        'icon' => 'clipboard-document-list',
+                        'icon' => 'finger-print',
                         'route' => 'audittrail',
                         'label' => 'Audit Trail',
                         'permission' => 'audittrail.view',
+                    ],
+                    [
+                        'icon' => 'plus',
+                        'route' => 'locations.create',
+                        'label' => 'Add Location',
+                        'permission' => 'locations.create',
                     ],
                     [
                         'icon' => 'map-pin',

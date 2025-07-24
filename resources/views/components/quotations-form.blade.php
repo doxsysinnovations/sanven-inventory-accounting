@@ -3,6 +3,8 @@
     'customers' => [],
     'products' => [],
     'agents' => [],
+    'withVAT' => false,
+    'discount_type' => null,
 ])
 
 @php
@@ -16,7 +18,7 @@
                 {{ $isEditing ? 'Edit Quotation' : 'Create New Quotation' }}
             </h3>
         </div>
-        
+
         <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-6 sm:p-8 sm:pb-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="mb-4">
@@ -49,25 +51,31 @@
                 </div>
             </div>
             <div class="mt-4 mb-4">
-                <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Items</h4>
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2">
+                    Items
+                </h4>
                 <div class="space-y-6">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
                                 <th
-                                    class="w-2/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-2/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Product
                                 </th>
                                 <th
-                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Quantity
                                 </th>
                                 <th
-                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Unit Price
                                 </th>
                                 <th
-                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    VAT (0.12%)
+                                </th>
+                                <th
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Total
                                 </th>
                                 <th class="px-6 py-3"></th>
@@ -77,7 +85,7 @@
                             @foreach ($items as $index => $item)
                             <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
                                 wire:key="item-{{ $index }}">
-                                <td class="w-2/5 px-6 py-4 align-top">
+                                <td class="w-2/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <flux:select
                                             wire:model.live.debounce.500ms="items.{{ $index }}.product_id"
@@ -86,7 +94,7 @@
                                             :label="__('')"
                                         >
                                             <flux:select.option value="">Select Product...</flux:select.option>
-                                        
+
                                             @foreach ($products as $product)
                                                 <flux:select.option
                                                     value="{{ $product['id'] }}"
@@ -97,16 +105,17 @@
                                         </flux:select>
                                     </div>
                                 </td>
-                                <td class="w-1/5 px-6 py-4 align-top">
+                                <td class="w-1/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <div class="relative">
                                             <flux:input
                                                 type="number"
                                                 wire:model.live="items.{{ $index }}.quantity"
-                                                placeholder="Qty"
+                                                placeholder="0"
                                                 :iconTrailing="false"
                                                 min="1"
                                                 :label="__('')"
+                                                :disabled="!$item['product_id']"
                                             >
                                                 <x-slot name="iconTrailing">
                                                     <span class="text-gray-400 text-xs dark:text-zinc-400">units</span>
@@ -115,7 +124,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="w-1/5 px-6 py-4 align-top">
+                                <td class="w-1/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <div class="relative">
                                             <flux:input
@@ -123,9 +132,10 @@
                                                 wire:model.live="items.{{ $index }}.unit_price"
                                                 placeholder="0.00"
                                                 :iconLeading="false"
-                                                step="0.01" 
+                                                step="0.01"
                                                 min="0"
                                                 :label="__('')"
+                                                :disabled="!$item['product_id']"
                                             >
                                                 <x-slot name="iconLeading">
                                                     <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
@@ -134,7 +144,22 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="w-1/5 px-6 py-4 align-top">
+                                <td class="w-1/6 px-6 py-4 align-top">
+                                    <div class="space-y-1">
+                                        <div class="relative">
+                                          <label class="inline-flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                class="form-checkbox accent-[--color-accent-alt]"
+                                                disabled
+                                                {{ (isset($items[$index]['is_vatable']) && ($items[$index]['is_vatable'] == 1 || $items[$index]['is_vatable'] === true)) ? 'checked' : '' }}
+                                            >
+                                                <span class="ml-2">Subject to VAT</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="w-1/6 px-6 py-4 align-top">
                                     <div class="space-y-1">
                                         <div class="relative">
                                             <flux:input
@@ -149,7 +174,7 @@
                                                 </x-slot>
                                             </flux:input>
                                         </div>
-                                        
+
                                         @error("items.{$index}.total_price")
                                             <div class="text-(--color-accent-2) text-xs mt-1">{{ $message }}</div>
                                         @enderror
@@ -193,7 +218,7 @@
                         wire:model="agent_id" id="agent_id" :label="__('Agent')"
                     >
                         <flux:select.option value="">Select Agent...</flux:select.option>
-                    
+
                         @foreach ($agents as $agent)
                             <flux:select.option
                                 value="{{ $agent->id }}"
@@ -210,7 +235,7 @@
                         wire:model="valid_until"
                         :label="__('Valid Until')"
                     >
-                    </flux:input>   
+                    </flux:input>
                 </div>
             </div>
 
@@ -221,27 +246,73 @@
                         type="number"
                         wire:model.live="tax"
                         placeholder="0.00"
-                        :iconLeading="false"
                         step="0.01" min="0"
                         id="tax"
-                        :label="__('Tax (%)')"
+                        readonly
+                        :label="__('Total VAT')"
                     >
-                        <x-slot name="iconTrailing">
-                            <span class="text-sm text-zinc-500 dark:text-zinc-400">%</span>
+                        <x-slot name="iconLeading">
+                            <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
                         </x-slot>
                     </flux:input>
                 </div>
 
                 <div class="mb-4">
-                    <flux:input
-                        type="number"
-                        wire:model.live="discount"
-                        placeholder="0.00"
-                        step="0.01" min="0"
-                        id="discount"
-                        :label="__('Discount')"
-                    >
-                    </flux:input>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1">
+                            <flux:select wire:model.live="discount_type" :label="__('Discount')" size="md" value="">
+                                <flux:select.option value="">Choose Discount...</flux:select.option>
+                                <flux:select.option value="fixed">Fixed</flux:select.option>
+                                <flux:select.option value="percentage">Percentage</flux:select.option>
+                            </flux:select>
+
+                        </div>
+                        <div class="flex-1">
+                            @if($discount_type === 'fixed')
+                                <flux:input
+                                    type="number"
+                                    wire:model.live="discount"
+                                    placeholder="0.00"
+                                    step="0.01"
+                                    min="0"
+                                    id="tax"
+                                    :disabled="!['discount_type']"
+                                    :label="__('(In Pesos)')"
+                                >
+                                    <x-slot name="iconLeading">
+                                        <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
+                                    </x-slot>
+                                </flux:input>
+                            @elseif($discount_type === 'percentage')
+                                <flux:input
+                                    type="number"
+                                    wire:model.live="discount"
+                                    placeholder="0.00"
+                                    step="0.01"
+                                    min="0"
+                                    max="100"
+                                    id="tax"
+                                    :disabled="!['discount_type']"
+                                    :label="__('(As Percentage)')"
+                                >
+                                    <x-slot name="iconTrailing">
+                                        <span class="text-sm text-zinc-500 dark:text-zinc-400">%</span>
+                                    </x-slot>
+                                </flux:input>
+                            @else
+                                <flux:input
+                                    type="number"
+                                    wire:model.live="discount"
+                                    placeholder="0.00"
+                                    step="0.01"
+                                    min="0"
+                                    id="tax"
+                                    readonly
+                                    :label="__('%/₱')"
+                                ></flux:input>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -269,9 +340,10 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-2 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-lg">
-            <flux:button type="submit" variant="primary">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
+            <flux:button variant="primary" type="submit">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
+            <flux:button variant="primary" color="green" icon="printer" wire:click="print">Save & Print</flux:button>
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
         </div>
     </form>

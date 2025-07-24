@@ -111,7 +111,7 @@ new class extends Component {
         searchPlaceholder="Search Quotations..."
         message="No quotations available."
         :perPage="$perPage"
-        createButtonLabel="Create Quotations"
+        createButtonLabel="Create Quotation"
         createButtonAbility="quotations.create"
         createButtonRoute="quotations.create"
     >
@@ -126,7 +126,11 @@ new class extends Component {
                 'actions-placeholder',
                 '__model' => $quotation
             ])"
+            viewAbility="quotations.view"
+            viewRoute="quotations.view"
+            editParameter="quotation"
             editAbility="quotations.edit"
+            editParameter="quotation"
             editRoute="quotations.edit"
             deleteAbility="quotations.delete"
             deleteAction="confirmDelete"

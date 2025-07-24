@@ -17,6 +17,18 @@ new class extends Component {
     public $phone = '';
     public $address = '';
     public $customerInfo;
+    public $perPage = 5;
+
+    public function mount()
+    {
+        $this->perPage = session('perPage', 5);
+    }
+
+    public function updatedPerPage($value)
+    {
+        session(['perPage' => $value]);
+        $this->resetPage();
+    }
 
     public function confirmDelete($customerId)
     {
@@ -47,7 +59,7 @@ new class extends Component {
         return Customer::query()
             ->where('name', 'like', '%' . $this->search . '%')
             ->orWhere('email', 'like', '%' . $this->search . '%')
-            ->paginate(10);
+            ->paginate($this->perPage);
     }
 };
 
@@ -58,9 +70,10 @@ new class extends Component {
         <x-view-layout
             title="Customers"
             :items="$customers"
+            :perPage="$perPage"
             searchPlaceholder="Search Customers..."
             message="No existing customers."
-            createButtonLabel="Add Customers"
+            createButtonLabel="Add Customer"
             createButtonAbility="customers.create"
             createButtonRoute="customers.create"
         >
@@ -70,17 +83,18 @@ new class extends Component {
                 </svg>
             </x-slot:emptyIcon>
                 <x-list-table
-                    :headers="['Name', 'Email', 'Phone', 'Address', 'Actions']"
+                    :headers="['Name', 'Email', 'Phone Number', 'Address', 'Actions']"
                     :rows="$customers->map(fn($customer) => [
                         $customer->name,
                         $customer->email,
-                        $customer->phone ?? 'N/A',
-                        $customer->address ?? 'N/A',
+                        !empty($customer->phone) ? $customer->phone : 'No phone number available.',
+                        !empty($customer->address) ? $customer->address : 'No address available.',
                         '__model' => $customer
                     ])"
                     viewAbility="customers.info"
                     viewRoute="customers.view"
                     editAbility="customers.edit"
+                    editParameter="customer"
                     editRoute="customers.edit"
                     deleteAbility="customers.delete"
                     deleteAction="confirmDelete"
