@@ -93,6 +93,9 @@ new class extends Component {
                 'actions-placeholder',
                 '__model' => $quotation
             ])"
+            viewAbility="quotations.view"
+            viewRoute="quotations.view"
+            editParameter="quotation"
             editAbility="quotations.edit"
             editParameter="quotation"
             editRoute="quotations.edit"

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('total_amount', 10, 2);
             $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
+            $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
             $table->text('notes')->nullable();
             $table->enum('status', ['draft', 'sent', 'accepted', 'rejected']);
             $table->date('valid_until');

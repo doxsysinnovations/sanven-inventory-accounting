@@ -77,6 +77,19 @@
                             @endforeach
                         </flux:select>
                     </div>
+                    <div class="flex flex-col">
+                        <label class="block text-sm font-medium text-zinc-800/700 dark:text-gray-300 mb-2">
+                            VAT (0.12%)
+                        </label>
+                        <div class="inline-flex">
+                            <input
+                                wire:model="is_vatable"
+                                type="checkbox"
+                                class="form-checkbox accent-[--color-accent-alt]"
+                            >
+                            <span class="ml-2 text-sm font-medium">Subject to VAT</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
