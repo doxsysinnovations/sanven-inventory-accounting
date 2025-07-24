@@ -335,29 +335,5 @@ new class extends Component {
                 @endif
             </flux:navlist.group>
         @endforeach
-            <flux:navlist.group :heading="__($group['heading'])" class="grid">
-                @if (isset($group['permission']))
-                    @can($group['permission'])
-                        @foreach ($group['items'] as $item)
-                            @if (!$item['permission'] || auth()->user()->can($item['permission']))
-                                <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                    :current="request()->routeIs($item['route'])" wire:navigate>
-                                    {{ __($item['label']) }}
-                                </flux:navlist.item>
-                            @endif
-                        @endforeach
-                    @endcan
-                @else
-                    @foreach ($group['items'] as $item)
-                        @if (!$item['permission'] || auth()->user()->can($item['permission']))
-                            <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                :current="request()->routeIs($item['route'])" wire:navigate>
-                                {{ __($item['label']) }}
-                            </flux:navlist.item>
-                        @endif
-                    @endforeach
-                @endif
-            </flux:navlist.group>
-        @endforeach
     </flux:navlist>
 </div>
