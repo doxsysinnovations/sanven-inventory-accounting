@@ -5,12 +5,13 @@ use App\Models\Stock;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Models\Location;
 
 new class extends Component {
     public string $stock_number = '';
     public int $product_id = 0;
     public string $product_name = '';
-    public string $product_description = '';
+    public ?string $product_description = null;
     public string $brand_name = '';
     public string $product_category = '';
     public string $product_code = '';
@@ -32,11 +33,13 @@ new class extends Component {
     public int $unit_id = 0; // Selected unit
     public string $supplier = '';
     public int $currentStep = 1;
+
     public function mount()
     {
         $this->products = Product::all(); // Load all products initially
         $this->suppliers = Supplier::all(); // Load all suppliers
         $this->units = Unit::all(); // Load all units
+        $this->locations = Location::all();
     }
 
     public function nextStep()
@@ -133,6 +136,57 @@ new class extends Component {
         ];
     }
 
+    public function messages()
+{
+    return [
+        'product_name.required' => 'The product name is required.',
+        'product_name.string' => 'The product name must be a string.',
+        'product_name.max' => 'The product name may not be greater than 255 characters.',
+
+        // 'batch_number.required' => 'The batch number is required.',
+        // 'batch_number.string' => 'The batch number must be a string.',
+        // 'batch_number.max' => 'The batch number may not be greater than 100 characters.',
+        // 'batch_number.unique' => 'This batch number already exists.',
+
+        'quantity.required' => 'Quantity is required.',
+        'quantity.integer' => 'Quantity must be a whole number.',
+        'quantity.min' => 'Quantity must be at least 1.',
+
+        'unit_id.required' => 'Unit is required.',
+        'unit_id.integer' => 'Unit ID must be a valid number.',
+        'unit_id.exists' => 'The selected unit does not exist.',
+
+        'capital_price.required' => 'Capital price is required.',
+        'capital_price.numeric' => 'Capital price must be a valid number.',
+        'capital_price.min' => 'Capital price must be at least 1.',
+
+        'selling_price.required' => 'Selling price is required.',
+        'selling_price.numeric' => 'Selling price must be a valid number.',
+        'selling_price.min' => 'Selling price must be at least 1.',
+
+        'expiry_date.required' => 'Expiry date is required.',
+        'expiry_date.date' => 'Expiry date must be a valid date.',
+        'expiry_date.after' => 'Expiry date must be after today.',
+
+        'manufactured_date.required' => 'Manufactured date is required.',
+        'manufactured_date.date' => 'Manufactured date must be a valid date.',
+        'manufactured_date.before_or_equal' => 'Manufactured date must be today or earlier.',
+
+        'stock_location.string' => 'Stock location must be a string.',
+        'stock_location.max' => 'Stock location may not be greater than 255 characters.',
+
+        'invoice_number.string' => 'Invoice number must be a string.',
+        'invoice_number.max' => 'Invoice number may not be greater than 100 characters.',
+
+        'batch_notes.string' => 'Batch notes must be a string.',
+        'batch_notes.max' => 'Batch notes may not be greater than 1000 characters.',
+
+        'supplier.required' => 'Supplier is required.',
+        'supplier.string' => 'Supplier name must be a string.',
+        'supplier.max' => 'Supplier name may not be greater than 255 characters.',
+    ];
+}
+
     private function generateStockNumber()
     {
         $yearPrefix = date('Y');
@@ -144,6 +198,17 @@ new class extends Component {
             $newStockNumber = 1;
         }
         return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function goToStep($step)
+    {
+        if ($step <= $this->currentStep) {
+            $this->currentStep = $step;
+            return;
+        }
+        
+        $this->validateStep();
+        $this->currentStep = $step;
     }
 
     public function save()
@@ -176,422 +241,73 @@ new class extends Component {
 };
 ?>
 <div>
-    <div class="mb-4">
-        <nav class="flex items-center justify-between" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <a href="{{ route('stocks') }}"
-                            class="ml-1 text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 md:ml-2">Stocks</a>
-                    </div>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Create</span>
-                    </div>
-                </li>
-            </ol>
-            <flux:button href="{{ route('stocks') }}" variant="primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                        clip-rule="evenodd" />
-                </svg>
-                Back
-            </flux:button>
-        </nav>
+    <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
+        <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+           Receive Stock
+        </h3>
     </div>
+    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="flex flex-col space-x-4 mb-4">
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-6">
+                <div class="bg-(--color-accent) h-2 rounded-full transition-all duration-500" 
+                    style="width: {{ ($currentStep / 3) * 100 }}%">
+                </div>
+            </div>
+        
+            <div class="flex flex-col sm:flex-row space-x-2 mb-6 bg-gray-100 p-1 rounded-lg">
+                <button wire:click="goToStep(1)" 
+                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
+                    {{ $currentStep === 1 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
+                            {{ $currentStep === 1 ? 'font-bold text-(--color-accent)' : 'font-medium' }}">
+                            1
+                        </div>
+                        <div>
+                            <span class="{{ $currentStep === 1 ? 'font-bold' : 'font-medium' }}">
+                                Product Info
+                            </span>
+                        </div>
+                    </div>
+                </button>
 
-  <!-- Stepper Navigation -->
-  <div class="flex items-center justify-between mb-6">
-    <div class="flex space-x-4">
-        <!-- Step 1 -->
-        <button wire:click="$set('currentStep', 1)" 
-            class="px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-md
-            {{ $currentStep === 1 ? 'bg-blue-600 text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
-            Step 1: Product Info
-        </button>
+                <button wire:click="goToStep(2)" 
+                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
+                    {{ $currentStep === 2 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
+                            {{ $currentStep === 2 ? 'font-bold text-(--color-accent)' : 'font-medium' }}">
+                            2
+                        </div>
+                        <div>
+                            <span class="{{ $currentStep === 2 ? 'font-bold' : 'font-medium' }}">
+                                Stock Info
+                            </span>
+                        </div>
+                    </div>
+                </button>
 
-        <!-- Step 2 -->
-        <button wire:click="$set('currentStep', 2)" 
-            class="px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-md
-            {{ $currentStep === 2 ? 'bg-blue-600 text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
-            Step 2: Stock Info
-        </button>
+                <button wire:click="goToStep(3)" 
+                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
+                    {{ $currentStep === 3 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
+                                    {{ $currentStep === 3 ? 'font-bold text-(--color-accent)' : 'font-medium' }}">
+                            3
+                        </div>
+                        <div>
+                            <span class="{{ $currentStep === 3 ? 'font-bold' : 'font-medium' }}">
+                                Additional Details
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
 
-        <!-- Step 3 -->
-        <button wire:click="$set('currentStep', 3)" 
-            class="px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-md
-            {{ $currentStep === 3 ? 'bg-blue-600 text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
-            Step 3: Additional Details
-        </button>
+        @include('livewire.stocks.views.step-1-product-information')
+        @include('livewire.stocks.views.step-2-stock-information')
+        @include('livewire.stocks.views.step-3-additional-details')
+
     </div>
-</div>
-
-    @if ($currentStep === 1)
-        <div>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Product Information</h2>
-            <!-- Informative Message -->
-            @if (!$product_code)
-                <div
-                    class="col-span-1 flex items-center justify-between sm:col-span-2 lg:col-span-3 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 p-4 rounded">
-                    <p class="text-sm">
-                        No product selected yet. Click the <strong>Search Product</strong> button to select a product.
-                    </p>
-                    <div class="flex justify-end mt-4">
-                        <button type="button" wire:click="$set('openModal', true)"
-                            class="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-                            Select Product
-                        </button>
-                    </div>
-                </div>
-            @else
-                <div
-                    class="col-span-1 flex items-center justify-between  sm:col-span-2 lg:col-span-3 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 p-4 rounded">
-                    <p class="text-sm">
-                        You have selected a product. Click the <strong>Select Product</strong> button again to change
-                        the product.
-                    </p>
-                    <div class="flex justify-end mt-4">
-                        <button type="button" wire:click="$set('openModal', true)"
-                            class="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-                            Select Product
-                        </button>
-                    </div>
-                </div>
-            @endif
-            <!-- Product Code -->
-            <div class="mt-6">
-                <label for="product_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product
-                    Code</label>
-                <flux:input id="product_code" wire:model="product_code" wire:click="$set('openModal', true)"
-                    type="text" placeholder="Click to select a product"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded" readonly />
-            </div>
-            <!-- Product Name -->
-            <div class="mt-3">
-                <label for="product_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product
-                    Name</label>
-                <flux:input id="product_name" wire:model="product_name" wire:click="$set('openModal', true)"
-                    type="text" placeholder="Click to select a product"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded" readonly />
-            </div>
-
-            <!-- Product Description -->
-            <div class="col-span-1 sm:col-span-2 lg:col-span-3 mt-3">
-                <label for="product_description"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product
-                    Description</label>
-                <p id="product_description"
-                    class="text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-                    {{ $product_description ?: 'No description available.' }}
-                </p>
-            </div>
-
-            <!-- Brand Name -->
-            <div class="mt-3">
-                <label for="brand_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Brand
-                    Name</label>
-                <p id="brand_name" class="text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-                    {{ $brand_name ?: 'No brand specified.' }}
-                </p>
-            </div>
-
-            <!-- Product Category -->
-            <div class="mt-3">
-                <label for="product_category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product
-                    Category</label>
-                <p id="product_category"
-                    class="text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-                    {{ $product_category ?: 'No category assigned.' }}
-                </p>
-            </div>
-
-
-            <!-- Search Product Button -->
-
-
-            <!-- Next Button -->
-            <div class="flex justify-end mt-4">
-                <button wire:click="nextStep" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Next
-                </button>
-            </div>
-        </div>
-
-        <div>
-
-            <!-- Product Search Modal -->
-            @if ($openModal)
-                <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-25">
-                    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-3/4 max-w-4xl p-6">
-                        <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">Search Product</h3>
-
-                        <!-- Search Field -->
-                        <div class="mb-4 relative">
-                            <input type="text" wire:model.live="search"
-                                placeholder="Search by product name, code, or scan barcode..."
-                                class="input input-bordered w-full py-2 px-4 bg-gray-200 border-2 rounded dark:bg-gray-700 dark:text-gray-100"
-                                autofocus />
-
-                            <!-- Clear Button -->
-                            @if ($search)
-                                <button type="button" wire:click="$set('search', '')"
-                                    class="absolute right-2 top-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100">
-                                    ✕
-                                </button>
-                            @endif
-                        </div>
-                        <!-- Product Table -->
-                        <div class="overflow-x-auto">
-                            <table
-                                class="table-auto w-full text-left border-collapse border border-gray-300 dark:border-gray-700">
-                                <thead>
-                                    <tr class="bg-gray-100 dark:bg-gray-700">
-                                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-700">Product
-                                            Code</th>
-                                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-700">Name</th>
-                                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-700">Category
-                                        </th>
-                                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-700">Action
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($products as $product)
-                                        <tr>
-                                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">
-                                                {{ $product->product_code }}</td>
-                                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">
-                                                {{ $product->name }}</td>
-                                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">
-                                                {{ $product->category->name ?? 'N/A' }}</td>
-                                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">
-                                                <button type="button"
-                                                    wire:click="selectProduct('{{ $product->id }}')"
-                                                    class="btn btn-sm px-12 py-2 rounded-full bg-blue-500 hover:bg-blue-600 cursor-pointer text-white">
-                                                    Select
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Close Button -->
-                        <div class="mt-4 flex justify-end">
-                            <button type="button" wire:click="$set('openModal', false)"
-                                class="btn bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    @endif
-
-
-    @if ($currentStep === 2)
-        <div>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Stock Information</h2>
-
-
-            <!-- Supplier -->
-            <div class="mt-3">
-                <label for="supplier"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier</label>
-                <flux:select id="supplier" wire:model="supplier" placeholder="Select a supplier"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-        @error('supplier') border-red-500 dark:border-red-500 @enderror">
-                    @foreach ($suppliers as $supplier)
-                        <flux:select.option value="{{ $supplier->id }}">{{ $supplier->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-                @error('supplier')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- Pricing -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                <!-- Capital Price -->
-                <div>
-                    <label for="capital_price"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Capital
-                        Price (₱)</label>
-                    <flux:input id="capital_price" wire:model="capital_price" type="number" placeholder="0.00"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-            @error('capital_price') border-red-500 dark:border-red-500 @enderror" />
-                    <small class="text-gray-500 dark:text-gray-400">Format: 0.00</small>
-                    @error('capital_price')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <!-- Selling Price -->
-                <div>
-                    <label for="selling_price"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Selling
-                        Price (₱)</label>
-                    <flux:input id="selling_price" wire:model="selling_price" type="number" placeholder="0.00"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-            @error('selling_price') border-red-500 dark:border-red-500 @enderror" />
-                    <small class="text-gray-500 dark:text-gray-400">Format: 0.00</small>
-                    @error('selling_price')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <!-- Quantity, Expiry, and Manufactured Date -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Quantity -->
-                <div>
-                    <label for="quantity"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
-                    <flux:input id="quantity" wire:model="quantity" type="number" placeholder="Enter quantity"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-            @error('quantity') border-red-500 dark:border-red-500 @enderror" />
-                    <small class="text-gray-500 dark:text-gray-400">Enter the total quantity of stock.</small>
-                    @error('quantity')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Unit of Measurement -->
-                <div>
-                    <label for="unit_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit of
-                        Measurement</label>
-                    <flux:select id="unit_id" wire:model="unit_id" placeholder="Select a unit"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-            @error('unit_id') border-red-500 dark:border-red-500 @enderror">
-                        @foreach ($units as $unit)
-                            <flux:select.option value="{{ $unit->id }}">{{ $unit->name }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
-                    <small class="text-gray-500 dark:text-gray-400">Specify the unit of measurement (e.g., Box,
-                        Piece).</small>
-                    @error('unit_id')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Manufactured Date -->
-                <div>
-                    <label for="manufactured_date"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Manufactured Date</label>
-                    <flux:input id="manufactured_date" wire:model="manufactured_date" type="date"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-            @error('manufactured_date') border-red-500 dark:border-red-500 @enderror" />
-                    <small class="text-gray-500 dark:text-gray-400">Enter the manufacturing date, if
-                        applicable.</small>
-                    @error('manufactured_date')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Expiry Date -->
-                <div>
-                    <label for="expiry_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Expiry
-                        Date</label>
-                    <flux:input id="expiry_date" wire:model="expiry_date" type="date"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-            @error('expiry_date') border-red-500 dark:border-red-500 @enderror" />
-                    <small class="text-gray-500 dark:text-gray-400">Enter the expiry date, if applicable.</small>
-                    @error('expiry_date')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Invoice Number -->
-                <div class="mt-3">
-                    <label for="invoice_number"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice
-                        Number</label>
-                    <flux:input id="invoice_number" wire:model="invoice_number" type="text"
-                        placeholder="Enter invoice number"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-        @error('invoice_number') border-red-500 dark:border-red-500 @enderror" />
-                    <small class="text-gray-500 dark:text-gray-400">Enter the supplier's invoice number for
-                        reference.</small>
-                    @error('invoice_number')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Navigation Buttons -->
-
-            </div>
-
-            <div class="flex justify-between mt-4">
-                <button wire:click="previousStep" class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                    Back
-                </button>
-                <button wire:click="nextStep" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Next
-                </button>
-            </div>
-    @endif
-
-    @if ($currentStep === 3)
-        <div>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Additional Details</h2>
-            <!-- Stock Location -->
-            <div>
-                <label for="stock_location" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock
-                    Location</label>
-                <flux:select id="stock_location" wire:model="stock_location" placeholder="Select a location"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
-                    @foreach ($locations as $location)
-                        <flux:select.option value="{{ $location->id }}">{{ $location->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-                <small class="text-gray-500 dark:text-gray-400">Select where the stock will be stored.</small>
-            </div>
-
-            <!-- Batch Notes -->
-            <div class="mt-3">
-                <label for="batch_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Batch
-                    Notes</label>
-                <flux:textarea id="batch_notes" wire:model="batch_notes"
-                    placeholder="Enter any notes about the batch"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded
-    @error('batch_notes') border-red-500 dark:border-red-500 @enderror">
-                </flux:textarea>
-                <small class="text-gray-500 dark:text-gray-400">Add any additional notes or instructions for this
-                    batch.</small>
-                @error('batch_notes')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-            <!-- Submit Button -->
-            <div class="flex justify-between mt-4">
-                <button wire:click="previousStep" class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                    Back
-                </button>
-                <button wire:click="save" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Submit
-                </button>
-            </div>
-        </div>
-    @endif
-</div>
-
 </div>
