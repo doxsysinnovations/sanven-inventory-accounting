@@ -210,10 +210,22 @@ new class extends Component {
                 'permission' => 'users.view',
                 'items' => [
                     [
+                        'icon' => 'user-plus',
+                        'route' => 'users.create',
+                        'label' => 'Add User',
+                        'permission' => 'users.create',
+                    ],
+                    [
                         'icon' => 'user-group',
                         'route' => 'users',
                         'label' => 'Users',
                         'permission' => 'users.view',
+                    ],
+                    [
+                        'icon' => 'plus',
+                        'route' => 'roles.create',
+                        'label' => 'Add Role',
+                        'permission' => 'roles.create',
                     ],
                     [
                         'icon' => 'shield-check',
@@ -222,7 +234,7 @@ new class extends Component {
                         'permission' => 'roles.view',
                     ],
                     [
-                        'icon' => 'clipboard-document-list',
+                        'icon' => 'finger-print',
                         'route' => 'audittrail',
                         'label' => 'Audit Trail',
                         'permission' => 'audittrail.view',

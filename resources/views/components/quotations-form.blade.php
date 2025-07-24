@@ -4,6 +4,7 @@
     'products' => [],
     'agents' => [],
     'withVAT' => false,
+    'discount_type' => null,
 ])
 
 @php
@@ -257,15 +258,61 @@
                 </div>
 
                 <div class="mb-4">
-                    <flux:input
-                        type="number"
-                        wire:model.live="discount"
-                        placeholder="0.00"
-                        step="0.01" min="0"
-                        id="discount"
-                        :label="__('Discount')"
-                    >
-                    </flux:input>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1">
+                            <flux:select wire:model.live="discount_type" :label="__('Discount')" size="md" value="">
+                                <flux:select.option value="">Choose Discount...</flux:select.option>
+                                <flux:select.option value="fixed">Fixed</flux:select.option>
+                                <flux:select.option value="percentage">Percentage</flux:select.option>
+                            </flux:select>
+        
+                        </div>
+                        <div class="flex-1">
+                            @if($discount_type === 'fixed')
+                                <flux:input
+                                    type="number"
+                                    wire:model.live="discount"
+                                    placeholder="0.00"
+                                    step="0.01" 
+                                    min="0"
+                                    id="tax"
+                                    :disabled="!['discount_type']"
+                                    :label="__('(In Pesos)')"
+                                >
+                                    <x-slot name="iconLeading">
+                                        <span class="text-sm text-zinc-500 dark:text-zinc-400">₱</span>
+                                    </x-slot>
+                                </flux:input>
+                            @elseif($discount_type === 'percentage')
+                                <flux:input
+                                    type="number"
+                                    wire:model.live="discount"
+                                    placeholder="0.00"
+                                    step="0.01" 
+                                    min="0"
+                                    max="100"
+                                    id="tax"
+                                    :disabled="!['discount_type']"
+                                    :label="__('(As Percentage)')"
+                                >
+                                    <x-slot name="iconTrailing">
+                                        <span class="text-sm text-zinc-500 dark:text-zinc-400">%</span>
+                                    </x-slot>
+                                </flux:input>
+                            @else
+                                <flux:input
+                                    type="number"
+                                    wire:model.live="discount"
+                                    placeholder="0.00"
+                                    step="0.01" 
+                                    min="0"
+                                    id="tax"
+                                    readonly
+                                    :label="__('%/₱')"
+                                ></flux:input>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -294,8 +341,8 @@
             </div>
         </div>
         
-        <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 gap-2 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-lg">
-            <flux:button variant="primary" type="submit">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
+        <div class="bg-gray-50 rounded-b-lg dark:bg-gray-800 px-4 py-6 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
+            <flux:button variant="primary" color="blue" type="submit">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
             <flux:button variant="primary" color="green" icon="printer" wire:click="print">Save & Print</flux:button>                     
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
         </div>

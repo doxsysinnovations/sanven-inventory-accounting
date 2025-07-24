@@ -1,6 +1,9 @@
 @props([
     'title',
     'description' => null,
+    'withSearch' => true,
+    'withDateFilter' => false,
+    'withRoleFilter' => false,
     'searchPlaceholder' => null,
     'withFilter' => false,
     'filterItems',
@@ -19,13 +22,37 @@
 <div>
     <div class="flex h-full w-full flex-1 flex-col gap-4">
         <div class="flex flex-col bg-white rounded-lg">
-            <div class="bg-gray-50 p-6 flex flex-col rounded-t-lg">
-                <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
-                    {{ $title }}
-                </h3>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                   {{ $description }}
-                </span>
+            <div class="bg-gray-50 p-6 flex justify-between items-center rounded-t-lg">
+                <div>
+                    <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+                        {{ $title }}
+                    </h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ $description }}
+                    </span>
+                </div>
+
+                @if (!$items->isEmpty() || $showNewCreateButtonIfEmpty)
+                    @php
+                        $ability = $items->isEmpty()
+                            ? ($createButtonAbilityIfEmpty ?? $createButtonAbility)
+                            : $createButtonAbility;
+                        
+                        $route = $items->isEmpty()
+                            ? ($createButtonRouteIfEmpty ?? $createButtonRoute)
+                            : $createButtonRoute;
+                    @endphp
+
+                    @can($ability)
+                        <div>
+                            <a href="{{ route($route) }}">
+                                <flux:button variant="primary" color="blue" icon="plus">
+                                    {{ $items->isEmpty() ? ($createButtonLabelIfEmpty ?? $createButtonLabel) : $createButtonLabel }}
+                                </flux:button>
+                            </a>
+                        </div>
+                    @endcan
+                @endif
             </div>
 
             <div class="px-8 pb-4">
@@ -54,34 +81,36 @@
                                 </flux:select>
                             </div>
                         @endif
+
+                        @if($withRoleFilter)
+                            <div class="flex gap-2 items-center">
+                                <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300">Role:</label>
+                                <flux:select wire:model.live="selectedUserType" :label="__('')" size="md">
+                                    <flux:select.option value="">All</flux:select.option>
+                                    <flux:select.option value="superadmin">Super Admin</flux:select.option>
+                                    <flux:select.option value="admin">Admin</flux:select.option>
+                                    <flux:select.option value="staff">Staff</flux:select.option>
+                                    <flux:select.option value="agent">Agent</flux:select.option>
+                                </flux:select>
+                            </div>
+                        @endif
                     </div>
                   
-                    <div class="ml-auto w-1/3 relative">
-                        <x-search-bar placeholder="{{ $searchPlaceholder }}" />
-                    </div>
-                </div>
+                    @if($withSearch)
+                        <div class="ml-auto w-1/3 relative">
+                            <x-search-bar placeholder="{{ $searchPlaceholder }}" />
+                        </div> 
+                    @endif
 
-                @if (!$items->isEmpty() || $showNewCreateButtonIfEmpty)
-
-                    @php
-                        $ability = $items->isEmpty()
-                            ? ($createButtonAbilityIfEmpty ?? $createButtonAbility)
-                            : $createButtonAbility;
-                        
-                        $route = $items->isEmpty()
-                            ? ($createButtonRouteIfEmpty ?? $createButtonRoute)
-                            : $createButtonRoute;
-                        
-                    @endphp
-
-                    @can($ability)
-                        <div class="flex justify-end mb-4">
-                          <a href="{{ route($route) }}">
-                                <flux:button variant="primary" icon="plus">{{ $items->isEmpty() ? ($createButtonLabelIfEmpty ?? $createButtonLabel) : $createButtonLabel }}</flux:button>                                
-                            </a>
+                    @if($withDateFilter)
+                        <div class="ml-auto relative">
+                            <div class="flex gap-3">
+                                <x-flux::input wire:model.live="startDate" type="date" label="Start" placeholder="Start" />
+                                <x-flux::input wire:model.live="endDate" type="date" label="End" placeholder="End" />
+                            </div>
                         </div>
-                    @endcan
-                @endif
+                    @endif
+                </div>
 
                 <div>
                     @if ($items->isEmpty())

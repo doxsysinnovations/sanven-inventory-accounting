@@ -6,10 +6,10 @@
 @php
     $statusGroups = [
         'gray' => ['valid'],
-        'orange' => ['expiring'],
-        'red' => ['expired', 'inactive'],
-        'green' => ['accepted', 'active'],
-        'blue' => ['sent'],
+        'orange' => ['expiring', 'Agent'],
+        'red' => ['expired', 'inactive', 'Admin'],
+        'green' => ['accepted', 'active', 'Staff'],
+        'blue' => ['sent', 'Super Admin'],
     ];
 
     $statusClasses = [

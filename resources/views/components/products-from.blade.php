@@ -15,7 +15,7 @@
             </h3>
         </div>
 
-        <div class="bg-white dark:bg-gray-900 px-6 py-8 rounded-b-lg shadow-sm">
+        <div class="bg-white dark:bg-gray-900 px-6 py-8 shadow-sm">
             <div class="mb-8">
                 <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
                     Basic Information
@@ -209,11 +209,12 @@
                     </div>
                 </div>
             </div>
-
-            <div class="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <flux:button class="w-full sm:w-auto order-2 sm:order-2" type="submit" variant="primary">{{ $isEditing ? 'Update' : 'Create' }}</flux:button>
-                <flux:button class="w-full sm:w-auto order-1" variant="danger" wire:click="cancel">Cancel</flux:button>
-            </div>
+        </div>
+        <div class="bg-gray-50 rounded-b-lg dark:bg-gray-800 px-4 py-6 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
+            <flux:button class="sm:w-auto" variant="danger" wire:click="cancel">Cancel</flux:button>
+            <flux:button class="sm:w-auto" variant="primary" color="blue" type="submit" >
+                {{ $isEditing ? 'Update' : 'Create' }}
+            </flux:button>
         </div>
     </form>
 </div>
