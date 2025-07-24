@@ -358,7 +358,6 @@ new class extends Component {
             'due_date' => 'required|date|after_or_equal:today',
             'invoice_date' => 'required|date',
             'payment_terms' => 'required|string',
-            'assigned_agent' => 'required|exists:agents,id',
             'discount' => 'nullable|numeric|min:0|max:1000000',
             'tax' => 'nullable|numeric|min:0|max:1000000',
             'tax_rate' => 'nullable|numeric|between:0,100',
@@ -385,6 +384,7 @@ new class extends Component {
                 'created_by' => auth()->id(),
                 'agent_id' => $this->assigned_agent,
             ]);
+            
 
             // Add invoice items
             foreach ($this->cart as $item) {
@@ -433,6 +433,7 @@ new class extends Component {
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+             dd('exception', $e->getMessage());
             $this->dispatch('notify', type: 'error', message: 'Error creating invoice: ' . $e->getMessage());
             logger()->error('Invoice creation error: ' . $e->getMessage());
         } finally {
