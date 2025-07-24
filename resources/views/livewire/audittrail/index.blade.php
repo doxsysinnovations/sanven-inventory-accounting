@@ -12,6 +12,18 @@ new class extends Component {
     public $search = '';
     public $startDate = '';
     public $endDate = '';
+    public $perPage = 5;
+
+    public function mount()
+    {
+        $this->perPage = session('perPage', 5);
+    }
+
+    public function updatedPerPage($value)
+    {
+        session(['perPage' => $value]);
+        $this->resetPage();
+    }
 
     #[Title('Audit Trail')]
     public function with(): array
@@ -37,106 +49,38 @@ new class extends Component {
                 $query->whereDate('created_at', '<=', $this->endDate);
             })
             ->latest()
-            ->paginate(10);
+            ->paginate($this->perPage);
     }
 };
 
 ?>
 
 <div>
-    <div class="mb-4">
-        <nav class="flex justify-end" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Audit
-                            Trail</span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
-
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="flex items-center justify-between">
-            <div class="w-1/3">
-                {{-- <input wire:model.live="search" type="search" placeholder="Search..."
-                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:outline-none transition duration-200 dark:border-gray-600"> --}}
-            </div>
-            <div class="flex gap-4">
-                <x-flux::input wire:model.live="startDate" type="date" label="Start" placeholder="Start" />
-                <x-flux::input wire:model.live="endDate" type="date" label="End" placeholder="End" />
-            </div>
-        </div>
-
-        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-800">
-                    <tr>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Name
-                        </th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Model
-                        </th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Event
-                        </th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Changed By
-                        </th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Created By
-                        </th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Updated On
-                        </th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Created At
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                    @foreach ($activities as $activity)
-                        <tr class="dark:hover:bg-gray-800">
-                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $activity->subject->name }}</td>
-                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                {{ class_basename($activity->subject_type) }}</td>
-                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">{{ $activity->description }}</td>
-                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                {{ $activity->causer->name ?? 'System' }}</td>
-                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                {{ $activity->causer->name ?? 'System' }}</td>
-                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                {{ $activity->subject->updated_at->format('Y-m-d H:i:s') }}</td>
-                            <td class="whitespace-nowrap px-6 py-4 dark:text-gray-300">
-                                {{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-4">
-            {{ $activities->links() }}
-        </div>
-    </div>
+    <x-view-layout
+        title="All Activities"
+        :items="$activities"
+        :withSearch="false"
+        :withDateFilter="true"
+        message="No activities."
+        :perPage="$perPage"
+    >
+        <x-slot:emptyIcon>
+            <svg class="w-48 h-48 mb-2 text-gray-300 dark:text-gray-600"  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a28.076 28.076 0 0 1-1.091 9M7.231 4.37a8.994 8.994 0 0 1 12.88 3.73M2.958 15S3 14.577 3 12a8.949 8.949 0 0 1 1.735-5.307m12.84 3.088A5.98 5.98 0 0 1 18 12a30 30 0 0 1-.464 6.232M6 12a6 6 0 0 1 9.352-4.974M4 21a5.964 5.964 0 0 1 1.01-3.328 5.15 5.15 0 0 0 .786-1.926m8.66 2.486a13.96 13.96 0 0 1-.962 2.683M7.5 19.336C9 17.092 9 14.845 9 12a3 3 0 1 1 6 0c0 .749 0 1.521-.031 2.311M12 12c0 3 0 6-2 9"/>
+            </svg>
+        </x-slot:emptyIcon>
+        <x-list-table
+            :headers="['Name', 'Model', 'Event', 'Changed By', 'Created By', 'Updated On', 'Created At']"
+            :rows="$activities->map(fn($activity) => [
+                optional($activity->subject)->name ?? 'N/A',
+                class_basename(optional($activity)->subject_type) ?? 'N/A',
+                optional($activity)->description ?? 'N/A',
+                optional($activity->causer)->name ?? 'System',
+                optional($activity->causer)->name ?? 'System',
+                optional(optional($activity->subject)->updated_at)?->format('Y-m-d H:i:s') ?? 'N/A',
+                optional($activity->created_at)?->format('Y-m-d H:i:s') ?? 'N/A',
+                '__model' => $activity,
+            ])"
+        />
+    </x-view-layout>
 </div>

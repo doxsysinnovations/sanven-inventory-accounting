@@ -20,11 +20,11 @@ new class extends Component {
     public $brand = '';
     public $unit = '';
     public $productType = '';
-    public $perPage = 10;
+    public $perPage = 5;
 
     public function mount()
     {
-        $this->perPage = session('perPage', 10);
+        $this->perPage = session('perPage', 5);
     }
 
     public function updatedPerPage($value)
@@ -108,218 +108,72 @@ new class extends Component {
 };
 ?>
 
-<!-- HTML Blade Template Continues -->
 <div>
-    <div class="mb-4">
-        <nav class="flex justify-start" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Expiry Products
-                            List</span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
+    <x-view-layout
+        title="List of Expiry Stocks"
+        description="This table lists all products nearing or past their expiration date. Please review and take necessary actions to manage stock effectively."
+        :items="$stocks"
+        searchPlaceholder="Search Expiry Products..."
+        message="No stocks available."
+        createButtonLabel="Add / Receive Stock"
+        createButtonAbility="products.create"
+        createButtonRoute="stocks.create"
+        showNewCreateButtonIfEmpty="true"
+        createButtonLabelIfEmpty="Add Product"
+        createButtonAbilityIfEmpty="products.create"
+        createButtonRoute="stocks.create"
+    >
+        <x-slot:emptyIcon>
+            <svg class="w-48 h-48 mb-2 text-gray-300 dark:text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M20 10H4v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8ZM9 13v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1Z" clip-rule="evenodd"/>
+                <path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Z"/>
+            </svg>
+        </x-slot:emptyIcon>
+         <x-list-table
+            :headers="[
+                'Code', 'Name', 'Capital', 'Selling', 'Stocks',
+                'Manufactured Date', 'Expiry Date', 'Actions'
+            ]"
+            :rows="$stocks->map(function($stock) {
+                $expirationDate = \Carbon\Carbon::parse($stock->expiration_date);
+                $daysDiff = $expirationDate->diffInDays(now(), false);
 
-    <div class="flex flex-col gap-4 rounded-xl">
-        <h2 class="mb-16">
-            <span class="text-lg font-semibold text-gray-900 dark:text-gray-100">List of Expiry Products</span>
-            <p>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                    This table lists all products nearing or past their expiration date. Please review and take
-                    necessary actions to manage stock effectively.
-                </span>
-            </p>
-        </h2>
-        <div class="flex flex-wrap justify-between items-center gap-4">
+                if ($daysDiff >= 0) {
+                    $status = 'expired';
+                } elseif ($daysDiff >= -3) {
+                    $status = 'expiring';
+                } else {
+                    $status = 'valid';
+                }
 
-          
-
-            <div class="flex gap-2 items-center">
-                <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300">Per Page:</label>
-                <select wire:model="perPage" id="perPage"
-                    class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm">
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                </select>
-            </div>
-        </div>
-
-        @if ($stocks->isEmpty())
-            {{-- <div class="flex flex-col items-center justify-center p-8">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">No products found</p>
-                @can('products.create')
-                    <a href="{{ route('stocks.create') }}"
-                        class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add Product
-                    </a>
-                @endcan
-            </div> --}}
-        @else
-            {{-- <div class="flex justify-end">
-                @can('products.create')
-                    <a href="{{ route('stocks.create') }}"
-                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="currentColor"
-                            viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add / Receive Stock
-                    </a>
-                @endcan
-            </div> --}}
-
-            <div
-                class="overflow-x-auto overflow-y-scroll max-h-128 rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            {{-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Image
-                            </th> --}}
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Code
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Name
-                            </th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Capital</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Selling</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Stocks</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Manufactured Date</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Expiry Date</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        @foreach ($stocks as $stock)
-                        <tr wire:key="product-{{ $stock->id }}">
-                            {{-- Product Details --}}
-                            <td class="px-6 py-4">{{ $stock->product->product_code }}</td>
-                            <td class="px-6 py-4">{{ $stock->product_name }}</td>
-                            <td class="px-6 py-4 text-center">{{ number_format($stock->capital_price, 2) }}</td>
-                            <td class="px-6 py-4 text-center">{{ number_format($stock->selling_price, 2) }}</td>
-                            <td class="px-6 py-4 text-center">{{ $stock->quantity }}</td>
-                            <td class="px-6 py-4 text-center">{{ $stock->formatted_manufactured_date }}</td>
-                    
-                            {{-- Expiration Date --}}
-                            <td class="px-6 py-4 text-center">
-                                <span class="
-                                @php
-                                $expirationDate = \Carbon\Carbon::parse($stock->expiration_date);
-                                $daysDifference = $expirationDate->diffInDays(now(), false);
-                            @endphp
-                            
-                            @if ($daysDifference < 0 && $daysDifference >= -3) {{-- Expiring soon (within 3 days) --}}
-                                text-orange-600 font-medium
-                            @elseif ($daysDifference >= 0) {{-- Already expired --}}
-                                text-red-600 font-bold
-                            @else {{-- More than 3 days left --}}
-                                text-yellow-500 font-semibold
-                            @endif
-                            
-                                ">
-                                    {{ $expirationDate->format('F j, Y') }}
-                                </span>
-                                {{-- Expired Label --}}
-                                @if ($daysDifference >= 0)
-                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
-                                        Expired
-                                    </span>
-                                @endif
-                            </td>
-                    
-                            {{-- Actions --}}
-                            <td class="px-6 py-4 text-center space-x-2">
-                                @can('products.edit')
-                                    <button wire:click="edit({{ $stock->id }})"
-                                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-indigo-400">
-                                        Edit
-                                    </button>
-                                @endcan
-                                @can('products.delete')
-                                    <button wire:click="confirmDelete({{ $stock->id }})"
-                                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400">
-                                        Delete
-                                    </button>
-                                @endcan
-                            </td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-4">
-                {{ $stocks->links() }}
-            </div>
-        @endif
-    </div>
+                return [
+                    $stock->product->product_code,
+                    $stock->product_name ?? 'N/A',
+                    number_format($stock->capital_price, 2),
+                    number_format($stock->selling_price, 2),
+                    $stock->quantity,
+                    $stock->formatted_manufactured_date,
+                    [ // <-- Expiry column: both date and status
+                        'date' => $expirationDate->format('F j, Y'),
+                        'status' => $status,
+                    ],
+                    '__model' => $stock
+                ];
+            })"
+            editAbility="products.edit"
+            editParameter="id"
+            editRoute="products.edit"
+            deleteAbility="products.delete"
+            deleteAction="confirmDelete"
+            
+        />
+    </x-view-layout>
 
     @if ($confirmingDelete)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
-                </div>
-                <div
-                    class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Product
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this product? This action cannot be undone.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button wire:click="delete"
-                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400 sm:ml-3 sm:w-auto sm:text-sm">
-                            Delete
-                        </button>
-                        <button wire:click="$set('confirmingDelete', false)"
-                            class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-delete-modal 
+            title="Delete Expiring Product"
+            message="Are you sure you want to delete this expiring product? This action cannot be undone."
+            onCancel="$set('confirmingDelete', false)"
+        />
     @endif
 </div>
