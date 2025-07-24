@@ -39,7 +39,13 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('settings/seeders', 'settings.seeders')->name('settings.seeders');
 
     Volt::route('users', 'users.index')->name('users');
+    Volt::route('users/create', 'users.create')->name('users.create');
+    Volt::route('users/edit/{user}', 'users.edit')->name('users.edit');
+
     Volt::route('roles', 'roles.index')->name('roles');
+    Volt::route('roles/create', 'roles.create')->name('roles.create');
+    Volt::route('roles/edit/{role}', 'roles.edit')->name('roles.edit');
+
     Volt::route('audit-trail', 'audittrail.index')->name('audittrail');
 
     //Brands
