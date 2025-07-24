@@ -21,6 +21,7 @@ new class extends Component {
     public $quantity_per_piece = 1;
     public $low_stock_value = 10;
     public $image;
+    public $is_vatable;
 
     public $productTypes = [];
     public $units = [];
@@ -36,6 +37,7 @@ new class extends Component {
         'product_type' => 'required',
         'unit' => 'required',
         'brand' => 'required',
+        'is_vatable' => 'required',
         'category' => 'required',
         'quantity_per_piece' => 'required|integer|min:1',
         'low_stock_value' => 'required|integer|min:0',
@@ -62,6 +64,7 @@ new class extends Component {
             'product_type.required' => 'Please select the product type.',
             'unit.required' => 'Please specify the unit of measurement.',
             'brand.required' => 'Please select the product brand.',
+            'is_vatable.required' => 'Please specify if the product has VAT.',
             'category.required' => 'Please choose a product category.',
 
             'quantity_per_piece.required' => 'Please enter how many pieces per quantity.',
@@ -97,6 +100,7 @@ new class extends Component {
             'product_type_id' => $this->product_type,
             'unit_id' => $this->unit,
             'brand_id' => $this->brand,
+            'is_vatable' => $this->is_vatable,
             'category_id' => $this->category,
             'quantity_per_piece' => $this->quantity_per_piece,
             'low_stock_value' => $this->low_stock_value,
@@ -129,6 +133,7 @@ new class extends Component {
         $this->product_type = '';
         $this->unit = '';
         $this->brand = '';
+        $this->is_vatable = null;
         $this->category = '';
         $this->supplier = '';
         $this->quantity = '';

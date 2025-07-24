@@ -23,6 +23,7 @@ new class extends Component {
     public $quantity_per_piece = 1;
     public $low_stock_value = 10;
     public $image;
+    public $is_vatable;
 
     public $productTypes = [];
     public $units = [];
@@ -38,6 +39,7 @@ new class extends Component {
         'product_type' => 'required',
         'unit' => 'required',
         'brand' => 'required',
+        'is_vatable' => 'required',
         'category' => 'required',
         'quantity_per_piece' => 'required|integer|min:1',
         'low_stock_value' => 'required|integer|min:0',
@@ -53,6 +55,7 @@ new class extends Component {
         $this->product_type = $this->product->product_type_id;
         $this->unit = $this->product->unit_id;
         $this->brand = $this->product->brand_id;
+        $this->is_vatable = (bool) $this->product->is_vatable;
         $this->category = $this->product->category_id;
         $this->quantity_per_piece = $this->product->quantity_per_piece;
         $this->low_stock_value = $this->product->low_stock_value;
@@ -81,6 +84,7 @@ new class extends Component {
             'product_type.required' => 'Please select the product type.',
             'unit.required' => 'Please specify the unit of measurement.',
             'brand.required' => 'Please select the product brand.',
+            'is_vatable.required' => 'Please specify if the product has VAT.',
             'category.required' => 'Please choose a product category.',
 
             'quantity_per_piece.required' => 'Please enter how many pieces per quantity.',
@@ -113,6 +117,7 @@ new class extends Component {
             'product_type_id' => $this->product_type,
             'unit_id' => $this->unit,
             'brand_id' => $this->brand,
+            'is_vatable' => $this->is_vatable,
             'category_id' => $this->category,
             'quantity_per_piece' => $this->quantity_per_piece,
             'low_stock_value' => $this->low_stock_value,
@@ -150,28 +155,6 @@ new class extends Component {
             $newStockNumber = 1;
         }
         return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
-    }
-
-    private function resetForm()
-    {
-        $this->product_code = '';
-        $this->name = '';
-        $this->image = null;
-        $this->dispatch('reset-preview');
-        $this->description = '';
-        $this->product_type = '';
-        $this->unit = '';
-        $this->brand = '';
-        $this->category = '';
-        $this->supplier = '';
-        $this->quantity = '';
-        $this->capital_price = '';
-        $this->selling_price = '';
-        $this->quantity_per_piece = 1;
-        $this->low_stock_value = 10;
-        $this->expiration_date='';
-        $this->product = null;
-        $this->resetValidation();
     }
 
     public function cancel() 
