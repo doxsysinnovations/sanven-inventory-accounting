@@ -23,7 +23,7 @@ new class extends Component {
         $this->resetValidation();
         $this->location = $location;
         $this->name = $location->name;
-        $this->is_active = $location->is_active;
+        $this->is_active = (bool)$location->is_active;
     }
 
     public function rules()

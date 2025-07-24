@@ -38,7 +38,7 @@ new class extends Component {
         $this->email = $agent->email;
         $this->phone = $agent->phone;
         $this->address = $agent->address;
-        $this->is_active = $agent->is_active;
+        $this->is_active = (bool)$agent->is_active;
         
         $this->selectedLocations = $agent->locations()->wherePivotNull('deleted_at')->pluck('locations.id')->toArray();
         $this->allLocations = \App\Models\Location::where('is_active', true)->pluck('name', 'id')->toArray();
