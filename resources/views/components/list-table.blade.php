@@ -63,7 +63,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ count($headers) }}" class="px-6 py-4 text-left text-gray-400">
+                    <td colspan="{{ count($headers) }}" class="px-6 py-4 text-center text-gray-400">
                         {{ $emptyMessage }}
                     </td>
                 </tr>
