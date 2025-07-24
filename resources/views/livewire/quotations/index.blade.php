@@ -105,7 +105,7 @@ new class extends Component {
     </x-view-layout>
 
     @if ($confirmingDelete)
-        <x-delete-modal 
+        <x-delete-modal
             title="Delete Quotation"
             message="Are you sure you want to delete this quotation? This action cannot be undone."
             onCancel="$set('confirmingDelete', false)"

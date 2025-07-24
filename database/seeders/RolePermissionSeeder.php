@@ -77,6 +77,7 @@ class RolePermissionSeeder extends Seeder
             'stocks.create',
             'stocks.edit',
             'stocks.delete',
+            'stocks.view-expiry',
 
             //Orders/POS
             'orders.view',
@@ -104,6 +105,7 @@ class RolePermissionSeeder extends Seeder
             'expenses.delete',
 
             //Reports
+            'reports.view-aging-reportss',
             'reports.view',
             'reports.create',
             'reports.edit',
@@ -122,11 +124,32 @@ class RolePermissionSeeder extends Seeder
             'agents.edit',
             'agents.delete',
 
+            //Invoicing
+            'invoicing.view',
+            'invoicing.create',
+            'invoicing.edit',
+            'invoicing.delete',
+
+            //Settings
+            // 'settings.view',
+            // 'settings.create',
+            // 'settings.edit',
+            // 'settings.delete',
+
+            //Profile
+            'profile.view',
+            'profile.edit',
+
+
             //Locations
             'locations.view',
             'locations.create',
             'locations.edit',
             'locations.delete',
+
+            //Special Features
+            'special-features.view',
+            'special-features.pdf-binding-view',
 
             //Settings
             'settings.view',
@@ -139,6 +162,21 @@ class RolePermissionSeeder extends Seeder
             'invoicing.create',
             'invoicing.edit',
             'invoicing.delete',
+
+            //Purchase Requests
+            'purchase-requests.view',
+            'purchase-requests.show',
+            'purchase-requests.create',
+            'purchase-requests.edit',
+            'purchase-requests.delete',
+
+            //Purchase Orders
+            'purchase-orders.view',
+            'purchase-orders.show',
+            'purchase-orders.create',
+            'purchase-orders.edit',
+            'purchase-orders.delete',
+            'purchase-orders.update-status',
         ];
 
         foreach ($permissions as $permission) {
