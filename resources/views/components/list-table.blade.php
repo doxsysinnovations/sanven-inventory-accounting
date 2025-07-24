@@ -36,7 +36,7 @@
                             $cell = $row[$i] ?? null;
                         @endphp
                         <td class="text-left px-6 py-4 dark:text-gray-300">
-                            @if (strtolower($header) === 'status' || strtolower($header) === 'expiry date')
+                            @if (strtolower($header) === 'status' || strtolower($header) === 'expiry date' || strtolower($header) === 'roles' || strtolower($header) === 'user type')
                                @if (is_array($cell) && isset($cell['date'], $cell['status']))
                                     <x-status-badges :date="$cell['date']" :status="$cell['status']" />
                                 @else
