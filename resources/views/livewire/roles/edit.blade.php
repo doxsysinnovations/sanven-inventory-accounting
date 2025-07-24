@@ -94,7 +94,9 @@ new class extends Component {
 
     public function cancel() 
     {
-        return redirect()->route('roles');
+        if($this->isEditing) {
+            return redirect()->route('roles');
+        }   
     }
 };
 ?>
