@@ -84,6 +84,9 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Aging
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
 
+    //Recievables
+    Volt::route('recievables', 'recievables.index')->name('recievables');
+
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
@@ -134,6 +137,19 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('invoicing/create', 'invoicing.create')->name('invoicing.create');
     Volt::route('invoicing/show', 'invoicing.create')->name('invoicing.show');
     Volt::route('invoicing/{id}/edit', 'invoicing.edit')->name('invoicing.edit');
+
+    //Special Features
+    Volt::route('pdf-binding', 'special-features.pdf-binding')->name('pdf-binding');
+
+    //Purchase Requests
+    Volt::route('purchase-requests', 'purchase-requests.index')->name('purchase-requests');
+    Volt::route('purchase-requests/create', 'purchase-requests.create')->name('purchase-requests.create');
+    Volt::route('purchase-requests/{id}/edit', 'purchase-requests.edit')->name('purchase-requests.edit');
+
+    //Purchase Orders
+    Volt::route('purchase-orders', 'purchase-orders.index')->name('purchase-orders');
+    Volt::route('purchase-orders/create', 'purchase-orders.create')->name('purchase-orders.create');
+    Volt::route('purchase-orders/{id}/edit', 'purchase-orders.edit')->name('purchase-orders.edit');
 });
 
 Route::middleware(['auth'])->group(function () {
