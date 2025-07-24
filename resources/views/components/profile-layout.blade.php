@@ -72,7 +72,7 @@
                 </div> 
                 <div>
                     <a href="{{ route($editRoute, [$modelInstance => $modelInfo->id]) }}">
-                        <flux:button variant="primary" icon="pencil">Edit Profile</flux:button>                                
+                        <flux:button variant="primary" color="blue" icon="pencil">Edit Profile</flux:button>                                
                     </a>
                 </div>
             </div>
