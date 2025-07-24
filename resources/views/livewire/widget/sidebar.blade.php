@@ -84,10 +84,10 @@ new class extends Component {
                     ],
                     // [
                     //     'icon' => 'pencil-square',
-                    //     'route' => 'purchase-requests',
-                    //     'label' => 'Purchase Requests',
-                    //     'permission' => 'purchase-requests.view',
-                    // ],
+                    // //     'route' => 'purchase-requests',
+                    // //     'label' => 'Purchase Requests',
+                    // //     'permission' => 'purchase-requests.view',
+                    // // ],
                     [
                         'icon' => 'document-text',
                         'route' => 'purchase-orders',
