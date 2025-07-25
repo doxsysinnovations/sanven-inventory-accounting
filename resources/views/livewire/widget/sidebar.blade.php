@@ -116,6 +116,23 @@ new class extends Component {
                     ],
                 ],
             ],
+             [
+                'heading' => 'Agents Management',
+                'items' => [
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agents',
+                        'label' => 'Agents',
+                        'permission' => 'agents.view',
+                    ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agent-commissions',
+                        'label' => 'Commissions',
+                        'permission' => 'customers.view',
+                    ],
+                ],
+            ],
             [
                 'heading' => 'Supplier Management',
                 'permission' => 'suppliers.view',

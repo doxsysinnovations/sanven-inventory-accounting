@@ -82,6 +82,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Agents
     Volt::route('agents', 'agents.index')->name('agents');
+    Volt::route('agent-commissions', 'agent-commisions.index')->name('agent-commissions');
 
     //Customers
     Volt::route('customers', 'customers.index')->name('customers');

@@ -19,4 +19,8 @@ class Agent extends Model
             ->withTimestamps()
             ->withTrashed();
     }
+    public function commissions()
+{
+    return $this->hasMany(AgentCommission::class);
+}
 }

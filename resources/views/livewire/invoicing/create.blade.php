@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Invoice;
 use App\Models\Stock;
 use App\Models\Agent;
+use App\Models\AgentCommission;
 use App\Models\InvoiceItem;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
@@ -384,7 +385,6 @@ new class extends Component {
                 'created_by' => auth()->id(),
                 'agent_id' => $this->assigned_agent,
             ]);
-            
 
             // Add invoice items
             foreach ($this->cart as $item) {
@@ -416,6 +416,17 @@ new class extends Component {
                 }
             }
 
+            // If agent_id is set, create agent commission
+            if (!empty($this->assigned_agent)) {
+                \App\Models\AgentCommission::create([
+                    'agent_id' => $this->assigned_agent,
+                    'invoice_id' => $invoice->id,
+                    'commission_amount' => $invoice->grand_total * 0.05, // Example: 5% commission
+                    'status' => 'pending',
+                    'notes' => 'Auto-generated commission for invoice #' . $invoice->invoice_number,
+                ]);
+            }
+
             DB::commit();
 
             // Reset form
@@ -433,7 +444,7 @@ new class extends Component {
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-             dd('exception', $e->getMessage());
+            dd('exception', $e->getMessage());
             $this->dispatch('notify', type: 'error', message: 'Error creating invoice: ' . $e->getMessage());
             logger()->error('Invoice creation error: ' . $e->getMessage());
         } finally {
@@ -470,7 +481,8 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <a href="{{ route('invoicing') }}" class="ml-1 text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 md:ml-2">Invoices</a>
+                        <a href="{{ route('invoicing') }}"
+                            class="ml-1 text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 md:ml-2">Invoices</a>
                     </div>
                 <li aria-current="page">
                     <div class="flex items-center">

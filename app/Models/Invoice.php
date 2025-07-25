@@ -70,4 +70,8 @@ class Invoice extends Model
     {
         return $this->belongsTo(User::class, 'agent_id', 'id');
     }
+    public function commissions()
+    {
+        return $this->hasMany(AgentCommission::class);
+    }
 }
