@@ -23,7 +23,7 @@
             <small class="text-gray-500 dark:text-gray-400">Add any additional notes or instructions for this batch.</small>
         </div>
         
-        <div class="flex justify-between mt-4">
+        <div class="flex justify-between mt-4 overflow-hidden">
             <flux:button variant="ghost" color="zinc" wire:click="previousStep">
                 Back
             </flux:button>

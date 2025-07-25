@@ -6,7 +6,7 @@
 <div>
     <form wire:submit.prevent="save">
         <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
-            <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">
                 {{ $isEditing ? 'Edit Agent Profile' : 'Add New Agent' }}
             </h3>
         </div>
@@ -82,7 +82,7 @@
             <div class="mb-4">
                 <label class="inline-flex items-center">
                     <input class="accent-(--color-accent-alt) form-checkbox" type="checkbox" wire:model="is_active">
-                    <span class="ml-2">Active</span>
+                    <span class="ml-2 text-sm">Active</span>
                 </label>
             </div>
         </div>

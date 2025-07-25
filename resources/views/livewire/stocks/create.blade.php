@@ -242,7 +242,7 @@ new class extends Component {
 ?>
 <div>
     <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
-        <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+        <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">
            Receive Stock
         </h3>
     </div>
@@ -254,9 +254,9 @@ new class extends Component {
                 </div>
             </div>
         
-            <div class="flex flex-col sm:flex-row space-x-2 mb-6 bg-gray-100 p-1 rounded-lg">
+            <div class="flex flex-col sm:flex-row items-stretch gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
                 <button wire:click="goToStep(1)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
+                    class="flex-1 px-6 py-3 rounded-sm text-base shadow
                     {{ $currentStep === 1 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
@@ -272,7 +272,7 @@ new class extends Component {
                 </button>
 
                 <button wire:click="goToStep(2)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
+                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow w-full
                     {{ $currentStep === 2 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
@@ -288,7 +288,7 @@ new class extends Component {
                 </button>
 
                 <button wire:click="goToStep(3)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
+                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow w-full
                     {{ $currentStep === 3 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm

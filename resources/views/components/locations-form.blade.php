@@ -16,8 +16,8 @@
             </div>
             <div class="mb-4">
                 <label class="inline-flex items-center">
-                    <input type="checkbox" wire:model="is_active" class="form-checkbox">
-                    <span class="ml-2">Active</span>
+                    <input class="accent-(--color-accent-alt) form-checkbox" type="checkbox" wire:model="is_active">
+                    <span class="ml-2 text-sm">Active</span>
                 </label>
             </div>
         </div>

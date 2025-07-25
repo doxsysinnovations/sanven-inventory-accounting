@@ -15,17 +15,19 @@
 @endphp
 
 <div class="bg-white rounded-md dark:bg-zinc-900 shadow">
-       <div class="mb-4 p-4 bg-gray-50 rounded-t-md">
-        <h2 class="text-xl font-bold  text-(--color-accent) dark:text-white">{{ $title }}</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $description }}</p>
+        <div class="mb-4 p-4 bg-gray-50 rounded-t-md">
+        <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">
+               {{ $title }}
+        </h3>
+        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">{{ $description }}</p>
     </div>
 
     <div class="overflow-auto rounded-sm dark:border-zinc-700 px-6 pb-6">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
-            <thead class="{{ $headerBackgroundColor }}  text-black text-left text-sm">
+            <thead class="{{ $headerBackgroundColor }}  text-black text-left">
                 <tr>
                     @foreach ($headers as $header)
-                        <th class="px-4 py-2 font-semibold whitespace-nowrap border-b-1">{{ $header }}</th>
+                        <th class="text-sm px-4 py-2 font-semibold whitespace-nowrap border-b-1">{{ $header }}</th>
                     @endforeach
                 </tr>
             </thead>
@@ -39,31 +41,21 @@
                 @else
                     @foreach ($rows as $rowIndex => $row)
                         <tr class="border-b-1">
-                            @foreach ($row as $colIndex => $cell)
+                         @foreach ($row as $colIndex => $cell)
                                 @php
-                                    $textClass = $rowColors[$rowIndex][$colIndex] ?? null;
-                                    $hasBadge = $textClass !== null;
                                     $statusIndex = array_search('Status', $headers);
-                                    $statusClasses = '';
-                                    if ($colIndex === $statusIndex) {
-                                        if (strtolower($cell) === 'overdue') {
-                                            $statusClasses = 'bg-[#FFEAE8] capitalize text-[var(--color-accent-2)] px-3 py-1 font-semibold rounded-3xl';
-                                        } elseif (strtolower($cell) === 'pending') {
-                                            $statusClasses = 'bg-(--color-yellow-100) capitalize text-(--color-yellow-400) px-3 py-1 font-semibold rounded-3xl';
-                                        } elseif (strtolower($cell) === 'paid') {
-                                            $statusClasses = 'bg-green-100 capitalize text-green-400 px-3 py-1 font-semibold rounded-3xl';
-                                        } elseif (strtolower($cell) === 'cancelled') {
-                                            $statusClasses = 'bg-orange-100 capitalize text-orange-400 px-3 py-1 font-semibold rounded-3xl';
-                                        }
-                                    }
+                                    $dateIndex = array_search('Date', $headers);
+                                    $isStatusCol = $colIndex === $statusIndex;
+                                    $isDateCol = $colIndex === $dateIndex;
                                 @endphp
+
                                 <td class="py-2 px-4">
-                                    @if ($statusClasses)
-                                        <span class="{{ $statusClasses }}">{{ $cell }}</span>
-                                    @elseif ($hasBadge)
-                                        <span class="inline-block {{ $textClass }} rounded-3xl">
-                                            {{ $cell }}
-                                        </span>
+                                    @if ($isStatusCol)
+                                        <x-status-badges
+                                            :status="$cell"
+                                        />
+                                    @elseif (!empty($rowColors[$rowIndex][$colIndex]))
+                                        <x-status-badges :status="$cell" />
                                     @else
                                         <span class="text-gray-700 dark:text-gray-300">
                                             {{ $cell }}
@@ -79,9 +71,9 @@
     </div>
 
     <div class="mt-6 text-right pr-6 pb-6">
-        <div class="flex justify-end mb-4 md:mb-0">
+        <div class="flex justify-end">
             <a href="{{ route($route) }}">
-                <flux:button variant="primary">{{ $buttonLabel }}</flux:button>                                
+                <flux:button variant="primary" color="blue">{{ $buttonLabel }}</flux:button>                                
             </a>
         </div>
     </div>

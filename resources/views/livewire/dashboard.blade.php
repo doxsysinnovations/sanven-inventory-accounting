@@ -47,7 +47,6 @@ new class extends Component {
             ->orderBy('due_date', 'asc')
             ->get();
 
-        //Invoice status counts
         $paid = Invoice::where('status', 'paid')->count();
         $pending = Invoice::where('status', 'pending')->count();
         $overdue = Invoice::where('status', 'overdue')->count();
@@ -73,8 +72,6 @@ new class extends Component {
             ],
         ];
 
-
-        //Expiring products soon
         $stocks = Stock::whereNotNull('expiration_date')
             ->whereBetween('expiration_date', [$today, $today->copy()->addDays(7)])
             ->with('product')
@@ -135,54 +132,44 @@ new class extends Component {
 ?>
 
 <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-    <h1 class="font-bold sm:text-sm md:text-lg lg:text-xl">
+    <h1 class="font-bold sm:text-base md:text-lg lg:text-xl">
         Dashboard
     </h1>
-    <!-- General Statistics -->
+    
     <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <x-stat-card :value="$salesToday" label="Income Sales Today" cardColor="bg-white" iconColor="text-white
-            text-white" iconBackgroundColor="bg-[var(--color-accent)]">
-            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+        <x-stat-card :value="$salesToday" label="Income Sales Today" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent)">
+            <svg class="w-8 h-8"  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 7V6a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-1M3 18v-7a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Zm8-3.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>
             </svg>
         </x-stat-card>
-        <x-stat-card :value="$totalProducts" label="Total Products" cardColor="bg-white" iconColor="text-white
-            text-white" iconBackgroundColor="bg-[var(--color-accent)]">
-            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+
+        <x-stat-card :value="$totalProducts" label="Total Products" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent)">
+            <svg class="w-8 h-8" text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Zm16 14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2ZM4 13a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6Zm16-2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6Z"/>
             </svg>
         </x-stat-card>
-        <x-stat-card :value="$totalInvoices" label="Total Invoices" cardColor="bg-white" iconColor="text-white
-            text-white" iconBackgroundColor="bg-[var(--color-accent)]">
-            <svg class=" w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+
+        <x-stat-card :value="$totalInvoices" label="Total Invoices" cardColor="bg-white"  iconColor="text-white" iconBackgroundColor="bg-(--color-accent)">
+            <svg class="w-8 h-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m8-2h3m-3 3h3m-4 3v6m4-3H8M19 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM8 12v6h8v-6H8Z"/>
             </svg>
         </x-stat-card>
-        <x-stat-card :value="$totalExpiredProducts" label="Expired Products" cardColor="bg-white" iconColor="text-white
-            text-white" iconBackgroundColor="bg-[var(--color-accent-2)]">
-            <svg class=" w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+
+        <x-stat-card :value="$totalExpiredProducts" label="Expired Products" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent-2)">
+            <svg class="w-8 h-8"  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="m6 6 12 12m3-6a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
             </svg>
         </x-stat-card>
     </div>
 
     <div>
-        <h1 class="font-bold sm:text-sm md:text-lg lg:text-xl">
+        <h1 class="font-bold sm:text-base md:text-lg lg:text-xl">
             Reports
         </h1>
     </div>
 
-    <!-- Reports -->
     <div class="flex h-full w-full flex-1 flex-col gap-6">
-        <div class="grid auto-rows-min gap-6 md:grid-cols-2">
+        <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
             <x-reports-data-table 
                 title="Overdue Invoices" 
                 :headers="['Invoice #', 'Customer', 'Due']"
@@ -195,10 +182,9 @@ new class extends Component {
                 :rowColors="$overdueInvoices->map(fn($invoice) => [
                     '',
                     '',
-                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
+                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold',
                 ])->toArray()" />
 
-            <!-- Items with less than 50 in stock -->
             <x-reports-data-table 
                 title="Low Stock Items" 
                 description="Items below low stock value" 
@@ -211,11 +197,10 @@ new class extends Component {
                 ])->toArray()" :rowColors="$lowStockItems->map(fn($item) => [
                     '',
                     '',
-                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Qty
-                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold' // Low
+                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold',
+                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold',
                 ])->toArray()" />
 
-            <!-- Expired Products -->
             <x-reports-data-table title="Expired Products" 
                 description="Products past their expiration date"
                 :headers="['Code', 'Name', 'Qty', 'Expiration']" 
@@ -225,13 +210,12 @@ new class extends Component {
                     $stock->quantity . ' ' . ($stock->product?->unit?->name ?? ''),
                     \Carbon\Carbon::parse($stock->expiration_date)->format('M d, Y'),
                 ])->toArray()" :rowColors="$expiredStocks->map(fn($stock) => [
-                    '', // No badge for Code
-                    '', // No badge for Name
-                    '', // Qty
-                    'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold', // Expiration
+                    '',
+                    '',
+                    '', 
+                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'
                 ])->toArray()" />
 
-            <!-- Returned/Rejected Products -->
             <x-reports-data-table 
                 title="Returned Products" 
                 :headers="['Product', 'Returned']" 
@@ -240,13 +224,12 @@ new class extends Component {
                     ['Face Masks (Box of 50)', '5 boxes returned'],
                     ['Digital Thermometers', '3 units rejected'],
                 ]" :rowColors="[
-                    [null, 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
-                    [null, 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
-                    [null, 'bg-[#FFEAE8] text-[color:var(--color-accent-2)] px-3 py-1 font-semibold'],
+                    [null, 'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'],
+                    [null, 'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'],
+                    [null, 'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'],
                 ]" />
         </div>
 
-        <!-- Aging Reports Table -->
         <x-reports-data-table-with-status 
             title="Aging Reports" 
             :headers="['Agent', 'Inovice #', 'Total Amount', 'Status']" 
@@ -259,9 +242,7 @@ new class extends Component {
             route="agingreports"
         />
 
-        <!-- Top Customers / Top Suppliers -->
         <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
-            <!-- Top Suppliers by Delivery -->
             <x-reports-data-table-with-button
                 styleAttributes="md:row-start-1 md:col-start-1"
                 title="Top Suppliers of {{ $currentMonth }}" 
@@ -277,7 +258,6 @@ new class extends Component {
                 route="suppliers"
             />
 
-            <!-- Top Customers by Total Spent -->
             <x-reports-data-table-with-button
                 styleAttributes="md:row-start-2 md:col-start-1"
                 description="Based on Total Spent"
@@ -293,47 +273,44 @@ new class extends Component {
                 route="customers"
             />
 
-            <!-- Monthly Sales -->
             <div class="md:row-span-2 md:col-start-2">
-                <div
-                    class="relative h-full overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
+                <div class="h-full overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
                     
                     <div class="p-4 bg-gray-50">
-                         <h3 class="text-lg font-semibold text-(--color-accent) dark:text-gray-100">Monthly Sales</h3>
+                         <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">Monthly Sales</h3>
                     </div>
 
-                    <div id="monthlySales" class="w-full h-full"></div>
+                    <div id="monthlySales" class=" w-full h-full py-6 md:py-0 px-6"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Invoice Status -->
         <div class="relative overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
                 <div class="mb-4 p-4 bg-gray-50">
-                        <h3 class="text-lg font-semibold text-(--color-accent) dark:text-gray-100">Invoice Status</h3>
+                    <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">Invoice Status</h3>
                 </div>
                 <div class="flex flex-col items-center pb-6">
-                    <div id="invoiceStatusChart" class="-mb-5 p-6" style="width: 100%; height: 300px;"></div>
-                    <div class="flex flex-row gap-5 text-xs">
+                    <div id="invoiceStatusChart" class="-mb-5 p-6 py-6 md:py-0 px-6" style="width: 100%; height: 300px;"></div>
+                    <div class="flex flex-row gap-5 text-xs px-4 md:px-10">
                         <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-green-400"></span>
+                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-green-600"></div>
                             <span class="text-gray-700 dark:text-gray-300">Paid:
                                 {{ $invoiceStatusCounts['paid']['percent'] }}%</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-(--color-yellow-400)"></span>
+                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-(--color-yellow-400)"></div>
                             <span class="text-gray-700 dark:text-gray-300">Pending:
                                 {{ $invoiceStatusCounts['pending']['percent'] }}%</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-[var(--color-accent-2)]"></span>
+                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-[var(--color-accent-2)]"></div>
                             <span class="text-gray-700 dark:text-gray-300">Overdue:
                                 {{ $invoiceStatusCounts['overdue']['percent'] }}%</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-orange-400"></span>
+                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-orange-400"></div>
                             <span class="text-gray-700 dark:text-gray-300">Cancelled:
                                 {{ $invoiceStatusCounts['cancelled']['percent'] }}%</span>
                         </div>
@@ -341,17 +318,16 @@ new class extends Component {
                 </div>
         </div>
 
-        <!-- Expiring Products Soon -->
         <div class="relative overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
            <div class="mb-4 p-4 bg-gray-50">
-                <h3 class="text-lg font-semibold text-(--color-accent) dark:text-gray-100">Expiring Products Soon</h3>
+                <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">Expiring Products Soon</h3>
             </div>
             @if(count($chartData) <= 1)
-                <div class="p-6 text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
+                <div class="p-6 text-center text-gray-500 dark:text-gray-400 py-4 text-sm sm:text-base">
                     No products expiring within 7 days.
                 </div>
             @else
-                <div class="p-6" id="expiringChart" style="width: 100%; height: 320px;"></div>
+                <div class="px-4 md:px-10 pb-6 -mt-5" id="expiringChart" style="width: 100%; height: 320px;"></div>
             @endif
         </div>
     </div>
@@ -359,11 +335,9 @@ new class extends Component {
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script>
-    // Store chart instances globally for resize handling
     let charts = {};
     let isInitialized = false;
 
-    // Utility function to get CSS variables
     function getCSSVariable(name) {
         return getComputedStyle(document.documentElement)
             .getPropertyValue(name)
@@ -487,7 +461,7 @@ new class extends Component {
             const total = paid + pending + overdue + cancelled;
 
             const colours = {
-                paid: '#4ade80',
+                paid: '#00a63e',
                 pending: yellowColor,
                 overdue: accentColor,
                 cancelled: '#fb923c'
@@ -596,7 +570,7 @@ new class extends Component {
                     text: ['Expiring in 7 days', 'Expiring Soon'],
                     dimension: 0,
                     inRange: {
-                        color: ['#e7000b', '#FFD700', '#65B581']
+                        color: ['#e7000b', '#FFD700', '#00a63e']
                     },
                     textStyle: {
                         color: isDark ? '#fff' : '#222'
@@ -722,10 +696,7 @@ new class extends Component {
         charts,
         isInitialized: () => isInitialized
     };
-</script>
-
-<!-- Add this script tag to pass PHP data to JavaScript -->
-<script>
+    
     // Pass PHP data to JavaScript
     window.invoiceStatusData = {
         paid: {{ $invoiceStatusCounts['paid']['count'] ?? 0 }},

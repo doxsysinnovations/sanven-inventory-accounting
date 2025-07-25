@@ -6,17 +6,17 @@
     'iconBackgroundColor' => 'bg-[#358DBE]',
 ])
 
-<div class="relative p-6 {{ $cardColor }} rounded-md shadow-sm text-gray-900 dark:bg-gray-800 dark:text-white overflow-hidden">
-    <div class="flex items-center gap-4 z-10 relative">
+<div class="w-full h-full p-6 {{ $cardColor }} rounded-md shadow-sm text-gray-900 dark:bg-gray-800 dark:text-white overflow-hidden flex items-center md:justify-center lg:justify-start">
+    <div class="flex items-center gap-4 h-full min-w-0">
         @if (trim($slot))
             <div class="rounded-sm p-3 {{ $iconColor }} {{ $iconBackgroundColor }}">
                 {{ $slot }}
             </div>
         @endif
 
-        <div>
-            <p class="text-4xl font-semibold text-black dark:text-white">{{ $value }}</p>
-            <h3 class="text-md font-bold text-black dark:text-gray-400">{{ $label }}</h3>
+        <div class="flex flex-col justify-center h-full min-w-0">
+            <p class="text-2xl md:text-3xl lg:text-4xl font-semibold text-black dark:text-white">{{ $value }}</p>
+            <h3 class="text-sm md:text-base font-bold text-black dark:text-gray-400 md:truncate">{{ $label }}</h3>
         </div>
     </div>
 </div>
