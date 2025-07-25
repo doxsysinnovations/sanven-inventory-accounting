@@ -11,7 +11,7 @@ $invalid ??= ($name && $errors->has($name));
 $classes = Flux::classes()
     ->add('appearance-none w-full ps-3 pe-10 block')
     ->add(match ($size) {
-        default => 'h-10 py-2 text-base sm:text-sm leading-[1.375rem] rounded',
+        default => 'h-10 py-2 text-sm leading-[1.375rem] rounded',
         'sm' => 'h-8 py-1.5 text-sm leading-[1.125rem] rounded',
         'xs' => 'h-6 text-xs leading-[1.125rem] rounded',
     })

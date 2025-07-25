@@ -202,8 +202,9 @@ $classes = Flux::classes()
             <div class="flex-1 flex justify-center p-2.5">
                 <span>{{ $content }}</span>
             </div>
+        <?php elseif ($iconLeading || $iconTrailing): ?>
         <?php else: ?>
-            <div class="flex-1 flex justify-center px-5 py-2.5">
+            <div class="flex-1 flex justify-center items-center px-5 py-2.5">
                 <span>{{ $content }}</span>
             </div>
         <?php endif; ?>
