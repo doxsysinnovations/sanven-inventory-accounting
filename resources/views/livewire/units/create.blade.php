@@ -16,11 +16,13 @@ new class extends Component {
     public $unitToDelete;
 
     public $name;
+    public $code;
 
     public function rules()
     {
         return [
             'name' => 'required|string|max:255',
+            'code' => 'required|string|max:10|unique:units,code',
         ];
     }
 
@@ -30,6 +32,8 @@ new class extends Component {
             'name.required' => 'Please enter the unit name.',
             'name.string' => 'Name should only contain letters and spaces.',
             'name.max' => 'Name is too long.',
+            'code.required' => 'Please enter the unit code.', 
+            'code.unique' => 'This code already exists.',  
         ];
     }
 
@@ -44,10 +48,16 @@ new class extends Component {
         $this->validate();
 
         if ($this->isEditing) {
-            $this->unit->update(['name' => $this->name]);
+            $this->unit->update([
+                'name' => $this->name,
+                'code' => $this->code,
+            ]);
             flash()->success('Unit updated successfully!');
         } else {
-            Unit::create(['name' => $this->name]);
+            Unit::create([
+                'name' => $this->name,
+                'code' => $this->code,
+            ]);
             flash()->success('Unit created successfully!');
         }
 

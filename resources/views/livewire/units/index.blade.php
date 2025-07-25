@@ -126,8 +126,9 @@ new class extends Component {
             </svg>
         </x-slot:emptyIcon>
         <x-list-table
-            :headers="['Name', 'Actions']"
+            :headers="['Code', 'Name', 'Actions']"
             :rows="$units->map(fn($unit) => [
+                $unit->code,
                 $unit->name,
                 'actions-placeholder',
                 '__model' => $unit

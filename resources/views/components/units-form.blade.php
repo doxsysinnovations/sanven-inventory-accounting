@@ -11,6 +11,12 @@
         </div>
         <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div class="mb-4">
+                <flux:input wire:model="code" :label="__('Code')" type="text"
+                    class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="mb-4">
                 <flux:input wire:model="name" :label="__('Name')" type="text"
                     class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
             </div>
