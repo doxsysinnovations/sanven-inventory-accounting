@@ -14,7 +14,7 @@
 <div>
     <form wire:submit.prevent="save">
         <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
-            <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">
                 {{ $isEditing ? 'Edit Quotation' : 'Create New Quotation' }}
             </h3>
         </div>
@@ -51,10 +51,10 @@
                 </div>
             </div>
             <div class="mt-4 mb-4">
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2">
+                <h1 class="font-bold sm:text-base md:text-lg lg:text-xl mb-4">
                     Items
-                </h4>
-                <div class="space-y-6">
+                </h1>
+                <div class="space-y-6 overflow-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
@@ -342,9 +342,9 @@
         </div>
         
         <div class="bg-gray-50 rounded-b-lg dark:bg-gray-800 px-4 py-6 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
-            <flux:button variant="primary" color="blue" type="submit">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
-            <flux:button variant="primary" color="green" icon="printer" wire:click="print">Save & Print</flux:button>                     
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
+            <flux:button variant="primary" color="green" icon="printer" wire:click="print">Save & Print</flux:button>                     
+            <flux:button variant="primary" color="blue" type="submit">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>
         </div>
     </form>
 </div>
