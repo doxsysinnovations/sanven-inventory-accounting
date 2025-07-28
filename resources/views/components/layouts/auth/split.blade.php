@@ -3,10 +3,10 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
+    <body class="min-h-screen bg-white antialiased dark:bg-[#050811]">
         <div class="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
-            <div class="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r dark:border-neutral-800">
-                <div class="absolute inset-0 bg-(--color-accent)"></div>
+            <div class="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex">
+                <div class="absolute inset-0 bg-(--color-accent) dark:bg-(--color-accent-4-dark)"></div>
                 <div class="relative z-10 flex-1 flex items-center justify-center">
                     <div class="flex flex-col justify-center items-center space-y-4">
                         <div class="flex justify-center">

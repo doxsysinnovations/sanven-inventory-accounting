@@ -117,13 +117,11 @@ new class extends Component {
             ->take(5)
             ->get();
 
-        //Low Stock Items (total quantity per product <= 50)
         $this->lowStockItems = Stock::selectRaw('product_id, SUM(quantity) as total_quantity')
             ->groupBy('product_id')
             ->with('product')
             ->get()
             ->filter(function ($item) {
-                // Only include if product exists and total_quantity <= product's low_stock_value
                 return $item->product && $item->total_quantity <= ($item->product->low_stock_value ?? 0);
             })
             ->values();
@@ -137,19 +135,19 @@ new class extends Component {
     </h1>
     
     <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <x-stat-card :value="$salesToday" label="Income Sales Today" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent)">
+        <x-stat-card :value="$salesToday" label="Income Sales Today" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent) dark:bg-(--color-accent-3-dark)">
             <svg class="w-8 h-8"  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 7V6a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-1M3 18v-7a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Zm8-3.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>
             </svg>
         </x-stat-card>
 
-        <x-stat-card :value="$totalProducts" label="Total Products" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent)">
+        <x-stat-card :value="$totalProducts" label="Total Products" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent) dark:bg-(--color-accent-3-dark)">
             <svg class="w-8 h-8" text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Zm16 14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2ZM4 13a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6Zm16-2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6Z"/>
             </svg>
         </x-stat-card>
 
-        <x-stat-card :value="$totalInvoices" label="Total Invoices" cardColor="bg-white"  iconColor="text-white" iconBackgroundColor="bg-(--color-accent)">
+        <x-stat-card :value="$totalInvoices" label="Total Invoices" cardColor="bg-white"  iconColor="text-white" iconBackgroundColor="bg-(--color-accent) dark:bg-(--color-accent-3-dark)">
             <svg class="w-8 h-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m8-2h3m-3 3h3m-4 3v6m4-3H8M19 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM8 12v6h8v-6H8Z"/>
             </svg>
@@ -168,7 +166,7 @@ new class extends Component {
         </h1>
     </div>
 
-    <div class="flex h-full w-full flex-1 flex-col gap-6">
+    <div class="flex flex-col gap-6">
         <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
             <x-reports-data-table 
                 title="Overdue Invoices" 
@@ -182,7 +180,7 @@ new class extends Component {
                 :rowColors="$overdueInvoices->map(fn($invoice) => [
                     '',
                     '',
-                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold',
+                    'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900',
                 ])->toArray()" />
 
             <x-reports-data-table 
@@ -197,8 +195,8 @@ new class extends Component {
                 ])->toArray()" :rowColors="$lowStockItems->map(fn($item) => [
                     '',
                     '',
-                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold',
-                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold',
+                    'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900',
+                    'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900',
                 ])->toArray()" />
 
             <x-reports-data-table title="Expired Products" 
@@ -213,7 +211,7 @@ new class extends Component {
                     '',
                     '',
                     '', 
-                    'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'
+                    'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900'
                 ])->toArray()" />
 
             <x-reports-data-table 
@@ -224,9 +222,9 @@ new class extends Component {
                     ['Face Masks (Box of 50)', '5 boxes returned'],
                     ['Digital Thermometers', '3 units rejected'],
                 ]" :rowColors="[
-                    [null, 'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'],
-                    [null, 'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'],
-                    [null, 'bg-[#FFEAE8] text-(--color-accent-2) font-semibold'],
+                    [null, 'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900'],
+                    [null, 'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900'],
+                    [null, 'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900'],
                 ]" />
         </div>
 
@@ -274,10 +272,9 @@ new class extends Component {
             />
 
             <div class="md:row-span-2 md:col-start-2">
-                <div class="h-full overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
-                    
-                    <div class="p-4 bg-gray-50">
-                         <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">Monthly Sales</h3>
+                <div class="h-full overflow-hidden rounded-md shadow border-neutral-200 bg-white dark:bg-(--color-accent-dark)">
+                    <div class="mb-4 p-4 rounded-t-md bg-gray-50 dark:bg-(--color-accent-4-dark) dark:rounded-t-sm">
+                         <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">Monthly Sales</h3>
                     </div>
 
                     <div id="monthlySales" class=" w-full h-full py-6 md:py-0 px-6"></div>
@@ -287,47 +284,47 @@ new class extends Component {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="relative overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
-                <div class="mb-4 p-4 bg-gray-50">
-                    <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">Invoice Status</h3>
-                </div>
-                <div class="flex flex-col items-center pb-6">
-                    <div id="invoiceStatusChart" class="-mb-5 p-6 py-6 md:py-0 px-6" style="width: 100%; height: 300px;"></div>
-                    <div class="flex flex-row gap-5 text-xs px-4 md:px-10">
-                        <div class="flex items-center gap-2">
-                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-green-600"></div>
-                            <span class="text-gray-700 dark:text-gray-300">Paid:
-                                {{ $invoiceStatusCounts['paid']['percent'] }}%</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-(--color-yellow-400)"></div>
-                            <span class="text-gray-700 dark:text-gray-300">Pending:
-                                {{ $invoiceStatusCounts['pending']['percent'] }}%</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-[var(--color-accent-2)]"></div>
-                            <span class="text-gray-700 dark:text-gray-300">Overdue:
-                                {{ $invoiceStatusCounts['overdue']['percent'] }}%</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="inline-block w-3 h-3 aspect-square rounded-full bg-orange-400"></div>
-                            <span class="text-gray-700 dark:text-gray-300">Cancelled:
-                                {{ $invoiceStatusCounts['cancelled']['percent'] }}%</span>
-                        </div>
+        <div class="h-full overflow-hidden rounded-md shadow border-neutral-200  bg-white dark:bg-(--color-accent-dark)">
+            <div class="mb-4 p-4 rounded-t-md bg-gray-50 dark:bg-(--color-accent-4-dark) dark:rounded-t-sm">
+                <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">Invoice Status</h3>
+            </div>
+            <div class="flex flex-col items-center pb-10">
+                <div id="invoiceStatusChart" class="-mb-5 mt-8 md:py-0" style="width: 100%; height: 300px;"></div>
+                <div class="flex flex-row gap-5 text-xs px-10">
+                    <div class="flex items-center gap-2">
+                        <div class="inline-block w-3 h-3 aspect-square rounded-full bg-green-600"></div>
+                        <span class="text-gray-700 dark:text-gray-300">Paid:
+                            {{ $invoiceStatusCounts['paid']['percent'] }}%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="inline-block w-3 h-3 aspect-square rounded-full bg-(--color-yellow-400)"></div>
+                        <span class="text-gray-700 dark:text-gray-300">Pending:
+                            {{ $invoiceStatusCounts['pending']['percent'] }}%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="inline-block w-3 h-3 aspect-square rounded-full bg-[var(--color-accent-2)]"></div>
+                        <span class="text-gray-700 dark:text-gray-300">Overdue:
+                            {{ $invoiceStatusCounts['overdue']['percent'] }}%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="inline-block w-3 h-3 aspect-square rounded-full bg-orange-400"></div>
+                        <span class="text-gray-700 dark:text-gray-300">Cancelled:
+                            {{ $invoiceStatusCounts['cancelled']['percent'] }}%</span>
                     </div>
                 </div>
+            </div>
         </div>
 
-        <div class="relative overflow-hidden rounded-md shadow border-neutral-200 dark:border-neutral-700 bg-white dark:bg-gray-800">
-           <div class="mb-4 p-4 bg-gray-50">
-                <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">Expiring Products Soon</h3>
+        <div class="h-full overflow-hidden rounded-md shadow border-neutral-200  bg-white dark:bg-(--color-accent-dark)">
+            <div class="mb-4 p-4 rounded-t-md bg-gray-50 dark:bg-(--color-accent-4-dark) dark:rounded-t-sm">
+                <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">Expiring Products Soon</h3>
             </div>
             @if(count($chartData) <= 1)
-                <div class="p-6 text-center text-gray-500 dark:text-gray-400 py-4 text-sm sm:text-base">
+                <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
                     No products expiring within 7 days.
                 </div>
             @else
-                <div class="px-4 md:px-10 pb-6 -mt-5" id="expiringChart" style="width: 100%; height: 320px;"></div>
+                <div class="px-10 md:px-10 -mt-5 pb-10 sm:mt-0 sm:pb-2" id="expiringChart" style="width: 100%; height: 320px;"></div>
             @endif
         </div>
     </div>

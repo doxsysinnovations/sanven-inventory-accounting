@@ -23,9 +23,9 @@
 @endphp
 
 <div>
-    <div class="bg-white rounded-lg dark:bg-gray-900 sm:pb-4">
-         <div class="bg-gray-50 p-6 flex flex-col rounded-t-lg">
-            <h3 class="font-bold sm:text-base md:text-lg lg:text-xl text-[color:var(--color-accent)] dark:text-gray-100">
+    <div class="bg-white rounded-lg dark:bg-(--color-accent-dark) sm:pb-4">
+        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
+            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
                 {{ $title }}
             </h3>
         </div>

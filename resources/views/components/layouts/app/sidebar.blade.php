@@ -5,9 +5,9 @@
     @include('partials.head')
 </head>
 
-<body class="min-h-screen bg-[#EAF3FC] dark:bg-zinc-800">
+<body class="min-h-screen bg-[#EAF3FC] dark:bg-[#050811]">
     <!-- Sidebar -->
-    <flux:sidebar sticky stashable class="bg-white dark:bg-zinc-900 border-zinc-100">
+    <flux:sidebar sticky stashable class="bg-white dark:bg-[#050811] border-zinc-100">
         <a href="{{ route('dashboard') }}" class="mr-5 lg:flex items-center space-x-2 hidden" wire:navigate>
             <x-app-logo />
         </a>
@@ -74,19 +74,20 @@
 
 
     <!-- Header -->
-    <flux:header class="sticky top-0 z-50 bg-white dark:bg-zinc-800 border-zinc-100">
+    <flux:header class="sticky top-0 z-50 bg-white dark:bg-[#050811] border-zinc-100">
 
-        <flux:sidebar.toggle class="lg:hidden" icon="bars-2"/>
+        <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
         <flux:spacer />
 
         <flux:dropdown position="top" align="end">
 
+
             <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
 
             <flux:menu>
                 <flux:menu.radio.group>
-                    <div class="text-sm font-normal">
+                    <div class="p-0 text-sm font-normal">
                         <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                             <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
                                 <span

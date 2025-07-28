@@ -21,8 +21,8 @@
 
 <div>
     <div class="flex h-full w-full flex-1 flex-col gap-4">
-        <div class="flex flex-col bg-white rounded-lg">
-            <div class="bg-gray-50 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 overflow-auto rounded-t-lg">
+        <div class="flex flex-col bg-white dark:bg-(--color-accent-dark) rounded-lg">
+            <div class="bg-gray-50 px-6 py-8 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 overflow-auto rounded-t-lg dark:bg-(--color-accent-4-dark) dark:text-white">
                 <div>
                     <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">
                         {{ $title }}
@@ -55,12 +55,12 @@
                 @endif
             </div>
 
-            <div class="px-8 pb-4 overflow-auto">
+            <div class="px-10 pt-4 pb-10 overflow-auto">
                 <div class="flex flex-col sm:flex-row my-5 gap-4">
                     <div class="flex flex-col sm:flex-row gap-4 sm:gap-x-4 w-full sm:w-auto">
-                        <div class="flex gap-2 items-center w-full sm:w-auto">
+                        <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
                             <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Per Page:</label>
-                            <flux:select wire:model.live="perPage" id="perPage" :label="__('')" size="md" class="flex-1 sm:flex-none">
+                            <flux:select wire:model.live="perPage" id="perPage" class="flex-1 sm:flex-none">
                                 <flux:select.option value="5">5</flux:select.option>
                                 <flux:select.option value="10">10</flux:select.option>
                                 <flux:select.option value="25">25</flux:select.option>
@@ -118,7 +118,7 @@
 
                 <div>
                     @if ($items->isEmpty())
-                        <div class="flex flex-col items-center justify-center p-8">
+                        <div class="flex flex-col items-center justify-center p-10">
                             @isset($emptyIcon)
                                 {{ $emptyIcon }}
                             @else

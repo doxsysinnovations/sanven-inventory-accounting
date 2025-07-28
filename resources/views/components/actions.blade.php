@@ -12,7 +12,7 @@
 @php
     $actionClasses = [
         'view' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
-                text-(--color-accent) hover:text-white hover:bg-(--color-accent)
+                text-(--color-accent) dark:text-(--color-accent-3-dark) hover:text-white hover:bg-(--color-accent) dark:hover:bg-(--color-accent-3-dark)
                 focus:outline-none focus:ring-2 focus:ring-(--color-accent) focus:ring-offset-2 dark:focus:ring-offset-gray-900',
         'edit' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
                 text-(--color-yellow-400) hover:text-white hover:bg-(--color-yellow-400)
