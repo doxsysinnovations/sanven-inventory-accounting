@@ -6,12 +6,12 @@
     'iconBackgroundColor' => 'bg-[#358DBE]',
 ])
 
-<div class="w-full h-full p-6 {{ $cardColor }} rounded-md shadow-sm text-gray-900 overflow-hidden flex items-center md:justify-center lg:justify-start
+<div class="w-full h-full p-6 {{ $cardColor }} rounded-lg shadow-sm text-gray-900 overflow-hidden flex items-center md:justify-center lg:justify-start
         dark:bg-(--color-accent-dark) dark:text-white
     ">
     <div class="flex items-center gap-4 h-full min-w-0">
         @if (trim($slot))
-            <div class="rounded-sm p-3 {{ $iconColor }} {{ $iconBackgroundColor }}">
+            <div class="rounded-md p-3 {{ $iconColor }} {{ $iconBackgroundColor }}">
                 {{ $slot }}
             </div>
         @endif

@@ -14,15 +14,15 @@
     $statusIndex = array_search('Status', $headers);
 @endphp
 
-<div class="bg-white rounded-md shadow dark:bg-(--color-accent-dark) dark:text-white">
-    <div class="mb-4 p-6 rounded-t-md bg-gray-50 dark:bg-(--color-accent-4-dark) dark:text-white dark:rounded-t-sm">
+<div class="bg-white rounded-lg shadow dark:bg-(--color-accent-dark) dark:text-white">
+    <div class="mb-4 p-6 rounded-t-lg bg-gray-50 dark:bg-(--color-accent-4-dark) dark:text-white dark:rounded-t-md">
         <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">
                {{ $title }}
         </h3>
         <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">{{ $description }}</p>
     </div>
 
-    <div class="overflow-x-auto rounded-sm dark:border-zinc-700 px-10 pb-10">
+    <div class="overflow-x-auto rounded-lg dark:border-zinc-700 px-10 pb-10">
         <table class="w-full table-auto divide-y divide-gray-200">
             <thead class="{{ $headerBackgroundColor }}  text-black dark:text-white text-left">
                 <tr>
