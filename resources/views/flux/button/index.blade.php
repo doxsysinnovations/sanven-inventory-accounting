@@ -143,13 +143,7 @@ $classes = Flux::classes()
         'green' => '[--color-accent:var(--color-green-600)]
                 [--color-accent-hover:var(--color-green-700)]  
                 [--color-accent-content:var(--color-white)]
-                [--color-accent-foreground:var(--color-white)]
-                dark:[--color-accent:var(--color-green-800)]
-                dark:[--color-accent-hover:var(--color-green-200)] 
-                dark:[--color-accent-content:var(--color-green-400)]
-                dark:[--color-accent-foreground:var(--color-white)]
-                hover:[--color-accent-foreground:var(--color-white]
-                dark:hover:[--color-accent-foreground:var(--color-green-800)]',
+                [--color-accent-foreground:var(--color-white)]',
         'emerald' => '[--color-accent:var(--color-emerald-600)] [--color-accent-content:var(--color-emerald-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-emerald-600)] dark:[--color-accent-content:var(--color-emerald-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'teal' => '[--color-accent:var(--color-teal-600)] [--color-accent-content:var(--color-teal-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-teal-600)] dark:[--color-accent-content:var(--color-teal-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'cyan' => '[--color-accent:var(--color-cyan-600)] [--color-accent-content:var(--color-cyan-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-cyan-600)] dark:[--color-accent-content:var(--color-cyan-400)] dark:[--color-accent-foreground:var(--color-white)]',

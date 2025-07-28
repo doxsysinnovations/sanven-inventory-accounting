@@ -13,13 +13,13 @@
 
 <div>
     <form wire:submit.prevent="save">
-        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
-            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-gray-100">
+        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
+            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
                 {{ $isEditing ? 'Edit Quotation' : 'Create New Quotation' }}
             </h3>
         </div>
         
-        <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-6 sm:p-8 sm:pb-8">
+        <div class="bg-white dark:bg-(--color-accent-dark) p-8 sm:p-10">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="mb-4">
                     @if($isEditing)
@@ -341,7 +341,7 @@
             </div>
         </div>
         
-        <div class="bg-gray-50 rounded-b-lg dark:bg-gray-800 px-4 py-6 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
+        <div class="bg-gray-50 rounded-b-lg dark:bg-(--color-accent-4-dark) p-8 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
             <flux:button variant="danger" wire:click="cancel">Cancel</flux:button>
             <flux:button variant="primary" color="green" icon="printer" wire:click="print">Save & Print</flux:button>                     
             <flux:button variant="primary" color="blue" type="submit">{{ $isEditing ? 'Update' : 'Save' }}</flux:button>

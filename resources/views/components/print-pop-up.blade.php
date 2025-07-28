@@ -34,9 +34,9 @@
         
         <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
 
-        <div class="relative z-50 my-8 mx-auto p-5 w-11/12 max-w-6xl shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
+        <div class="relative z-50 my-8 mx-auto p-5 w-11/12 max-w-6xl shadow-lg rounded-md bg-white dark:bg-(--color-accent-4-dark) max-h-[95vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
                     Print Preview - {{ $quotation->quotation_number ?? '' }}
                 </h3>
                 <button wire:click="closePrintPreview" class="text-gray-400 hover:text-gray-600">
@@ -64,7 +64,7 @@
                     Generating PDF preview...
                 </div>
 
-                <div x-show="!isLoading" class="h-[100vh] border border-gray-300 rounded-lg overflow-hidden">
+                <div x-show="!isLoading" class="h-[100vh] border border-gray-300 dark:border-none rounded-lg overflow-hidden">
                     <iframe 
                         id="pdfPreview"
                         src="{{ route('quotations.stream-pdf', $quotation->id) }}"
