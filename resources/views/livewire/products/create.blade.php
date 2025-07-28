@@ -153,7 +153,7 @@ new class extends Component {
 }; ?>
 
 <div>
-    <x-products-from 
+    <x-products-form 
         :is-editing="false"
         :brands="$brands"
         :categories="$categories"
