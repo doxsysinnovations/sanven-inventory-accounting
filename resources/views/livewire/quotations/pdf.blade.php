@@ -201,7 +201,6 @@
             border: 1px solid #d4d4d8;
         }
 
-        /* Bottom Section */
         .bottom-section {
             width: 100%;
             margin-bottom: 20px;
@@ -386,11 +385,12 @@
                     <td class="company-details">
                         <div class="company-name">Sanven Medical Ent., Inc.</div>
                         <div class="company-address">
-                            <div>Address</div>
-                            <div>City, State, ZIP</div>
-                            <div>Phone:</div>
-                            <div>Email:</div>
-                            <div>Fax:</div>
+                            <div>Blk. 22 Lot 10 Phase 2, Nevada St., Suburbia North, Malpitic 2000,</div>
+                            <div>City of San Fernando (Capital), Pampanga, Philippines</div>
+                            <div>Tel. # (045) 455-1402; (045) 455-1517</div>
+                            <div>Cel. Nos. 0932-888-3548/0932-888-3547</div>
+                            <div>VAT Reg. TIN: 219-532-832-00000</div>
+                            <div>sanvenmedinc@yahoo.com.ph</div>
                         </div>
                     </td>
                     <td class="quote-details">
@@ -557,7 +557,10 @@
         </div>
 
         <div class="footer">
-            <p>If you have any question please contact:</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                If you have any questions, feel free to contact us at <strong>(045) 455-1402</strong> or <strong>(045) 455-1517</strong>,<br><strong>0932-888-3548</strong> or <strong>0932-888-3547</strong>, or email us at <u>sanvenmedinc@yahoo.com.ph</u>.
+            </p>
+            <br>
             <p>Thank you for your business!</p>
         </div>
     </div>

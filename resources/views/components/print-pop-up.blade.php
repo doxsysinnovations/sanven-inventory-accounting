@@ -9,8 +9,10 @@
         isLoading: false,
         isIframeLoaded: false
     }">    
-    <div class="flex justify-end mb-5 gap-2">
-        <flux:button variant="primary" color="blue" icon="printer" wire:click="print">Print/Download</flux:button> 
+    <div class="flex flex-col md:flex-row md:justify-end mb-5 gap-2">
+        <div>
+            <flux:button variant="primary" color="blue" icon="printer" wire:click="print">Print/Download</flux:button> 
+        </div>
         <div>
             <a href="{{ route($editRoute, [$modelInstance => $quotation]) }}">
                 <flux:button variant="primary" color="green" icon="pencil" wire:click="edit">Edit Quotation</flux:button>                      
@@ -44,9 +46,13 @@
                 </button>
             </div>
 
-            <div class="mb-4 flex space-x-2">
-                <flux:button variant="primary" color="blue" icon="printer" onclick="printIframe()">Print</flux:button>
-                <flux:button variant="primary" color="green" icon="document" wire:click="downloadPDF">Download PDF</flux:button>
+            <div class="mb-4 flex flex-col md:flex-row gap-2">
+                <div>
+                    <flux:button variant="primary" color="blue" icon="printer" onclick="printIframe()">Print</flux:button>
+                </div>
+                <div>
+                    <flux:button variant="primary" color="green" icon="document" wire:click="downloadPDF">Download PDF</flux:button>
+                </div>
             </div>
 
             @if ($quotation)
