@@ -125,6 +125,10 @@ new class extends Component {
                 return $item->product && $item->total_quantity <= ($item->product->low_stock_value ?? 0);
             })
             ->values();
+
+        $this->salesToday = Invoice::whereDate('issued_date', $today)
+            ->where('status', 'paid')
+            ->sum('grand_total');
     }
 }
 ?>
@@ -320,9 +324,9 @@ new class extends Component {
                 <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">Expiring Products Soon</h3>
             </div>
             @if(count($chartData) <= 1)
-                <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
+                <h3 class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">
                     No products expiring within 7 days.
-                </div>
+                </h3>
             @else
                 <div class="px-10 md:px-10 -mt-5 pb-10 sm:mt-0 sm:pb-2" id="expiringChart" style="width: 100%; height: 320px;"></div>
             @endif
