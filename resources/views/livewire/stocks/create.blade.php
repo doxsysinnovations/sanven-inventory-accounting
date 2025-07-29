@@ -24,7 +24,7 @@ new class extends Component {
     public string $search = '';
     public $products = [];
     public bool $openModal = false; // Modal visibility state
-    public string $stock_location = '';
+    public string $stock_location = 'Company Warehouse';
     public string $manufactured_date = '';
     public string $invoice_number = '';
     public string $batch_notes = '';
@@ -39,7 +39,7 @@ new class extends Component {
         $this->products = Product::all(); // Load all products initially
         $this->suppliers = Supplier::all(); // Load all suppliers
         $this->units = Unit::all(); // Load all units
-        $this->locations = Location::all();
+        // $this->locations = Location::all();
     }
 
     public function nextStep()
@@ -137,7 +137,7 @@ new class extends Component {
     }
 
     public function messages()
-{
+    {
     return [
         'product_name.required' => 'The product name is required.',
         'product_name.string' => 'The product name must be a string.',
@@ -250,7 +250,7 @@ new class extends Component {
         <div class="flex flex-col space-x-4 mb-4">
             <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
                 <div class="bg-(--color-accent) h-2 rounded-full transition-all duration-500" 
-                    style="width: {{ ($currentStep / 3) * 100 }}%">
+                    style="width: {{ min(100, ($currentStep / 3) * 100) }}%">
                 </div>
             </div>
         
@@ -292,7 +292,7 @@ new class extends Component {
                     {{ $currentStep === 3 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                            {{ $currentStep === 2 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
+                            {{ $currentStep === 3 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
                             3
                         </div>
                         <div>
