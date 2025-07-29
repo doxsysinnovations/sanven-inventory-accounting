@@ -493,11 +493,11 @@ new class extends Component {
                     <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                             <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">BILL FROM</h4>
-                            <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">Your Company Name</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">123 Business Street</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">City, State 12345</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Phone: (123) 456-7890</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Email: billing@yourcompany.com</p>
+                            <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">Sanven Medical Enterprises, Inc.</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Blk. 22 Lot 10 Phase 2, Nevada St., Suburbia North, Malpitic 2000, City of San Fernando (Capital), Pampanga, Philippines</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Tel. # (045) 455-1402; (045) 455-1517</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Cel. Nos. 0932-888-3548/0932-888-3547</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">sanvenmedinc@yahoo.com.ph</p>
                         </div>
 
                         <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
@@ -600,7 +600,7 @@ new class extends Component {
                                 @endif
                                 @if ($selectedInvoice->tax ?? 0 > 0)
                                     <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
-                                        <span>Tax</span>
+                                        <span>Vatable Amount</span>
                                         <span>Php {{ number_format($selectedInvoice->tax ?? 0, 2) }}</span>
                                     </div>
                                 @endif
