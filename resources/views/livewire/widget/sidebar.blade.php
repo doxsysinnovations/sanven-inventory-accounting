@@ -155,6 +155,12 @@ new class extends Component {
                         'label' => 'Aging Reports',
                         'permission' => 'suppliers.view',
                     ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'payables',
+                        'label' => 'Account Payables',
+                        'permission' => 'suppliers.view',
+                    ],
                 ],
             ],
             [

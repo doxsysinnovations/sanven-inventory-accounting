@@ -209,7 +209,7 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Suppliers</span>
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Commissions</span>
                     </div>
                 </li>
             </ol>
