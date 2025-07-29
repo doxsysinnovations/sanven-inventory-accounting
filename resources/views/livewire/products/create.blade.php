@@ -80,14 +80,21 @@ new class extends Component {
     private function generateStockNumber()
     {
         $yearPrefix = date('Y');
+        $lastId = \App\Models\Stock::max('id') ?? 0;
+        $newId = $lastId + 1;
+
         $lastProduct = \App\Models\Stock::orderBy('id', 'desc')->first();
+
         if ($lastProduct) {
             $lastStockNumber = intval(substr($lastProduct->stock_number, -6));
             $newStockNumber = $lastStockNumber + 1;
         } else {
-            $newStockNumber = 1; // Start from 1 if no products exist
+            $newStockNumber = 1;
         }
-        return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
+
+        return $yearPrefix
+            . $newId
+            . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
     }
 
     public function save()

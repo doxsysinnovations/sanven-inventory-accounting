@@ -144,19 +144,6 @@ new class extends Component {
         return redirect()->route('products');
     }
 
-    private function generateStockNumber()
-    {
-        $yearPrefix = date('Y');
-        $lastProduct = \App\Models\Stock::orderBy('id', 'desc')->first();
-        if ($lastProduct) {
-            $lastStockNumber = intval(substr($lastProduct->stock_number, -6));
-            $newStockNumber = $lastStockNumber + 1;
-        } else {
-            $newStockNumber = 1;
-        }
-        return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
-    }
-
     public function cancel() 
     {
         return redirect()->route('products');;
