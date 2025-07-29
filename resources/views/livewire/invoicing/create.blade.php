@@ -439,7 +439,7 @@ new class extends Component {
                     'total' => $item['total'],
                     // Include these if they exist in your cart items
                     'discount' => $item['discount'] ?? 0,
-                    'tax' => $item['tax'] ?? 0,
+                    'tax' => $item['vat_tax'] ?? 0,
                 ]);
 
                 // Update product stock if stock_id exists

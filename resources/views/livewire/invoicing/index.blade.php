@@ -532,13 +532,13 @@ new class extends Component {
                                             class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                             Price
                                         </th>
-                                        <th scope="col"
+                                        {{-- <th scope="col"
                                             class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                             Discount
-                                        </th>
+                                        </th> --}}
                                         <th scope="col"
                                             class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Tax
+                                            VAT (12%)
                                         </th>
                                         <th scope="col"
                                             class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -565,10 +565,10 @@ new class extends Component {
                                                 class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
                                                 Php {{ number_format($item->price, 2) }}
                                             </td>
-                                            <td
+                                            {{-- <td
                                                 class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
                                                 Php {{ number_format($item->discount ?? 0, 2) }}
-                                            </td>
+                                            </td> --}}
                                             <td
                                                 class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
                                                 Php {{ number_format($item->tax ?? 0, 2) }}
