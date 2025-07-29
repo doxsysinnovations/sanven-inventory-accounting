@@ -83,7 +83,8 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
 
     //Aging
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
-
+     Volt::route('payables', 'payables.index')->name('payables');
+     Volt::route('payables/{payable}', 'payables.show')->name('payables.show');
     //Recievables
     Volt::route('recievables', 'recievables.index')->name('recievables');
 
@@ -120,6 +121,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('agents/create', 'agents.create')->name('agents.create');
     Volt::route('agents/view/{id}', 'agents.view')->name('agents.view');
     Volt::route('agents/edit/{agent}', 'agents.edit')->name('agents.edit');
+    Volt::route('agent-commissions', 'agent-commisions.index')->name('agent-commissions');
 
     //Customers
     Volt::route('customers', 'customers.index')->name('customers');
