@@ -23,26 +23,73 @@
 @endphp
 
 <div>
-    <div class="bg-white rounded-lg dark:bg-gray-900 sm:pb-4">
-         <div class="bg-gray-50 p-6 flex flex-col rounded-t-lg">
-            <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+    <div class="bg-white rounded-lg dark:bg-(--color-accent-dark) sm:pb-4">
+        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
+            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
                 {{ $title }}
             </h3>
         </div>
 
         <div class="flex flex-col px-4 pt-5 pb-4 sm:p-6">
-            <div class="flex justify-between">
-                <div class="flex items-center gap-5">
+
+            <div class="lg:hidden">
+                <div class="flex justify-center w-full mb-5">
+                    <div class="h-35 w-35 rounded-full border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                        <svg class="h-full w-full text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-x-5 gap-y-2 mb-4">
                     <div>
-                        <div class="h-35 w-35 rounded-full border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                        <h3 class="text-4xl font-bold text-gray-900 dark:text-gray-100 text-center">
+                            {{ $modelInfo->name }}
+                        </h3>
+                    </div>
+                    @if ($withStatus)
+                        <div>
+                            <x-status-badges :status="$status" />
+                        </div>
+                    @endif
+                </div>
+
+                <div class="w-full flex justify-center mb-5">
+                    <a href="{{ route($editRoute, [$modelInstance => $modelInfo->id]) }}">
+                        <flux:button variant="primary" color="blue" icon="pencil">Edit Profile</flux:button>                                
+                    </a>
+                </div>
+
+                @if (!empty($headerDetails))
+                    <div class="flex flex-col sm:flex-row gap-4 sm:gap-10 justify-center items-center">
+                        <div class="flex gap-5">
+                            @foreach ($headerDetails as $details)
+                                <x-info-label 
+                                    :label="$details['label'] ?? '—'" 
+                                    :value="$details['value'] ?? '—'" 
+                                />
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <div class="text-center">
+                        <span class="text-sm text-gray-900 dark:text-gray-100">No details provided.</span>
+                    </div>
+                @endif
+            </div>
+
+            <div class="hidden lg:flex lg:justify-between lg:items-start lg:gap-2 over">
+                <div class="flex gap-8 items-center flex-1 overflow">
+                    <div class="flex-shrink-0">
+                        <div class="h-30 w-30 rounded-full border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                             <svg class="h-full w-full text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
                             </svg>
                         </div>
                     </div>
 
-                    <div class="flex flex-col mt-2 gap-4">
-                        <div class="flex items-center gap-x-5">
+                    <div class="flex flex-col gap-4 flex-1">
+                        <div class="flex items-center gap-5">
                             <div>
                                 <h3 class="text-4xl font-bold text-gray-900 dark:text-gray-100">
                                     {{ $modelInfo->name }}
@@ -55,27 +102,28 @@
                             @endif
                         </div>
 
-                     @if (!empty($headerDetails))
-                        <div class="flex gap-10">
-                            @foreach ($headerDetails as $details)
-                                <x-info-label 
-                                    :label="$details['label'] ?? '—'" 
-                                    :value="$details['value'] ?? '—'" 
-                                />
-                            @endforeach
-                        </div>
-                    @else
-                        <span class="text-sm text-gray-900 dark:text-gray-100">No details provided.</span>
-                    @endif
-
+                        @if (!empty($headerDetails))
+                            <div class="flex gap-10">
+                                @foreach ($headerDetails as $details)
+                                    <x-info-label 
+                                        :label="$details['label'] ?? '—'" 
+                                        :value="$details['value'] ?? '—'" 
+                                    />
+                                @endforeach
+                            </div>
+                        @else
+                            <span class="text-sm text-gray-900 dark:text-gray-100">No details provided.</span>
+                        @endif
                     </div>
-                </div> 
-                <div>
+                </div>
+
+                <div class="flex-shrink-0">
                     <a href="{{ route($editRoute, [$modelInstance => $modelInfo->id]) }}">
                         <flux:button variant="primary" color="blue" icon="pencil">Edit Profile</flux:button>                                
                     </a>
                 </div>
             </div>
+
             <div>
                 <div>
                     <div class="mt-6 border-b border-gray-200 dark:border-gray-700">

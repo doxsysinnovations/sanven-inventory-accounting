@@ -241,26 +241,26 @@ new class extends Component {
 };
 ?>
 <div>
-    <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
-        <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+    <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
+         <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
            Receive Stock
         </h3>
     </div>
-    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+    <div class="bg-white dark:bg-(--color-accent-dark) p-8 sm:p-10">
         <div class="flex flex-col space-x-4 mb-4">
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-6">
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
                 <div class="bg-(--color-accent) h-2 rounded-full transition-all duration-500" 
                     style="width: {{ ($currentStep / 3) * 100 }}%">
                 </div>
             </div>
         
-            <div class="flex flex-col sm:flex-row space-x-2 mb-6 bg-gray-100 p-1 rounded-lg">
+            <div class="flex flex-col sm:flex-row items-stretch gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
                 <button wire:click="goToStep(1)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
-                    {{ $currentStep === 1 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
+                    class="flex-1 px-6 py-3 rounded-sm text-base shadow
+                    {{ $currentStep === 1 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                            {{ $currentStep === 1 ? 'font-bold text-(--color-accent)' : 'font-medium' }}">
+                            {{ $currentStep === 1 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
                             1
                         </div>
                         <div>
@@ -272,11 +272,11 @@ new class extends Component {
                 </button>
 
                 <button wire:click="goToStep(2)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
-                    {{ $currentStep === 2 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
+                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow w-full
+                    {{ $currentStep === 2 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                            {{ $currentStep === 2 ? 'font-bold text-(--color-accent)' : 'font-medium' }}">
+                            {{ $currentStep === 2 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
                             2
                         </div>
                         <div>
@@ -288,11 +288,11 @@ new class extends Component {
                 </button>
 
                 <button wire:click="goToStep(3)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow
-                    {{ $currentStep === 3 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
+                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow w-full
+                    {{ $currentStep === 3 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                                    {{ $currentStep === 3 ? 'font-bold text-(--color-accent)' : 'font-medium' }}">
+                            {{ $currentStep === 2 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
                             3
                         </div>
                         <div>

@@ -1,37 +1,39 @@
 @if ($currentStep === 1)
     <div>
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <h1 class="font-bold sm:text-base md:text-lg lg:text-xl mb-3">
             Product Information
-        </h2>
+        </h1>
 
-        @if (!$product_code)
-            <div
-                class="p-4 col-span-1 flex items-center justify-between sm:col-span-2 lg:col-span-3 text-(--color-accent-2) bg-(--color-accent-2-muted) dark:bg-yellow-900 dark:text-yellow-300 rounded">
-                <div>
-                    <span class="text-sm">
-                        No product selected yet. Click the <strong>Search Product</strong> button to select a product.
-                    </span>
+        <div class="overflow-hidden">
+            @if (!$product_code)
+                <div
+                    class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-(--color-accent-2) bg-(--color-accent-2-muted) dark:bg-red-900 dark:text-red-300 rounded">
+                    <div>
+                        <span class="text-sm">
+                            No product selected yet. Click the <strong>Search Product</strong> button to select a product.
+                        </span>
+                    </div>
+                    <div class="flex justify-end">
+                        <flux:button wire:click="$set('openModal', true)" variant="danger">Select Product</flux:button>
+                    </div>
                 </div>
-                <div class="flex justify-end">
-                    <flux:button wire:click="$set('openModal', true)" variant="danger">Select Product</flux:button>
+            @else
+                <div
+                    class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-green-800 bg-green-100 dark:bg-green-900 dark:text-green-300 rounded">
+                    <div>
+                        <span class="text-sm">
+                            You have selected a product. Click the <strong>Select Product</strong> button again to change the product.
+                        </span>
+                    </div>
+                    <div class="flex justify-end">
+                        <flux:button variant="primary" color="green" wire:click="$set('openModal', true)">Select Product</flux:button>
+                    </div>
                 </div>
-            </div>
-        @else
-            <div
-                class="p-4 col-span-1 flex items-center justify-between sm:col-span-2 lg:col-span-3 text-green-800 bg-green-100 dark:bg-yellow-900 dark:text-yellow-300 rounded">
-                <div>
-                    <span class="text-sm">
-                        You have selected a product. Click the <strong>Select Product</strong> button again to change the product.
-                    </span>
-                </div>
-                <div class="flex justify-end">
-                    <flux:button variant="primary" color="green" wire:click="$set('openModal', true)">Select Product</flux:button>
-                </div>
-            </div>
-        @endif
+            @endif
+        </div>
 
         @if ($openModal)
-            <div class="mt-6 border border-gray-300 dark:border-gray-600 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
+            <div class="mt-6 border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-(--color-accent-dark)">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Search Product</h3>
                     <button type="button" wire:click="$set('openModal', false)"
@@ -53,7 +55,7 @@
                     @endif
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-md">
                     <x-list-table
                         :headers="['Product', 'Name', 'Category', 'Action']"
                         :rows="$products->map(fn($product) => [
@@ -105,7 +107,7 @@
             </p>
         </div>
 
-        <div class="flex justify-end mt-4">
+        <div class="flex justify-end mt-4 overflow-hidden">
             <flux:button variant="primary" color="blue" wire:click="nextStep">
                 Next
             </flux:button>

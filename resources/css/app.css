@@ -25,7 +25,7 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-red-1: #e7000b;
+    --color-red-1: #a90505;
     --color-red-2: #c26353;
     --color-red-3: #ffeae8;
 
@@ -43,16 +43,19 @@
     --color-accent-2: var(--color-red-1);
     --color-accent-2-alt: var(--color-red-2);
     --color-accent-2-muted: var(--color-red-3);
-
-    --color-accent-content: var(--color-white);
-    --color-accent-foreground: var(--color-white);
 }
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        --color-blue-1: #0a0e1a;
+        --color-blue-2: #26304a;
+        --color-blue-3: #057bba;
+        --color-blue-4: #151b2d;
+
+        --color-accent-dark: var(--color-blue-1);
+        --color-accent-2-dark: var(--color-blue-2);
+        --color-accent-3-dark: var(--color-blue-3);
+        --color-accent-4-dark: var(--color-blue-4);
     }
 }
 

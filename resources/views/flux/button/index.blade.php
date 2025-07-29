@@ -85,10 +85,10 @@ $classes = Flux::classes()
             : Flux::applyInset($inset, top: '-mt-1', right: '-me-2', bottom: '-mb-1', left: '-ms-2'),
     } : '')
     ->add(match ($variant) { // Background color...
-        'primary' => 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]',
+        'primary' => 'bg-(--color-accent) hover:bg-(--color-accent-hover)',
         'filled' => 'bg-zinc-800/5 hover:bg-zinc-800/10 dark:bg-white/10 dark:hover:bg-white/20',
         'outline' => 'bg-white hover:bg-zinc-50 dark:bg-zinc-700 dark:hover:bg-zinc-600/75',
-        'danger' => 'bg-[var(--color-accent-2)] hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500',
+        'danger' => 'bg-(--color-accent-2) hover:bg-red-700 dark:bg-(--color-accent-2) dark:hover:bg-red-700',
         'ghost' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
         'subtle' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
     })
@@ -155,14 +155,10 @@ $classes = Flux::classes()
         'cyan' => '[--color-accent:var(--color-cyan-600)] [--color-accent-content:var(--color-cyan-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-cyan-600)] dark:[--color-accent-content:var(--color-cyan-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'sky' => '[--color-accent:var(--color-sky-600)] [--color-accent-content:var(--color-sky-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-sky-600)] dark:[--color-accent-content:var(--color-sky-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'blue' => '[--color-accent:#057bba]  
-                [--color-accent-content:var(--color-white)] 
-                [--color-accent-hover:var(--color-accent-alt)] 
-                [--color-accent-foreground:var(--color-white)] 
-                hover:[--color-accent-foreground:var(--color-white)] 
-                dark:[--color-accent:var(--color-blue-500)] 
-                dark:[--color-accent-content:var(--color-blue-400)] 
-                dark:[--color-accent-hover:var(--color-accent-alt)] 
-                dark:[--color-accent-foreground:var(--color-white)]',
+            [--color-accent-content:var(--color-white)] 
+            [--color-accent-hover:var(--color-accent-alt)] 
+            [--color-accent-foreground:var(--color-white)] 
+            dark:hover:[--color-accent-hover:#006499]',
         'indigo' => '[--color-accent:var(--color-indigo-500)] [--color-accent-content:var(--color-indigo-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-indigo-500)] dark:[--color-accent-content:var(--color-indigo-300)] dark:[--color-accent-foreground:var(--color-white)]',
         'violet' => '[--color-accent:var(--color-violet-500)] [--color-accent-content:var(--color-violet-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-violet-500)] dark:[--color-accent-content:var(--color-violet-400)] dark:[--color-accent-foreground:var(--color-white)]',
         'purple' => '[--color-accent:var(--color-purple-500)] [--color-accent-content:var(--color-purple-600)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-purple-500)] dark:[--color-accent-content:var(--color-purple-300)] dark:[--color-accent-foreground:var(--color-white)]',
@@ -202,8 +198,9 @@ $classes = Flux::classes()
             <div class="flex-1 flex justify-center p-2.5">
                 <span>{{ $content }}</span>
             </div>
+        <?php elseif ($iconLeading || $iconTrailing): ?>
         <?php else: ?>
-            <div class="flex-1 flex justify-center px-5 py-2.5">
+            <div class="flex-1 flex justify-center items-center px-5 py-2.5">
                 <span>{{ $content }}</span>
             </div>
         <?php endif; ?>
