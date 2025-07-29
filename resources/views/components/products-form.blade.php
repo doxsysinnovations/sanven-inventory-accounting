@@ -9,17 +9,17 @@
 
 <div>
     <form wire:submit.prevent="save">
-        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg">
-            <h3 class="text-xl font-bold text-[color:var(--color-accent)] dark:text-gray-100">
+        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
+            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
                 {{ $isEditing ? 'Edit Product Details' : 'Create Product' }}
             </h3>
         </div>
 
         <div class="bg-white dark:bg-gray-900 px-6 py-8 shadow-sm">
             <div class="mb-8">
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <h1 class="font-bold sm:text-base md:text-lg lg:text-xl mb-4">
                     Basic Information
-                </h4>
+                </h1>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <flux:input wire:model="name" :label="__('Product Name')" type="text" placeholder="Enter product name"
@@ -33,9 +33,9 @@
             </div>
 
             <div class="mb-8">
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <h1 class="font-bold sm:text-base md:text-lg lg:text-xl mb-4">
                     Product Details
-                </h4>
+                </h1>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                         <flux:select wire:model.live="product_type" :label="__('Product Type')" size="md" searchable>
@@ -82,11 +82,7 @@
                             VAT (0.12%)
                         </label>
                         <div class="inline-flex">
-                            <input
-                                wire:model="is_vatable"
-                                type="checkbox"
-                                class="form-checkbox accent-[--color-accent-alt]"
-                            >
+                            <input class="accent-(--color-accent-alt) form-checkbox" type="checkbox" wire:model="is_vatable">
                             <span class="ml-2 text-sm font-medium">Subject to VAT</span>
                         </div>
                     </div>
@@ -94,9 +90,9 @@
             </div>
 
             <div class="mb-8">
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <h1 class="font-bold sm:text-base md:text-lg lg:text-xl mb-4">
                     Image & Description
-                </h4>
+                </h1>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -174,9 +170,9 @@
             </div>
 
             <div class="mb-8">
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <h1 class="font-bold sm:text-base md:text-lg lg:text-xl mb-4">
                     Inventory & Pricing
-                </h4>
+                </h1>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                         <flux:input wire:model="quantity" :label="__('Initial Stock')" type="number" min="0"
@@ -210,7 +206,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-gray-50 rounded-b-lg dark:bg-gray-800 px-4 py-6 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
+        <div class="bg-gray-50 rounded-b-lg dark:bg-(--color-accent-4-dark) p-8 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
             <flux:button class="sm:w-auto" variant="danger" wire:click="cancel">Cancel</flux:button>
             <flux:button class="sm:w-auto" variant="primary" color="blue" type="submit" >
                 {{ $isEditing ? 'Update' : 'Create' }}

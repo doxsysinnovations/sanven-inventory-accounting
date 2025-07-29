@@ -165,7 +165,7 @@ new class extends Component {
 ?>
 
 <div>
-    <x-products-from 
+    <x-products-form
         :is-editing="true"
         :brands="$brands"
         :categories="$categories"
