@@ -20,10 +20,10 @@ extract(Flux::forwardedAttributes($attributes, [
 
 <?php if (isset($label) || isset($description)): ?>
     <flux:field :attributes="Flux::attributesAfter('field:', $attributes, [])">
-        <?php if (!empty($label)): ?>
+        <?php if (isset($label)): ?>
             <flux:label :attributes="Flux::attributesAfter('label:', $attributes, ['badge' => $badge])">{{ $label }}</flux:label>
         <?php endif; ?>
-        
+
         <?php if (isset($description)): ?>
             <flux:description :attributes="Flux::attributesAfter('description:', $attributes, [])">{{ $description }}</flux:description>
         <?php endif; ?>

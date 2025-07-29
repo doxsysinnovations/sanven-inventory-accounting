@@ -3,8 +3,6 @@
 @php $iconVariant = $iconVariant ??= $attributes->pluck('icon:variant'); @endphp
 
 @props([
-    'action' => '',
-    'label' => '',
     'iconTrailing' => null,
     'variant' => 'outline',
     'iconVariant' => null,
@@ -20,10 +18,6 @@
 ])
 
 @php
-if ($action) {
-    $attributes = $attributes->merge(['wire:click' => $action]);
-}
-
 $iconLeading = $icon ??= $iconLeading;
 
 // Button should be a square if it has no text contents...
@@ -67,10 +61,15 @@ if ($loading && $type !== 'submit' && ! $isJsMethod) {
 $classes = Flux::classes()
     ->add('relative items-center font-medium justify-center gap-2 whitespace-nowrap')
     ->add('disabled:opacity-75 dark:disabled:opacity-75 disabled:cursor-default disabled:pointer-events-none')
-    ->add(match ($size) { // Size...
-        'base' => 'h-10 text-sm rounded' . ' ' . ($square ? 'w-10' : ' px-6 [&:has(>:not(span):first-child)]:ps-3 [&:has(>:not(span):last-child)]:pe-3'),
-        'sm' => 'h-8 text-sm rounded' . ' ' . ($square ? 'w-8' : 'px-3'),
-        'xs' => 'h-6 text-xs rounded' . ' ' . ($square ? 'w-6' : 'px-2'),
+    ->add(match ($size) { // Size...    
+        'base' => 'h-10 text-sm rounded-lg' . ' ' . (
+            $square 
+                ? 'w-10' 
+                // If we have an icon, we want to reduce the padding on the side that has the icon...
+                : ($iconLeading && $iconLeading !== '' ? 'ps-3' : 'ps-4') . ' ' . ($iconTrailing && $iconTrailing !== '' ? 'pe-3' : 'pe-4')
+        ),
+        'sm' => 'h-8 text-sm rounded-md' . ' ' . ($square ? 'w-8' : 'px-3'),
+        'xs' => 'h-6 text-xs rounded-md' . ' ' . ($square ? 'w-6' : 'px-2'),
     })
     ->add('inline-flex') // Buttons are inline by default but links are blocks, so inline-flex is needed here to ensure link-buttons are displayed the same as buttons...
     ->add($inset ? match ($size) { // Inset...
@@ -85,10 +84,10 @@ $classes = Flux::classes()
             : Flux::applyInset($inset, top: '-mt-1', right: '-me-2', bottom: '-mb-1', left: '-ms-2'),
     } : '')
     ->add(match ($variant) { // Background color...
-        'primary' => 'bg-[var(--color-accent)] hover:bg-[#006499]',
+        'primary' => 'bg-[var(--color-accent)] hover:bg-[color-mix(in_oklab,_var(--color-accent),_transparent_10%)]',
         'filled' => 'bg-zinc-800/5 hover:bg-zinc-800/10 dark:bg-white/10 dark:hover:bg-white/20',
         'outline' => 'bg-white hover:bg-zinc-50 dark:bg-zinc-700 dark:hover:bg-zinc-600/75',
-        'danger' => 'bg-[var(--color-accent-2)] hover:bg-[var(--color-accent-2-alt)] dark:bg-red-600 dark:hover:bg-red-500',
+        'danger' => 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500',
         'ghost' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
         'subtle' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
     })
@@ -165,7 +164,7 @@ $classes = Flux::classes()
 <flux:with-tooltip :$attributes>
     <flux:button-or-link :$type :attributes="$attributes->class($classes)" data-flux-button>
         <?php if ($loading): ?>
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 px-6 py-2.5" data-flux-loading-indicator>
+            <div class="absolute inset-0 flex items-center justify-center opacity-0" data-flux-loading-indicator>
                 <flux:icon icon="loading" :variant="$iconVariant" :class="$iconClasses" />
             </div>
         <?php endif; ?>
@@ -176,19 +175,12 @@ $classes = Flux::classes()
             {{ $iconLeading }}
         <?php endif; ?>
 
-        <?php
-            $hasSlot = !$slot->isEmpty();
-            $content = $hasSlot ? $slot : $label;
-        ?>
-        
-        <?php if (($iconLeading || $iconTrailing) && $content): ?>
-            <div class="flex-1 flex justify-center p-2.5">
-                <span>{{ $content }}</span>
-            </div>
+        <?php if (($loading || $iconLeading || $iconTrailing) && ! $slot->isEmpty()): ?>
+            {{-- If we have a loading indicator, we need to wrap it in a span so it can be a target of *:opacity-0... --}}
+            {{-- Also, if we have an icon, we need to wrap it in a span so it can be recognized as a child of the button for :first-child selectors... --}}
+            <span>{{ $slot }}</span>
         <?php else: ?>
-            <div class="flex-1 flex justify-center px-5 py-2.5">
-                <span>{{ $content }}</span>
-            </div>
+            {{ $slot }}
         <?php endif; ?>
 
         <?php if ($kbd): ?>

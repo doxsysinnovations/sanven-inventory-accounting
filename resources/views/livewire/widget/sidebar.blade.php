@@ -107,6 +107,18 @@ new class extends Component {
                         'label' => 'Expiry Stocks (' . $expiryStocksCount . ')', // Add the count here
                         'permission' => 'stocks.view-expiry',
                     ],
+                    // [
+                    //     'icon' => 'pencil-square',
+                    //     'route' => 'purchase-requests',
+                    //     'label' => 'Purchase Requests',
+                    //     'permission' => 'purchase-requests.view',
+                    // ],
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'purchase-orders',
+                        'label' => 'Purchase Orders',
+                        'permission' => 'purchase-orders.view',
+                    ],
                 ],
             ],
             [

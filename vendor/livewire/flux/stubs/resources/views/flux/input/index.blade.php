@@ -78,14 +78,7 @@ $inputLoadingClasses = Flux::classes()
     ;
 
 $classes = Flux::classes()
-    ->add($attributes->has('readonly')
-        ? 'bg-gray-100 dark:bg-gray-200'
-        : match ($variant) {
-            'outline' => 'bg-white dark:bg-white/10 dark:disabled:bg-white/[7%]',
-            'filled'  => 'bg-zinc-800/5 dark:bg-white/10 dark:disabled:bg-white/[7%]',
-        }
-    )
-    ->add('w-full rounded block disabled:shadow-none dark:shadow-none border')
+    ->add('w-full border rounded-lg block disabled:shadow-none dark:shadow-none')
     ->add('appearance-none') // Without this, input[type="date"] on mobile doesn't respect w-full...
     ->add(match ($size) {
         default => 'text-base sm:text-sm py-2 h-10 leading-[1.375rem]', // This makes the height of the input 40px (same as buttons and such...)
@@ -106,13 +99,17 @@ $classes = Flux::classes()
         5 => 'pe-37',
         6 => 'pe-44',
     })
+    ->add(match ($variant) { // Background...
+        'outline' => 'bg-white dark:bg-white/10 dark:disabled:bg-white/[7%]',
+        'filled'  => 'bg-zinc-800/5 dark:bg-white/10 dark:disabled:bg-white/[7%]',
+    })
     ->add(match ($variant) { // Text color
         'outline' => 'text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500',
         'filled'  => 'text-zinc-700 placeholder-zinc-500 disabled:placeholder-zinc-400 dark:text-zinc-200 dark:placeholder-white/60 dark:disabled:placeholder-white/40',
     })
     ->add(match ($variant) { // Border...
-        'outline' => $invalid ? 'border-(--color-accent-2)' : 'shadow-xs border-gray-300 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5',
-        'filled'  => $invalid ? 'border-(--color-accent-2)' : 'border-0',
+        'outline' => $invalid ? 'border-red-500' : 'shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5',
+        'filled'  => $invalid ? 'border-red-500' : 'border-0',
     })
     ->add($attributes->pluck('class:input'))
     ;
