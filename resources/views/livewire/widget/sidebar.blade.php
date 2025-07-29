@@ -187,6 +187,23 @@ new class extends Component {
                     ],
                 ],
             ],
+             [
+                'heading' => 'Agents Management',
+                'items' => [
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agents',
+                        'label' => 'Agents',
+                        'permission' => 'agents.view',
+                    ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agent-commissions',
+                        'label' => 'Commissions',
+                        'permission' => 'customers.view',
+                    ],
+                ],
+            ],
             [
                 'heading' => 'Supplier Management',
                 'permission' => 'suppliers.view',
@@ -219,6 +236,12 @@ new class extends Component {
                         'icon' => 'user-group',
                         'route' => 'recievables',
                         'label' => 'Receivables',
+                        'permission' => 'suppliers.view',
+                    ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'payables',
+                        'label' => 'Account Payables',
                         'permission' => 'suppliers.view',
                     ],
                 ],

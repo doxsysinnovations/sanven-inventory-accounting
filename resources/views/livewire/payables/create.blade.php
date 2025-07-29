@@ -53,8 +53,6 @@ new class extends Component {
     public $due_date;
     #[Validate('nullable|numeric|min:0|max:1000000')]
     public $discount = 0;
-    public $is_vatable = false;
-    public $total_vat = 0;
     #[Validate('nullable|numeric|min:0|max:1000000')]
     public $tax = 0;
     #[Validate('nullable|numeric|between:0,100')]
@@ -166,10 +164,8 @@ new class extends Component {
                 'code' => $product->product_code,
                 'price' => $product->selling_price,
                 'cost' => $product->cost_price,
-                'is_vatable' => (bool) ($product->is_vatable ?? 0), 
-                'vat_tax' => 0, 
                 'quantity' => 1,
-                'total' => 0,
+                'total' => $product->selling_price,
             ];
         }
 
@@ -187,25 +183,11 @@ new class extends Component {
         }
     }
 
-    public function updateCartItem($cartKey)
+    public function updateCartItem($productId)
     {
-        if (isset($this->cart[$cartKey])) {
-            $quantity = floatval($this->cart[$cartKey]['quantity'] ?? 1);
-            $unitPrice = floatval($this->cart[$cartKey]['price'] ?? 0);
-            $isVatable = $this->cart[$cartKey]['is_vatable'] ?? false;
-
-            $subtotal = $quantity * $unitPrice;
-
-            if ($isVatable) {
-                $vat = $subtotal * 0.12;
-                $this->cart[$cartKey]['vat_tax'] = round($vat, 2);
-                $this->cart[$cartKey]['total'] = round($subtotal + $vat, 2);
-            } else {
-                $this->cart[$cartKey]['vat_tax'] = 0;
-                $this->cart[$cartKey]['total'] = round($subtotal, 2);
-            }
+        if (isset($this->cart[$productId])) {
+            $this->cart[$productId]['total'] = $this->cart[$productId]['price'] * $this->cart[$productId]['quantity'];
         }
-        
         $this->recalculateTotals();
     }
 
@@ -215,31 +197,16 @@ new class extends Component {
         $this->recalculateTotals();
     }
 
-   public function recalculateTotals()
+    public function recalculateTotals()
     {
-        foreach ($this->cart as $cartKey => $item) {
-            $quantity = floatval($item['quantity'] ?? 1);
-            $unitPrice = floatval($item['price'] ?? 0);
-            $isVatable = $item['is_vatable'] ?? false;
+        $this->subtotal = collect($this->cart)->sum('total');
 
-            $subtotal = $quantity * $unitPrice;
-
-            if ($isVatable) {
-                $vat = $subtotal * 0.12;
-                $this->cart[$cartKey]['vat_tax'] = round($vat, 2);
-                $this->cart[$cartKey]['total'] = round($subtotal + $vat, 2);
-            } else {
-                $this->cart[$cartKey]['vat_tax'] = 0;
-                $this->cart[$cartKey]['total'] = round($subtotal, 2);
-            }
+        // Calculate tax based on tax rate if provided
+        if ($this->tax_rate > 0) {
+            $this->tax = $this->subtotal * ($this->tax_rate / 100);
         }
 
-        $this->subtotal = collect($this->cart)->sum('total');
-        $this->tax = collect($this->cart)->sum('vat_tax');
-        $this->total_vat = $this->tax;
-        
-        $discountAmount = $this->getTotalDiscountProperty();
-        $this->total = floatval(sprintf('%.2f', $this->subtotal - $discountAmount));
+        $this->total = $this->subtotal - $this->discount + $this->tax;
     }
 
     public function updatedTaxRate($value)
@@ -260,29 +227,20 @@ new class extends Component {
 
     public function getSubtotalProperty()
     {
-        return (float)collect($this->cart)->sum('total');
+        return collect($this->cart)->sum('total');
     }
 
     public function getTotalDiscountProperty()
     {
-        $discount = (float)$this->discount;
-        $baseTotal = $this->getSubtotalProperty();
-
         if ($this->discount_type === 'percentage') {
-            $this->total_discount = $baseTotal * ($discount / 100);
-        } else {
-            $this->total_discount = $discount;
+            return $this->subtotal * ($this->discount / 100);
         }
-
-        return $this->total_discount;
+        return $this->discount;
     }
-    
+
     public function getTotalProperty()
     {
-        $baseTotal = $this->getSubtotalProperty();
-        $discountAmount = $this->getTotalDiscountProperty();
-        
-        return floatval(sprintf('%.2f', $baseTotal - $discountAmount));
+        return $this->subtotal - $this->total_discount + $this->tax;
     }
 
     public function getProfitEstimateProperty()
@@ -349,11 +307,15 @@ new class extends Component {
                     continue;
                 }
 
+                // Create a unique key for this stock item
                 $cartKey = 'stock-' . $stockId;
 
                 if (isset($this->cart[$cartKey])) {
+                    // Update existing item
                     $this->cart[$cartKey]['quantity'] += $quantityToAdd;
+                    $this->cart[$cartKey]['total'] = $this->cart[$cartKey]['price'] * $this->cart[$cartKey]['quantity'];
                 } else {
+                    // Add new item
                     $this->cart[$cartKey] = [
                         'id' => $stock->product->id,
                         'stock_id' => $stock->id,
@@ -361,29 +323,26 @@ new class extends Component {
                         'code' => $stock->product->product_code,
                         'price' => $stock->selling_price ?? $stock->product->selling_price,
                         'cost' => $stock->capital_price ?? $stock->product->cost_price,
-                        'is_vatable' => (bool) ($stock->product->is_vatable ?? 0), 
-                        'vat_tax' => 0,
                         'quantity' => $quantityToAdd,
                         'available_quantity' => $availableQuantity,
                         'stock_number' => $stock->stock_number,
                         'expiration_date' => $stock->expiration_date?->format('Y-m-d'),
                         'batch_number' => $stock->batch_number,
-                        'total' => 0,
+                        'total' => ($stock->selling_price ?? $stock->product->selling_price) * $quantityToAdd,
                     ];
                 }
-                
-                $this->updateCartItem($cartKey);
             }
         }
 
+        // Clear selection and close modal
         $this->selectedProducts = [];
         $this->productQuantities = [];
         $this->showProductModal = false;
 
+        // Recalculate totals
         $this->recalculateTotals();
         $this->dispatch('notify', type: 'success', message: 'Selected products added to cart successfully!');
     }
-
     public function generateInvoiceNumber()
     {
         $lastInvoice = Invoice::latest()->first();
@@ -660,7 +619,7 @@ new class extends Component {
                         @endif
                         @if ($tax > 0)
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-300">Vatable Amount:</span>
+                                <span class="text-gray-600 dark:text-gray-300">Tax:</span>
                                 <span>+ Php {{ number_format($tax, 2) }}</span>
                             </div>
                         @endif
@@ -1288,8 +1247,6 @@ new class extends Component {
                                     <th
                                         class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Qty</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        VAT (12%)</th>
                                     <th
                                         class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Total</th>
@@ -1313,17 +1270,6 @@ new class extends Component {
                                         <td
                                             class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             {{ $item['quantity'] }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            @if(isset($item['vat_tax']) && $item['vat_tax'] > 0)
-                                                <span class="font-medium">
-                                                    Php {{ number_format($item['vat_tax'], 2) }}
-                                                </span>
-                                            @else
-                                                <span class="text-gray-400">
-                                                    Php 0.00
-                                                </span>
-                                            @endif
-                                        </td>
                                         <td
                                             class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             Php {{ number_format($item['total'], 2) }}</td>
@@ -1360,7 +1306,7 @@ new class extends Component {
                                 Php {{ number_format($total_discount, 2) }}</span>
                         </div>
 
-                        {{-- <div class="flex justify-between py-2">
+                        <div class="flex justify-between py-2">
                             <div class="flex items-center gap-2">
                                 <span class="text-gray-600 dark:text-gray-300">Tax:</span>
                                 <input wire:model.lazy="tax_rate" type="number" min="0" max="100"
@@ -1369,7 +1315,7 @@ new class extends Component {
                                 <span class="text-xs text-gray-500 dark:text-gray-400">%</span>
                             </div>
                             <span class="font-medium">+ Php {{ number_format($tax, 2) }}</span>
-                        </div> --}}
+                        </div>
 
                         <div
                             class="flex justify-between py-2 border-t border-gray-200 dark:border-gray-700 mt-2 font-medium text-lg">

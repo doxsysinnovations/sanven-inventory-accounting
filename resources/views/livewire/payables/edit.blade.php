@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\Invoice;
 use App\Models\Stock;
 use App\Models\Agent;
-use App\Models\AgentCommission;
 use App\Models\InvoiceItem;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
@@ -17,6 +16,7 @@ use Illuminate\Support\Carbon;
 new class extends Component {
     use WithFileUploads;
 
+    public Invoice $invoice;
     public $products = [];
     public $lastInvoice = null;
 
@@ -53,8 +53,6 @@ new class extends Component {
     public $due_date;
     #[Validate('nullable|numeric|min:0|max:1000000')]
     public $discount = 0;
-    public $is_vatable = false;
-    public $total_vat = 0;
     #[Validate('nullable|numeric|min:0|max:1000000')]
     public $tax = 0;
     #[Validate('nullable|numeric|between:0,100')]
@@ -78,12 +76,44 @@ new class extends Component {
     public $total = 0;
     public $total_discount = 0;
 
-    public function mount()
+    public function mount(Invoice $invoice) // Use route model binding
     {
+        $this->invoice = $invoice->load(['customer', 'items.stock.product', 'items.stock', 'agent']);
+
+        // Initialize form with invoice data
+        $this->customer_id = $this->invoice->customer_id;
+        $this->payment_method = $this->invoice->payment_method;
+        $this->due_date = is_string($this->invoice->due_date) ? $this->invoice->due_date : $this->invoice->due_date?->format('Y-m-d');
+        $this->invoice_date = is_string($this->invoice->issued_date) ? $this->invoice->issued_date : $this->invoice->issued_date?->format('Y-m-d');
+        $this->notes = $this->invoice->notes;
+        $this->subtotal = $this->invoice->total_amount;
+        $this->discount = $this->invoice->discount;
+        $this->tax = $this->invoice->tax;
+        $this->total = $this->invoice->grand_total;
+        $this->payment_terms = $this->invoice->payment_terms;
+        $this->assigned_agent = $this->invoice->agent_id;
+        $this->terms_conditions = $this->invoice->terms_conditions ?? $this->terms_conditions;
+
+        // Initialize cart with invoice items
+        foreach ($this->invoice->items as $item) {
+            $cartKey = $item->stock_id ? 'stock-' . $item->stock_id : 'product-' . $item->product_id;
+
+            $this->cart[$cartKey] = [
+                'id' => $item->product_id,
+                'stock_id' => $item->stock_id,
+                'name' => $item->product_name,
+                'code' => $item->product->product_code ?? '',
+                'price' => $item->price,
+                'quantity' => $item->quantity,
+                'total' => $item->total,
+                'available_quantity' => $item->stock ? $item->stock->quantity + $item->quantity : ($item->product->stock_quantity + $item->quantity),
+                'stock_number' => $item->stock->stock_number ?? '',
+                'expiration_date' => $item->stock->expiration_date?->format('Y-m-d') ?? '',
+                'batch_number' => $item->stock->batch_number ?? '',
+            ];
+        }
+
         $this->agents = Agent::all();
-        $this->due_date = now()->addDays(7)->format('Y-m-d');
-        $this->invoice_date = now()->format('Y-m-d');
-        $this->invoice_prefix = config('invoicing.prefix', 'INV');
         $this->loadStocks();
     }
 
@@ -157,23 +187,24 @@ new class extends Component {
     {
         $product = Product::findOrFail($productId);
 
-        if (isset($this->cart[$productId])) {
-            $this->cart[$productId]['quantity'] += 1;
+        $cartKey = 'product-' . $productId;
+
+        if (isset($this->cart[$cartKey])) {
+            $this->cart[$cartKey]['quantity'] += 1;
         } else {
-            $this->cart[$productId] = [
+            $this->cart[$cartKey] = [
                 'id' => $product->id,
+                'stock_id' => null,
                 'name' => $product->name,
                 'code' => $product->product_code,
                 'price' => $product->selling_price,
-                'cost' => $product->cost_price,
-                'is_vatable' => (bool) ($product->is_vatable ?? 0), 
-                'vat_tax' => 0, 
                 'quantity' => 1,
-                'total' => 0,
+                'total' => $product->selling_price,
+                'available_quantity' => $product->stock_quantity,
             ];
         }
 
-        $this->updateCartItem($productId);
+        $this->updateCartItem($cartKey);
     }
 
     public function updateProductSelection($stockId)
@@ -187,59 +218,35 @@ new class extends Component {
         }
     }
 
-    public function updateCartItem($cartKey)
+    public function updateCartItem($productKey)
     {
-        if (isset($this->cart[$cartKey])) {
-            $quantity = floatval($this->cart[$cartKey]['quantity'] ?? 1);
-            $unitPrice = floatval($this->cart[$cartKey]['price'] ?? 0);
-            $isVatable = $this->cart[$cartKey]['is_vatable'] ?? false;
-
-            $subtotal = $quantity * $unitPrice;
-
-            if ($isVatable) {
-                $vat = $subtotal * 0.12;
-                $this->cart[$cartKey]['vat_tax'] = round($vat, 2);
-                $this->cart[$cartKey]['total'] = round($subtotal + $vat, 2);
-            } else {
-                $this->cart[$cartKey]['vat_tax'] = 0;
-                $this->cart[$cartKey]['total'] = round($subtotal, 2);
-            }
+        if (isset($this->cart[$productKey])) {
+            $this->cart[$productKey]['total'] = $this->cart[$productKey]['price'] * $this->cart[$productKey]['quantity'];
         }
-        
         $this->recalculateTotals();
     }
 
-    public function removeFromCart($productId)
+    public function removeFromCart($productKey)
     {
-        unset($this->cart[$productId]);
+        unset($this->cart[$productKey]);
         $this->recalculateTotals();
     }
 
-   public function recalculateTotals()
+    public function recalculateTotals()
     {
-        foreach ($this->cart as $cartKey => $item) {
-            $quantity = floatval($item['quantity'] ?? 1);
-            $unitPrice = floatval($item['price'] ?? 0);
-            $isVatable = $item['is_vatable'] ?? false;
-
-            $subtotal = $quantity * $unitPrice;
-
-            if ($isVatable) {
-                $vat = $subtotal * 0.12;
-                $this->cart[$cartKey]['vat_tax'] = round($vat, 2);
-                $this->cart[$cartKey]['total'] = round($subtotal + $vat, 2);
-            } else {
-                $this->cart[$cartKey]['vat_tax'] = 0;
-                $this->cart[$cartKey]['total'] = round($subtotal, 2);
-            }
-        }
-
         $this->subtotal = collect($this->cart)->sum('total');
-        $this->tax = collect($this->cart)->sum('vat_tax');
-        $this->total_vat = $this->tax;
-        
-        $discountAmount = $this->getTotalDiscountProperty();
-        $this->total = floatval(sprintf('%.2f', $this->subtotal - $discountAmount));
+
+        // Calculate discount
+        $this->total_discount = $this->discount_type === 'percentage'
+            ? $this->subtotal * ($this->discount / 100)
+            : $this->discount;
+
+        // Calculate tax based on tax rate if provided
+        if ($this->tax_rate > 0) {
+            $this->tax = ($this->subtotal - $this->total_discount) * ($this->tax_rate / 100);
+        }
+
+        $this->total = $this->subtotal - $this->total_discount + $this->tax;
     }
 
     public function updatedTaxRate($value)
@@ -256,40 +263,6 @@ new class extends Component {
     {
         $this->discount = 0;
         $this->recalculateTotals();
-    }
-
-    public function getSubtotalProperty()
-    {
-        return (float)collect($this->cart)->sum('total');
-    }
-
-    public function getTotalDiscountProperty()
-    {
-        $discount = (float)$this->discount;
-        $baseTotal = $this->getSubtotalProperty();
-
-        if ($this->discount_type === 'percentage') {
-            $this->total_discount = $baseTotal * ($discount / 100);
-        } else {
-            $this->total_discount = $discount;
-        }
-
-        return $this->total_discount;
-    }
-    
-    public function getTotalProperty()
-    {
-        $baseTotal = $this->getSubtotalProperty();
-        $discountAmount = $this->getTotalDiscountProperty();
-        
-        return floatval(sprintf('%.2f', $baseTotal - $discountAmount));
-    }
-
-    public function getProfitEstimateProperty()
-    {
-        return collect($this->cart)->sum(function ($item) {
-            return ($item['price'] - $item['cost']) * $item['quantity'];
-        });
     }
 
     public function backToStep1()
@@ -349,11 +322,15 @@ new class extends Component {
                     continue;
                 }
 
+                // Create a unique key for this stock item
                 $cartKey = 'stock-' . $stockId;
 
                 if (isset($this->cart[$cartKey])) {
+                    // Update existing item
                     $this->cart[$cartKey]['quantity'] += $quantityToAdd;
+                    $this->cart[$cartKey]['total'] = $this->cart[$cartKey]['price'] * $this->cart[$cartKey]['quantity'];
                 } else {
+                    // Add new item
                     $this->cart[$cartKey] = [
                         'id' => $stock->product->id,
                         'stock_id' => $stock->id,
@@ -361,34 +338,25 @@ new class extends Component {
                         'code' => $stock->product->product_code,
                         'price' => $stock->selling_price ?? $stock->product->selling_price,
                         'cost' => $stock->capital_price ?? $stock->product->cost_price,
-                        'is_vatable' => (bool) ($stock->product->is_vatable ?? 0), 
-                        'vat_tax' => 0,
                         'quantity' => $quantityToAdd,
                         'available_quantity' => $availableQuantity,
                         'stock_number' => $stock->stock_number,
                         'expiration_date' => $stock->expiration_date?->format('Y-m-d'),
                         'batch_number' => $stock->batch_number,
-                        'total' => 0,
+                        'total' => ($stock->selling_price ?? $stock->product->selling_price) * $quantityToAdd,
                     ];
                 }
-                
-                $this->updateCartItem($cartKey);
             }
         }
 
+        // Clear selection and close modal
         $this->selectedProducts = [];
         $this->productQuantities = [];
         $this->showProductModal = false;
 
+        // Recalculate totals
         $this->recalculateTotals();
         $this->dispatch('notify', type: 'success', message: 'Selected products added to cart successfully!');
-    }
-
-    public function generateInvoiceNumber()
-    {
-        $lastInvoice = Invoice::latest()->first();
-        $number = $lastInvoice ? (int) str_replace($this->invoice_prefix, '', $lastInvoice->invoice_number) + 1 : 1;
-        return $this->invoice_prefix . str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function submitInvoice()
@@ -397,9 +365,10 @@ new class extends Component {
 
         $validated = $this->validate([
             'payment_method' => 'required|string|in:cash,credit_card,bank_transfer,paypal,other',
-            'due_date' => 'required|date|after_or_equal:today',
+            'due_date' => 'required|date',
             'invoice_date' => 'required|date',
             'payment_terms' => 'required|string',
+            'assigned_agent' => 'required|exists:agents,id',
             'discount' => 'nullable|numeric|min:0|max:1000000',
             'tax' => 'nullable|numeric|min:0|max:1000000',
             'tax_rate' => 'nullable|numeric|between:0,100',
@@ -409,38 +378,58 @@ new class extends Component {
         try {
             DB::beginTransaction();
 
-            // Create the invoice
-            $invoice = Invoice::create([
-                'invoice_number' => $this->generateInvoiceNumber(),
+            // First, restore stock quantities from the original invoice items
+            foreach ($this->invoice->items as $item) {
+                if ($item->stock_id) {
+                    $stock = Stock::find($item->stock_id);
+                    if ($stock) {
+                        $stock->increment('quantity', $item->quantity);
+                    }
+                }
+
+                $product = Product::find($item->product_id);
+                if ($product && $product->track_stock) {
+                    $product->increment('stock_quantity', $item->quantity);
+                }
+            }
+
+            // Delete all existing invoice items
+            $this->invoice->items()->delete();
+
+            // Update the invoice
+            $this->invoice->update([
                 'customer_id' => $this->customer_id,
                 'total_amount' => $this->subtotal,
                 'discount' => $this->total_discount,
                 'tax' => $this->tax,
                 'grand_total' => $this->total,
                 'status' => 'pending',
-                'payment_terms' => $this->payment_terms,
                 'payment_method' => $this->payment_method,
                 'due_date' => $this->due_date,
                 'issued_date' => $this->invoice_date,
                 'notes' => $this->notes,
-                'created_by' => auth()->id(),
                 'agent_id' => $this->assigned_agent,
+                'payment_terms' => $this->payment_terms,
+                'terms_conditions' => $this->terms_conditions,
             ]);
 
-            // Add invoice items
+            // Add new invoice items
             foreach ($this->cart as $item) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'stock_id' => $item['stock_id'] ?? null,
+                $invoiceItem = [
+                    'invoice_id' => $this->invoice->id,
+                    'product_id' => $item['id'],
                     'product_name' => $item['name'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'subtotal' => $item['price'] * $item['quantity'],
                     'total' => $item['total'],
-                    // Include these if they exist in your cart items
-                    'discount' => $item['discount'] ?? 0,
-                    'tax' => $item['tax'] ?? 0,
-                ]);
+                ];
+
+                if (isset($item['stock_id'])) {
+                    $invoiceItem['stock_id'] = $item['stock_id'];
+                }
+
+                InvoiceItem::create($invoiceItem);
 
                 // Update product stock if stock_id exists
                 if (isset($item['stock_id'])) {
@@ -457,37 +446,22 @@ new class extends Component {
                 }
             }
 
-            // If agent_id is set, create agent commission
-            if (!empty($this->assigned_agent)) {
-                \App\Models\AgentCommission::create([
-                    'agent_id' => $this->assigned_agent,
-                    'invoice_id' => $invoice->id,
-                    'commission_amount' => $invoice->grand_total * 0.05, // Example: 5% commission
-                    'status' => 'pending',
-                    'notes' => 'Auto-generated commission for invoice #' . $invoice->invoice_number,
-                ]);
-            }
-
             DB::commit();
 
             // Reset form
-            $this->resetExcept('invoice_prefix', 'currentStep');
-            $this->due_date = now()->addDays(7)->format('Y-m-d');
-            $this->invoice_date = now()->format('Y-m-d');
-            $this->currentStep = 1;
-
-            $this->dispatch('invoice-created');
+            $this->dispatch('invoice-updated');
             session()->flash('message', [
                 'type' => 'success',
-                'title' => 'Invoice Created',
-                'message' => 'The invoice has been created successfully!',
-                'invoiceId' => $invoice->id,
+                'title' => 'Invoice Updated',
+                'message' => 'The invoice has been updated successfully!',
+                'invoiceId' => $this->invoice->id,
             ]);
+
+            return redirect()->route('invoices.show', $this->invoice->id);
         } catch (\Exception $e) {
             DB::rollBack();
-            dd('exception', $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Error creating invoice: ' . $e->getMessage());
-            logger()->error('Invoice creation error: ' . $e->getMessage());
+            $this->dispatch('notify', type: 'error', message: 'Error updating invoice: ' . $e->getMessage());
+            logger()->error('Invoice update error: ' . $e->getMessage());
         } finally {
             $this->isLoading = false;
         }
@@ -497,8 +471,10 @@ new class extends Component {
     {
         $this->loadStocks();
     }
-}; ?>
+};
+?>
 
+<!-- The view part remains the same -->
 <div>
     <!-- Breadcrumb -->
     <div class="mb-4">
@@ -532,7 +508,8 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-700 dark:text-gray-300 md:ml-2">Create</span>
+                        <span class="ml-1 text-sm font-medium text-gray-700 dark:text-gray-300 md:ml-2">Edit Invoice
+                            #{{ $invoice->invoice_number }}</span>
                     </div>
                 </li>
             </ol>
@@ -633,7 +610,7 @@ new class extends Component {
                     ])>3</div>
                     <div>
                         <div class="font-medium">Review</div>
-                        <div class="text-xs">& Finalize</div>
+                        <div class="text-xs">& Update</div>
                     </div>
                 </div>
             </div>
@@ -660,7 +637,7 @@ new class extends Component {
                         @endif
                         @if ($tax > 0)
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-300">Vatable Amount:</span>
+                                <span class="text-gray-600 dark:text-gray-300">Tax:</span>
                                 <span>+ Php {{ number_format($tax, 2) }}</span>
                             </div>
                         @endif
@@ -714,7 +691,8 @@ new class extends Component {
                                 wire:click="$set('customer_id', '{{ $customer->id }}')">
                                 <div>
                                     <div class="font-medium">{{ $customer->name }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $customer->email }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $customer->email }}
+                                    </div>
                                     @if ($customer->company_name)
                                         <div class="text-xs text-gray-500 dark:text-gray-400">
                                             {{ $customer->company_name }}</div>
@@ -722,8 +700,8 @@ new class extends Component {
                                 </div>
                                 <div class="flex-shrink-0">
                                     @if ($customer_id == $customer->id)
-                                        <svg class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
+                                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M5 13l4 4L19 7"></path>
                                         </svg>
@@ -800,8 +778,6 @@ new class extends Component {
                                     <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
                                 @enderror
                             </div>
-
-
                         </div>
 
                         <div class="flex justify-between pt-4">
@@ -865,16 +841,6 @@ new class extends Component {
                         </svg>
                         Add Products
                     </button>
-
-                    {{-- <button wire:click="$set('showBulkAddModal', true)" type="button"
-                        class="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                        Bulk Add
-                    </button> --}}
 
                     @if (count($cart) > 0)
                         <button wire:click="goToStep3" type="button"
@@ -953,7 +919,6 @@ new class extends Component {
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <!-- In the product modal table body -->
                                         <tbody
                                             class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                                             @forelse ($products as $stock)
@@ -1156,7 +1121,7 @@ new class extends Component {
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h2 class="text-lg font-semibold">Step 3: Review Invoice</h2>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Review details and submit the invoice</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Review details and update the invoice</p>
                     </div>
                     <div class="text-sm font-medium">
                         Total: <span class="text-blue-600 dark:text-blue-400">Php
@@ -1259,20 +1224,7 @@ new class extends Component {
                             member.</small>
                     </div>
                 </div>
-                <!-- Invoice Due Date and Invoice Status -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label for="invoice_status"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Status</label>
-                        <select id="invoice_status" wire:model="invoice_status"
-                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
-                            <option value="Pending">Pending</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Overdue">Overdue</option>
-                        </select>
-                        <small class="text-gray-500 dark:text-gray-400">Set the status of this invoice.</small>
-                    </div>
-                </div>
+
                 <h3 class="text-md font-medium mb-3">Invoice Items</h3>
                 <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                     <div class="overflow-x-auto">
@@ -1288,8 +1240,6 @@ new class extends Component {
                                     <th
                                         class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Qty</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        VAT (12%)</th>
                                     <th
                                         class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Total</th>
@@ -1313,17 +1263,6 @@ new class extends Component {
                                         <td
                                             class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             {{ $item['quantity'] }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            @if(isset($item['vat_tax']) && $item['vat_tax'] > 0)
-                                                <span class="font-medium">
-                                                    Php {{ number_format($item['vat_tax'], 2) }}
-                                                </span>
-                                            @else
-                                                <span class="text-gray-400">
-                                                    Php 0.00
-                                                </span>
-                                            @endif
-                                        </td>
                                         <td
                                             class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             Php {{ number_format($item['total'], 2) }}</td>
@@ -1360,7 +1299,7 @@ new class extends Component {
                                 Php {{ number_format($total_discount, 2) }}</span>
                         </div>
 
-                        {{-- <div class="flex justify-between py-2">
+                        <div class="flex justify-between py-2">
                             <div class="flex items-center gap-2">
                                 <span class="text-gray-600 dark:text-gray-300">Tax:</span>
                                 <input wire:model.lazy="tax_rate" type="number" min="0" max="100"
@@ -1369,20 +1308,13 @@ new class extends Component {
                                 <span class="text-xs text-gray-500 dark:text-gray-400">%</span>
                             </div>
                             <span class="font-medium">+ Php {{ number_format($tax, 2) }}</span>
-                        </div> --}}
+                        </div>
 
                         <div
                             class="flex justify-between py-2 border-t border-gray-200 dark:border-gray-700 mt-2 font-medium text-lg">
                             <span>Total:</span>
                             <span>Php {{ number_format($total, 2) }}</span>
                         </div>
-
-                        {{-- @if ($profit_estimate > 0)
-                            <div class="flex justify-between py-2 text-sm text-green-600 dark:text-green-400">
-                                <span>Estimated Profit:</span>
-                                <span>${{ number_format($profit_estimate, 2) }}</span>
-                            </div>
-                        @endif --}}
                     </div>
                 </div>
 
@@ -1402,8 +1334,6 @@ new class extends Component {
                     </div>
                 @endif
 
-
-                <!-- Add this button near the submit button in Step 3 -->
                 <div class="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
                     <button wire:click="backToStep2" type="button"
                         class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -1417,7 +1347,7 @@ new class extends Component {
                         <button wire:click="submitInvoice" type="button"
                             class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-colors flex items-center gap-2"
                             wire:loading.attr="disabled">
-                            <span wire:loading.remove>Create Invoice</span>
+                            <span wire:loading.remove>Update Invoice</span>
                             <span wire:loading>Processing...</span>
                             <svg wire:loading class="animate-spin h-5 w-5 text-white"
                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1429,158 +1359,6 @@ new class extends Component {
                             </svg>
                         </button>
                     </div>
-
-                    <!-- Invoice Template (hidden until printed) -->
-                    <div id="invoice-template" class="hidden print:block p-8 max-w-4xl mx-auto">
-                        <div class="flex justify-between items-start mb-8">
-                            <div>
-                                <h1 class="text-3xl font-bold text-gray-800">INVOICE</h1>
-                                <p class="text-gray-600">
-                                    {{ $invoice_prefix }}{{ str_pad(($lastInvoice ? (int) str_replace($this->invoice_prefix, '', $lastInvoice->invoice_number) : 0) + 1, 6, '0', STR_PAD_LEFT) }}
-                                </p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xl font-bold text-gray-800">Your Company</div>
-                                <p class="text-gray-600">123 Business Street<br>City, State 10001<br>Phone: (123)
-                                    456-7890</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-8 mb-8">
-                            <div>
-                                <h2 class="text-lg font-semibold text-gray-800 mb-2">Bill To:</h2>
-                                @php $customer = Customer::find($customer_id); @endphp
-                                <p class="text-gray-700">
-                                    <strong>{{ $customer->name }}</strong><br>
-                                    @if ($customer->company_name)
-                                        {{ $customer->company_name }}<br>
-                                    @endif
-                                    @if ($customer->address)
-                                        {{ $customer->address }}<br>
-                                    @endif
-                                    @if ($customer->email)
-                                        {{ $customer->email }}<br>
-                                    @endif
-                                    @if ($customer->phone)
-                                        {{ $customer->phone }}
-                                    @endif
-                                </p>
-                            </div>
-                            <div>
-                                <table class="text-gray-700">
-                                    <tr>
-                                        <td class="pr-4 py-1 font-semibold">Invoice Date:</td>
-                                        <td>{{ \Carbon\Carbon::parse($invoice_date)->format('M d, Y') }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="pr-4 py-1 font-semibold">Due Date:</td>
-                                        <td>{{ \Carbon\Carbon::parse($due_date)->format('M d, Y') }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="pr-4 py-1 font-semibold">Payment Method:</td>
-                                        <td>{{ ucfirst(str_replace('_', ' ', $payment_method)) }}</td>
-                                    </tr>
-                                    @if ($assigned_agent)
-                                        <tr>
-                                            <td class="pr-4 py-1 font-semibold">Sales Agent:</td>
-                                            <td>{{ Agent::find($assigned_agent)->name }}</td>
-                                        </tr>
-                                    @endif
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="mb-8">
-                            <table class="w-full border-collapse">
-                                <thead>
-                                    <tr class="bg-gray-100 text-left">
-                                        <th class="py-3 px-4 font-semibold text-gray-700 border-b">Item</th>
-                                        <th class="py-3 px-4 font-semibold text-gray-700 border-b text-right">Price
-                                        </th>
-                                        <th class="py-3 px-4 font-semibold text-gray-700 border-b text-right">Qty</th>
-                                        <th class="py-3 px-4 font-semibold text-gray-700 border-b text-right">Amount
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($cart as $item)
-                                        <tr class="border-b">
-                                            <td class="py-3 px-4 text-gray-700">
-                                                {{ $item['name'] }}
-                                                @if ($item['code'])
-                                                    <br><span class="text-sm text-gray-500">{{ $item['code'] }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="py-3 px-4 text-gray-700 text-right">
-                                                Php {{ number_format($item['price'], 2) }}</td>
-                                            <td class="py-3 px-4 text-gray-700 text-right">{{ $item['quantity'] }}
-                                            </td>
-                                            <td class="py-3 px-4 text-gray-700 text-right">
-                                                Php {{ number_format($item['total'], 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <div class="w-64">
-                                <div class="flex justify-between py-2">
-                                    <span class="text-gray-700">Subtotal:</span>
-                                    <span class="text-gray-700">${{ number_format($subtotal, 2) }}</span>
-                                </div>
-                                @if ($total_discount > 0)
-                                    <div class="flex justify-between py-2">
-                                        <span class="text-gray-700">Discount:</span>
-                                        <span class="text-red-600">-${{ number_format($total_discount, 2) }}</span>
-                                    </div>
-                                @endif
-                                @if ($tax > 0)
-                                    <div class="flex justify-between py-2">
-                                        <span class="text-gray-700">Tax ({{ number_format($tax_rate, 2) }}%):</span>
-                                        <span class="text-gray-700">${{ number_format($tax, 2) }}</span>
-                                    </div>
-                                @endif
-                                <div class="flex justify-between py-2 border-t border-gray-300 mt-2 font-bold text-lg">
-                                    <span>Total:</span>
-                                    <span>${{ number_format($total, 2) }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        @if ($terms_conditions)
-                            <div class="mt-8 pt-4 border-t border-gray-300">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-2">Terms & Conditions</h3>
-                                <p class="text-gray-700 whitespace-pre-line">{{ $terms_conditions }}</p>
-                            </div>
-                        @endif
-
-                        <div class="mt-12 text-center text-sm text-gray-500">
-                            Thank you for your business!
-                        </div>
-                    </div>
-
-                    <!-- Add this style to your layout to ensure proper printing -->
-                    <style>
-                        @media print {
-                            body * {
-                                visibility: hidden;
-                            }
-
-                            #invoice-template,
-                            #invoice-template * {
-                                visibility: visible;
-                            }
-
-                            #invoice-template {
-                                position: absolute;
-                                left: 0;
-                                top: 0;
-                                width: 100%;
-                                max-width: 100%;
-                            }
-                        }
-                    </style>
                 </div>
             @endif
         </div>
