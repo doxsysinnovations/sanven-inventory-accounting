@@ -4,12 +4,14 @@
     'withSearch' => true,
     'withDateFilter' => false,
     'withRoleFilter' => false,
+    'withPaymentMethodFilter' => false,
+    'withStatusFilter' => false,
     'searchPlaceholder' => null,
     'withFilter' => false,
     'filterItems',
     'items',
     'message',
-    'perPage' => 5,
+    'perPage' => 25,
     'showNewCreateButtonIfEmpty' => false,
     'createButtonLabel' => 'Add',
     'createButtonAbility' => '',
@@ -56,8 +58,8 @@
             </div>
 
             <div class="px-10 pt-4 pb-10 overflow-auto">
-                <div class="flex flex-col sm:flex-row my-5 gap-4">
-                    <div class="flex flex-col sm:flex-row gap-4 sm:gap-x-4 w-full sm:w-auto">
+                <div class="flex flex-col gap-4 my-5">
+                    <div class="flex flex-col sm:flex-row gap-4">
                         <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
                             <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Per Page:</label>
                             <flux:select wire:model.live="perPage" id="perPage" class="flex-1 sm:flex-none">
@@ -97,23 +99,66 @@
                             </div>
                         @endif
                     </div>
-                
-                    @if($withSearch)
-                        <div class="w-full sm:w-1/3 sm:ml-auto relative">
-                            <x-search-bar placeholder="{{ $searchPlaceholder }}" />
-                        </div> 
-                    @endif
 
-                   @if($withDateFilter)
-                        <div class="w-full sm:w-auto sm:ml-auto flex flex-col sm:flex-row gap-3">
-                            <div class="w-full sm:w-auto flex-1">
-                                <x-flux::input wire:model.live="startDate" type="date" label="Start" placeholder="Start" />
+                    @if($withPaymentMethodFilter || $withStatusFilter || $withSearch || $withDateFilter)
+                        <div class="flex flex-col xl:flex-row gap-4">
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                @if($withPaymentMethodFilter)
+                                    <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
+                                        <label for="paymentMethodFilter" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                            Payment Method:
+                                        </label>
+                                        <flux:select wire:model.live="paymentMethod" id="paymentMethodFilter" class="flex-1 sm:flex-none">
+                                            <flux:select.option value="">All Methods</flux:select.option>
+                                            <flux:select.option value="cash">Cash</flux:select.option>
+                                            <flux:select.option value="credit_card">Credit Card</flux:select.option>
+                                            <flux:select.option value="bank_transfer">Bank Transfer</flux:select.option>
+                                            <flux:select.option value="paypal">PayPal</flux:select.option>
+                                            <flux:select.option value="other">Other</flux:select.option>
+                                        </flux:select>
+                                    </div>
+                                @endif
+
+                                @if($withStatusFilter)
+                                    <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
+                                        <label for="statusFilter" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                            Status:
+                                        </label>
+                                        <flux:select wire:model.live="status" id="statusFilter" class="flex-1 sm:flex-none">
+                                            <flux:select.option value="">All Statuses</flux:select.option>
+                                            <flux:select.option value="pending">Pending</flux:select.option>
+                                            <flux:select.option value="paid">Paid</flux:select.option>
+                                            <flux:select.option value="overdue">Overdue</flux:select.option>
+                                            <flux:select.option value="cancelled">Cancelled</flux:select.option>
+                                        </flux:select>
+                                    </div>
+                                @endif
                             </div>
-                            <div class="w-full sm:w-auto flex-1">
-                                <x-flux::input wire:model.live="endDate" type="date" label="End" placeholder="End" />
+
+                            <div class="flex flex-col lg:flex-row gap-4 xl:ml-auto">
+                                @if($withSearch)
+                                    <div class="flex items-center w-full sm:w-auto sm:min-w-fit">
+                                        <x-search-bar placeholder="{{ $searchPlaceholder }}" />
+                                    </div>
+                                @endif
+
+                                @if($withDateFilter)
+                                    <div class="flex items-end gap-3 @if($withSearch && $withDateFilter) h-[42px] @endif">
+                                        <div class="w-full sm:w-auto">
+                                            <x-flux::input wire:model.live="startDate" type="date" label="Start" placeholder="Start" />
+                                        </div>
+                                        <div class="w-full sm:w-auto">
+                                            <x-flux::input wire:model.live="endDate" type="date" label="End" placeholder="End" />
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endif
+                </div>
+                
+                <div class="mt-8">
+                    {{ $statisticsSlot ?? '' }}
                 </div>
 
                 <div>
