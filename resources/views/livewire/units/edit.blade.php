@@ -93,6 +93,6 @@ new class extends Component {
 
 <div>
     <x-units-form 
-        :is-editing="false"
+        :is-editing="true"
     />
 </div>

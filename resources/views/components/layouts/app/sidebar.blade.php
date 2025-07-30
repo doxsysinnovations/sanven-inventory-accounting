@@ -5,9 +5,9 @@
     @include('partials.head')
 </head>
 
-<body class="min-h-screen bg-[#EAF3FC] dark:bg-zinc-800">
+<body class="min-h-screen bg-[#EAF3FC] dark:bg-[#050811]">
     <!-- Sidebar -->
-    <flux:sidebar sticky stashable class="bg-white dark:bg-zinc-900 border-zinc-100">
+    <flux:sidebar sticky stashable class="bg-white dark:bg-[#050811] border-zinc-100">
         <a href="{{ route('dashboard') }}" class="mr-5 lg:flex items-center space-x-2 hidden" wire:navigate>
             <x-app-logo />
         </a>
@@ -74,7 +74,7 @@
 
 
     <!-- Header -->
-    <flux:header class="sticky top-0 z-50 bg-white dark:bg-zinc-800 border-zinc-100">
+    <flux:header class="sticky top-0 z-50 bg-white dark:bg-[#050811] border-zinc-100">
 
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 

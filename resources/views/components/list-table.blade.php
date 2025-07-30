@@ -13,7 +13,7 @@
     'editParameter' => '$id'
 ])
 
-<div>
+<div class="overflow-auto">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -24,7 +24,7 @@
                 @endforeach
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+        <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900 text-sm sm:text-base">
             @forelse ($rows as $row)
                 @php
                     $model = $row['__model'] ?? null;
@@ -34,6 +34,7 @@
                     @foreach ($headers as $i => $header)
                         @php
                             $cell = $row[$i] ?? null;
+                            $isExpiry = strtolower($header) === 'expiry date';
                         @endphp
                         <td class="text-left px-6 py-4 dark:text-gray-300">
                             @if (strtolower($header) === 'status' || strtolower($header) === 'expiry date' || strtolower($header) === 'roles' || strtolower($header) === 'user type')
@@ -63,7 +64,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ count($headers) }}" class="px-6 py-4 text-left text-gray-400">
+                    <td colspan="{{ count($headers) }}" class="px-6 py-4 text-center text-gray-400">
                         {{ $emptyMessage }}
                     </td>
                 </tr>

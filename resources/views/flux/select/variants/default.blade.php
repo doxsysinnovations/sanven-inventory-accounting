@@ -11,11 +11,11 @@ $invalid ??= ($name && $errors->has($name));
 $classes = Flux::classes()
     ->add('appearance-none w-full ps-3 pe-10 block')
     ->add(match ($size) {
-        default => 'h-10 py-2 text-base sm:text-sm leading-[1.375rem] rounded',
+        default => 'h-10 py-2 text-sm leading-[1.375rem] rounded',
         'sm' => 'h-8 py-1.5 text-sm leading-[1.125rem] rounded',
         'xs' => 'h-6 text-xs leading-[1.125rem] rounded',
     })
-    ->add('bg-white dark:bg-gray-800 dark:disabled:bg-white/[7%]')
+    ->add('bg-white dark:bg-[#353F4D] dark:disabled:bg-white/[7%]')
     ->add('text-zinc-700 dark:text-zinc-300 disabled:text-zinc-500 dark:disabled:text-zinc-400')
     ->add('has-[option.placeholder:checked]:text-zinc-400 dark:has-[option.placeholder:checked]:text-zinc-400')
     ->add('dark:[&>option]:bg-zinc-700 dark:[&>option]:text-white')

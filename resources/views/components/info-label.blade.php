@@ -11,7 +11,7 @@
     </div>
     <div>
         @if ($slot->isNotEmpty())
-           <div class="flex">
+           <div class="flex text-sm">
                 <div>
                     {{ $slot }}
                 </div>

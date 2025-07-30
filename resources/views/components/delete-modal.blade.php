@@ -12,7 +12,7 @@
         </div>
         <div
             class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-            <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="bg-white dark:bg-(--color-accent-dark) px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
                     <div class="mt-3 text-center sm:mt-0 sm:text-left">
                         <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
@@ -26,7 +26,7 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 dark:bg-gray-800 gap-2 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+            <div class="bg-gray-50 dark:bg-(--color-accent-4-dark) gap-2 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                 <flux:button variant="danger" wire:click="{{ $onDelete }}">Delete</flux:button>
                 <flux:button wire:click="{{ $onCancel }}">Cancel</flux:button>
             </div>
