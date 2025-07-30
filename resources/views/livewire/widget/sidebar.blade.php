@@ -24,8 +24,19 @@ new class extends Component {
                         'label' => 'Dashboard',
                         'permission' => 'dashboard.view',
                     ],
+                ]
+            ],
+            [
+                'heading' => 'Invoice Management',
+                'items' => [
                     [
-                        'icon' => 'shopping-cart',
+                        'icon' => 'plus',
+                        'route' => 'invoicing.create',
+                        'label' => 'Create Invoice',
+                        'permission' => 'agents.create'
+                    ],
+                    [
+                        'icon' => 'document-text',
                         'route' => 'invoicing',
                         'label' => 'Invoicing',
                         'permission' => 'invoicing.view',
@@ -105,7 +116,19 @@ new class extends Component {
                         'icon' => 'exclamation-triangle',
                         'route' => 'expiryproducts',
                         'label' => 'Expiry Stocks (' . $expiryStocksCount . ')', // Add the count here
-                        'permission' => 'stocks.view',
+                        'permission' => 'stocks.view-expiry',
+                    ],
+                    // [
+                    //     'icon' => 'pencil-square',
+                    //     'route' => 'purchase-requests',
+                    //     'label' => 'Purchase Requests',
+                    //     'permission' => 'purchase-requests.view',
+                    // ],
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'purchase-orders',
+                        'label' => 'Purchase Orders',
+                        'permission' => 'purchase-orders.view',
                     ],
                 ],
             ],
@@ -203,6 +226,12 @@ new class extends Component {
                         'label' => 'Aging Reports',
                         'permission' => 'suppliers.view',
                     ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'recievables',
+                        'label' => 'Receivables',
+                        'permission' => 'suppliers.view',
+                    ],
                 ],
             ],
             [
@@ -253,6 +282,19 @@ new class extends Component {
                     ],
                 ],
             ],
+            [
+                'heading' => 'Special Features',
+                'permission' => 'special-features.view',
+                'items' => [
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'pdf-binding',
+                        'label' => 'PDF Binding',
+                        'permission' => 'special-features.pdf-binding-view',
+                    ],
+                ],
+            ],
+
         ];
 
         // Filter menu items based on search input
@@ -286,6 +328,8 @@ new class extends Component {
 
 <div>
     <flux:navlist variant="outline" searchable>
+        {{--
+        <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
         {{--
         <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
 
