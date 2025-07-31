@@ -65,7 +65,6 @@
                                     number_format($stock->selling_price ?? $stock->product->selling_price, 2),
                                     view('livewire.invoicing.views.change-quantity-2', compact('stock', 'cart'))->render()
                                 ])"
-
                             />
                         </div>
                     </div>
