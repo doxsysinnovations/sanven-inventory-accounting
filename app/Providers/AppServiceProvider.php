@@ -13,6 +13,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         Blade::component('livewire.invoicing.views.invoice-statistics-card', 'invoice-statistics-card');
+        Blade::component('livewire.invoicing.views.invoice-preview', 'invoice-preview');
     }
 
     /**
