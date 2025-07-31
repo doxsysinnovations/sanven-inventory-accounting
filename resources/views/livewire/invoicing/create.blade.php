@@ -61,6 +61,7 @@ new class extends Component {
     public $discount_type = 'fixed'; // 'fixed' or 'percentage'
     public $invoice_prefix = 'INV';
     public $invoice_date;
+    public $invoice_status;
     public $terms_conditions = 'Payment due within 7 days. Late payments subject to 1.5% monthly interest.';
     public $payment_terms = '';
     public $assigned_agent = '';
@@ -76,6 +77,10 @@ new class extends Component {
     public $subtotal = 0;
     public $total = 0;
     public $total_discount = 0;
+
+    public $showPrintPreview = false;
+    public $loadingPDFPreview = false;
+    public $invoice = null;
 
     public function mount()
     {
@@ -188,23 +193,51 @@ new class extends Component {
 
     public function updateCartItem($cartKey)
     {
-        if (isset($this->cart[$cartKey])) {
-            $quantity = floatval($this->cart[$cartKey]['quantity'] ?? 1);
-            $unitPrice = floatval($this->cart[$cartKey]['price'] ?? 0);
-            $isVatable = $this->cart[$cartKey]['is_vatable'] ?? false;
+        if (!isset($this->cart[$cartKey])) return;
 
-            $subtotal = $quantity * $unitPrice;
+        $quantity   = floatval($this->cart[$cartKey]['quantity'] ?? 1);
+        $unitPrice  = floatval($this->cart[$cartKey]['price'] ?? 0);
+        $isVatable  = $this->cart[$cartKey]['is_vatable'] ?? false;
+        $stockId    = $this->cart[$cartKey]['stock_id'] ?? null;
 
-            if ($isVatable) {
-                $vat = $subtotal * 0.12;
-                $this->cart[$cartKey]['vat_tax'] = round($vat, 2);
-                $this->cart[$cartKey]['total'] = round($subtotal + $vat, 2);
-            } else {
-                $this->cart[$cartKey]['vat_tax'] = 0;
-                $this->cart[$cartKey]['total'] = round($subtotal, 2);
+        // Check against available stock
+        if ($stockId) {
+            $stock = Stock::find($stockId);
+            if ($stock) {
+                $availableQuantity = $stock->quantity;
+
+                // Adjust for other quantities of the same stock in cart (optional)
+                $otherQuantity = collect($this->cart)
+                    ->except($cartKey)
+                    ->where('stock_id', $stockId)
+                    ->sum('quantity');
+
+                $remainingStock = $availableQuantity - $otherQuantity;
+
+                if ($quantity > $remainingStock) {
+                    $productName = $stock->product->name ?? 'Unknown';
+                    $stockNumber = $stock->stock_number ?? 'N/A';
+
+                    flash()->warning("Only {$remainingStock} available for {$productName} (Stock #: {$stockNumber}). Quantity has been adjusted.");
+                    
+                    $quantity = $remainingStock;
+                    $this->cart[$cartKey]['quantity'] = $quantity;
+                }
             }
         }
-        
+
+        // Compute subtotal, VAT, and total
+        $subtotal = $quantity * $unitPrice;
+
+        if ($isVatable) {
+            $vat = $subtotal * 0.12;
+            $this->cart[$cartKey]['vat_tax'] = round($vat, 2);
+            $this->cart[$cartKey]['total'] = round($subtotal + $vat, 2);
+        } else {
+            $this->cart[$cartKey]['vat_tax'] = 0;
+            $this->cart[$cartKey]['total'] = round($subtotal, 2);
+        }
+
         $this->recalculateTotals();
     }
 
@@ -326,12 +359,15 @@ new class extends Component {
             $this->selectedProducts = array_diff($this->selectedProducts, [$productId]);
         } else {
             $this->selectedProducts[] = $productId;
-            $this->productQuantities[$productId] = 1; // Default quantity
+            $this->productQuantities[$productId] = 1;
         }
     }
 
     public function addSelectedProducts()
     {
+        $addedCount = 0;
+        $skippedMessages = [];
+
         foreach ($this->selectedProducts as $stockId) {
             $stock = Stock::with('product')->find($stockId);
 
@@ -344,7 +380,7 @@ new class extends Component {
                 }
 
                 if ($quantityToAdd > $availableQuantity) {
-                    $this->dispatch('notify', type: 'error', message: "Cannot add more than available stock for {$stock->product->name} (Stock #: {$stock->stock_number}). Available: {$availableQuantity}");
+                    $skippedMessages[] = "❌ {$stock->product->name} (Stock #: {$stock->stock_number}) - Available: {$availableQuantity}";
                     continue;
                 }
 
@@ -360,7 +396,7 @@ new class extends Component {
                         'code' => $stock->product->product_code,
                         'price' => $stock->selling_price ?? $stock->product->selling_price,
                         'cost' => $stock->capital_price ?? $stock->product->cost_price,
-                        'is_vatable' => (bool) ($stock->product->is_vatable ?? 0), 
+                        'is_vatable' => (bool) ($stock->product->is_vatable ?? 0),
                         'vat_tax' => 0,
                         'quantity' => $quantityToAdd,
                         'available_quantity' => $availableQuantity,
@@ -370,8 +406,9 @@ new class extends Component {
                         'total' => 0,
                     ];
                 }
-                
+
                 $this->updateCartItem($cartKey);
+                $addedCount++;
             }
         }
 
@@ -380,7 +417,15 @@ new class extends Component {
         $this->showProductModal = false;
 
         $this->recalculateTotals();
-        $this->dispatch('notify', type: 'success', message: 'Selected products added to cart successfully!');
+
+        if ($addedCount > 0 && count($skippedMessages) === 0) {
+            flash()->success('All selected products added to cart successfully!');
+        } elseif ($addedCount > 0 && count($skippedMessages) > 0) {
+            flash()->warning("Some products could not be added due to limited stock:\n" . implode("\n", $skippedMessages));
+            flash()->success("{$addedCount} product(s) added to cart.");
+        } else {
+            flash()->error("No products added. All selected items exceeded available stock:\n" . implode("\n", $skippedMessages));
+        }
     }
 
     public function generateInvoiceNumber()
@@ -388,6 +433,28 @@ new class extends Component {
         $lastInvoice = Invoice::latest()->first();
         $number = $lastInvoice ? (int) str_replace($this->invoice_prefix, '', $lastInvoice->invoice_number) + 1 : 1;
         return $this->invoice_prefix . str_pad($number, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function resetForm()
+    {
+        $this->resetExcept('invoice_prefix', 'currentStep');
+
+        $this->customer_id = null;
+        $this->cart = [];
+        $this->subtotal = 0;
+        $this->total_discount = 0;
+        $this->tax = 0;
+        $this->total = 0;
+        $this->invoice_status = 'unpaid';
+        $this->payment_terms = '';
+        $this->payment_method = '';
+        $this->due_date = now()->addDays(7)->format('Y-m-d');
+        $this->invoice_date = now()->format('Y-m-d');
+        $this->notes = '';
+        $this->assigned_agent = null;
+        $this->invoice = null;
+        $this->showPrintPreview = false;
+        $this->isLoading = false;
     }
 
     public function submitInvoice()
@@ -398,17 +465,18 @@ new class extends Component {
             'payment_method' => 'required|string|in:cash,credit_card,bank_transfer,paypal,other',
             'due_date' => 'required|date|after_or_equal:today',
             'invoice_date' => 'required|date',
+            'assigned_agent' => 'required|integer|exists:agents,id',
             'payment_terms' => 'required|string',
             'discount' => 'nullable|numeric|min:0|max:1000000',
             'tax' => 'nullable|numeric|min:0|max:1000000',
             'tax_rate' => 'nullable|numeric|between:0,100',
             'notes' => 'nullable|string|max:1000',
+            'invoice_status' => 'required|string',
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Create the invoice
             $invoice = Invoice::create([
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'customer_id' => $this->customer_id,
@@ -416,7 +484,7 @@ new class extends Component {
                 'discount' => $this->total_discount,
                 'tax' => $this->tax,
                 'grand_total' => $this->total,
-                'status' => 'pending',
+                'status' => $this->invoice_status,
                 'payment_terms' => $this->payment_terms,
                 'payment_method' => $this->payment_method,
                 'due_date' => $this->due_date,
@@ -426,7 +494,6 @@ new class extends Component {
                 'agent_id' => $this->assigned_agent,
             ]);
             
-            // Add invoice items
             foreach ($this->cart as $item) {
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
@@ -436,12 +503,10 @@ new class extends Component {
                     'price' => $item['price'],
                     'subtotal' => $item['price'] * $item['quantity'],
                     'total' => $item['total'],
-                    // Include these if they exist in your cart items
                     'discount' => $item['discount'] ?? 0,
                     'tax' => $item['vat_tax'] ?? 0,
                 ]);
 
-                // Update product stock if stock_id exists
                 if (isset($item['stock_id'])) {
                     $stock = Stock::find($item['stock_id']);
                     if ($stock) {
@@ -449,7 +514,6 @@ new class extends Component {
                     }
                 }
 
-                // Update product stock quantity if tracking is enabled
                 $product = Product::find($item['id']);
                 if ($product && $product->track_stock) {
                     $product->decrement('stock_quantity', $item['quantity']);
@@ -458,24 +522,60 @@ new class extends Component {
 
             DB::commit();
 
-            // Reset form
-            $this->resetExcept('invoice_prefix', 'currentStep');
-            $this->due_date = now()->addDays(7)->format('Y-m-d');
-            $this->invoice_date = now()->format('Y-m-d');
-            $this->currentStep = 1;
+            $this->invoice = $invoice;
 
             $this->dispatch('invoice-created');
-            session()->flash('message', [
-                'type' => 'success',
-                'title' => 'Invoice Created',
-                'message' => 'The invoice has been created successfully!',
-                'invoiceId' => $invoice->id,
-            ]);
+
+            if (!$this->showPrintPreview) {
+                $this->resetForm();
+                $this->due_date = now()->addDays(7)->format('Y-m-d');
+                $this->invoice_date = now()->format('Y-m-d');
+                flash()->success('Invoice created successfully!');
+                return redirect()->route('invoicing');
+            } else {
+                flash()->success('Invoice created successfully!');
+                return $invoice;
+            }
+
         } catch (\Exception $e) {
             DB::rollBack();
-             dd('exception', $e->getMessage());
-            $this->dispatch('notify', type: 'error', message: 'Error creating invoice: ' . $e->getMessage());
+            $this->invoice = null;
+            $this->showPrintPreview = false;
+            flash()->error('Error creating invoice: ' . $e->getMessage());
             logger()->error('Invoice creation error: ' . $e->getMessage());
+            return null;
+        } finally {
+            $this->isLoading = false;
+        }
+    }
+
+    public function print()
+    {
+        try {
+            $this->isLoading = true;
+            $this->showPrintPreview = true;
+            
+            $createdInvoice = $this->submitInvoice();
+            
+            if ($createdInvoice) {
+
+                $this->invoice = Invoice::with(['customer', 'agent', 'items'])->find($createdInvoice->id);
+
+                if ($this->invoice) {
+                    usleep(100000);
+                    $this->dispatch('open-print-dialog');
+                    $this->dispatch('start-pdf-loading');
+                } else {
+                    $this->showPrintPreview = false;
+                    flash()->error('Invoice was created but could not be loaded for printing.');
+                }
+            } else {
+                $this->showPrintPreview = false;
+                flash()->error('Failed to create invoice. Please check your data and try again.');
+            }
+        } catch (\Exception $e) {
+            $this->showPrintPreview = false;
+            throw $e;
         } finally {
             $this->isLoading = false;
         }
@@ -485,46 +585,56 @@ new class extends Component {
     {
         $this->loadStocks();
     }
+    
+    public function downloadPDF()
+    {
+        if (!$this->invoice) {
+            return;
+        }
+
+        $pdf = PDF::loadView('livewire.invoicing.pdf', [
+            'invoice' => $this->invoice->load(['customer', 'agent', 'items']),
+        ]);
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'SANVEN-' . $this->invoice->invoice_number . '.pdf');
+    }
+
+    public function streamPDF()
+    {
+
+        $this->loadingPDFPreview = true;
+        $this->dispatch('pdf-loading-started');
+
+        if (!$this->invoice) {
+            $this->invoice = $this->submitInvoice();
+        }
+
+        $pdf = PDF::loadView('livewire.invoicing.pdf', [
+            'invoicing' => $this->invoice->load(['customer', 'agent', 'items']),
+        ]);
+
+        $this->loadingPDFPreview = false;
+        $this->dispatch('pdf-generation-complete'); 
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'invoice-preview-' . $this->invoice->invoice_number . '.pdf', [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="invoice-preview-' . $this->invoice->invoice_number . '.pdf"'
+        ]);
+    }
+
+    public function closePrintPreview()
+    {
+        $this->showPrintPreview = false;
+        $this->resetForm();
+        $this->currentStep = 1;
+    }
 }; ?>
 
 <div>
-    <!-- Flash Messages -->
-    @if (session('message'))
-        <div @class([
-            'mb-4 p-4 rounded-lg',
-            'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' =>
-                session('message.type') === 'success',
-            'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100' =>
-                session('message.type') === 'error',
-        ])>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    @if (session('message.type') === 'success')
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    @else
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    @endif
-                    <span class="font-medium">{{ session('message.title') }}</span>
-                </div>
-                @if (isset(session('message')->invoiceId))
-                    <a href="{{ route('invoices.show', session('message')->invoiceId) }}"
-                        class="text-sm underline hover:no-underline">
-                        View Invoice
-                    </a>
-                @endif
-            </div>
-            <p class="mt-1 ml-7 text-sm">{{ session('message.message') }}</p>
-        </div>
-    @endif
-
     <div>
         <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
             <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
