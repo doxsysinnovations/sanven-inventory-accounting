@@ -265,8 +265,8 @@
                                 <flux:select.option value="fixed">Fixed</flux:select.option>
                                 <flux:select.option value="percentage">Percentage</flux:select.option>
                             </flux:select>
-        
                         </div>
+
                         <div class="flex-1">
                             @if($discount_type === 'fixed')
                                 <flux:input
