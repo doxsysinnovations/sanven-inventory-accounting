@@ -4,15 +4,16 @@
             Additional Details
         </h2>
    
-        <div>
-            <flux:select :label="__('Stock Location')" id="stock_location" wire:model="stock_location" placeholder="Select a location"
-                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
-                 <flux:select.option value="">Choose Location...</flux:select.option>
-                @foreach ($locations as $location)
-                    <flux:select.option value="{{ $location->id }}">{{ $location->name }}</flux:select.option>
-                @endforeach
-            </flux:select>
-            <small class="text-gray-500 dark:text-gray-400">Select where the stock will be stored.</small>
+       <div class="mt-3">
+            <flux:input id="stock_location"
+                :label="__('Stock Location')"
+                type="text"
+                value="Company Warehouse"
+                class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded"
+                readonly />
+            <small class="text-gray-500 dark:text-gray-400">
+                Stock will be stored in the company’s warehouse.
+            </small>
         </div>
 
         <div class="mt-3">
@@ -27,7 +28,7 @@
             <flux:button variant="ghost" color="zinc" wire:click="previousStep">
                 Back
             </flux:button>
-            <flux:button wire:submit.prevent="save" variant="primary" color="blue" wire:click="nextStep">
+            <flux:button wire:click="save" variant="primary" color="blue">
                 Save
             </flux:button>
         </div>

@@ -24,7 +24,7 @@ new class extends Component {
     public string $search = '';
     public $products = [];
     public bool $openModal = false; // Modal visibility state
-    public string $stock_location = '';
+    public string $stock_location = 'Company Warehouse';
     public string $manufactured_date = '';
     public string $invoice_number = '';
     public string $batch_notes = '';
@@ -39,7 +39,7 @@ new class extends Component {
         $this->products = Product::all(); // Load all products initially
         $this->suppliers = Supplier::all(); // Load all suppliers
         $this->units = Unit::all(); // Load all units
-        $this->locations = Location::all();
+        // $this->locations = Location::all();
     }
 
     public function nextStep()
@@ -137,67 +137,74 @@ new class extends Component {
     }
 
     public function messages()
-{
-    return [
-        'product_name.required' => 'The product name is required.',
-        'product_name.string' => 'The product name must be a string.',
-        'product_name.max' => 'The product name may not be greater than 255 characters.',
+    {
+        return [
+            'product_name.required' => 'The product name is required.',
+            'product_name.string' => 'The product name must be a string.',
+            'product_name.max' => 'The product name may not be greater than 255 characters.',
 
-        // 'batch_number.required' => 'The batch number is required.',
-        // 'batch_number.string' => 'The batch number must be a string.',
-        // 'batch_number.max' => 'The batch number may not be greater than 100 characters.',
-        // 'batch_number.unique' => 'This batch number already exists.',
+            // 'batch_number.required' => 'The batch number is required.',
+            // 'batch_number.string' => 'The batch number must be a string.',
+            // 'batch_number.max' => 'The batch number may not be greater than 100 characters.',
+            // 'batch_number.unique' => 'This batch number already exists.',
 
-        'quantity.required' => 'Quantity is required.',
-        'quantity.integer' => 'Quantity must be a whole number.',
-        'quantity.min' => 'Quantity must be at least 1.',
+            'quantity.required' => 'Quantity is required.',
+            'quantity.integer' => 'Quantity must be a whole number.',
+            'quantity.min' => 'Quantity must be at least 1.',
 
-        'unit_id.required' => 'Unit is required.',
-        'unit_id.integer' => 'Unit ID must be a valid number.',
-        'unit_id.exists' => 'The selected unit does not exist.',
+            'unit_id.required' => 'Unit is required.',
+            'unit_id.integer' => 'Unit ID must be a valid number.',
+            'unit_id.exists' => 'The selected unit does not exist.',
 
-        'capital_price.required' => 'Capital price is required.',
-        'capital_price.numeric' => 'Capital price must be a valid number.',
-        'capital_price.min' => 'Capital price must be at least 1.',
+            'capital_price.required' => 'Capital price is required.',
+            'capital_price.numeric' => 'Capital price must be a valid number.',
+            'capital_price.min' => 'Capital price must be at least 1.',
 
-        'selling_price.required' => 'Selling price is required.',
-        'selling_price.numeric' => 'Selling price must be a valid number.',
-        'selling_price.min' => 'Selling price must be at least 1.',
+            'selling_price.required' => 'Selling price is required.',
+            'selling_price.numeric' => 'Selling price must be a valid number.',
+            'selling_price.min' => 'Selling price must be at least 1.',
 
-        'expiry_date.required' => 'Expiry date is required.',
-        'expiry_date.date' => 'Expiry date must be a valid date.',
-        'expiry_date.after' => 'Expiry date must be after today.',
+            'expiry_date.required' => 'Expiry date is required.',
+            'expiry_date.date' => 'Expiry date must be a valid date.',
+            'expiry_date.after' => 'Expiry date must be after today.',
 
-        'manufactured_date.required' => 'Manufactured date is required.',
-        'manufactured_date.date' => 'Manufactured date must be a valid date.',
-        'manufactured_date.before_or_equal' => 'Manufactured date must be today or earlier.',
+            'manufactured_date.required' => 'Manufactured date is required.',
+            'manufactured_date.date' => 'Manufactured date must be a valid date.',
+            'manufactured_date.before_or_equal' => 'Manufactured date must be today or earlier.',
 
-        'stock_location.string' => 'Stock location must be a string.',
-        'stock_location.max' => 'Stock location may not be greater than 255 characters.',
+            'stock_location.string' => 'Stock location must be a string.',
+            'stock_location.max' => 'Stock location may not be greater than 255 characters.',
 
-        'invoice_number.string' => 'Invoice number must be a string.',
-        'invoice_number.max' => 'Invoice number may not be greater than 100 characters.',
+            'invoice_number.string' => 'Invoice number must be a string.',
+            'invoice_number.max' => 'Invoice number may not be greater than 100 characters.',
 
-        'batch_notes.string' => 'Batch notes must be a string.',
-        'batch_notes.max' => 'Batch notes may not be greater than 1000 characters.',
+            'batch_notes.string' => 'Batch notes must be a string.',
+            'batch_notes.max' => 'Batch notes may not be greater than 1000 characters.',
 
-        'supplier.required' => 'Supplier is required.',
-        'supplier.string' => 'Supplier name must be a string.',
-        'supplier.max' => 'Supplier name may not be greater than 255 characters.',
-    ];
-}
+            'supplier.required' => 'Supplier is required.',
+            'supplier.string' => 'Supplier name must be a string.',
+            'supplier.max' => 'Supplier name may not be greater than 255 characters.',
+        ];
+    }
 
     private function generateStockNumber()
     {
         $yearPrefix = date('Y');
+        $lastId = \App\Models\Stock::max('id') ?? 0;
+        $newId = $lastId + 1;
+
         $lastProduct = \App\Models\Stock::orderBy('id', 'desc')->first();
+
         if ($lastProduct) {
             $lastStockNumber = intval(substr($lastProduct->stock_number, -6));
             $newStockNumber = $lastStockNumber + 1;
         } else {
             $newStockNumber = 1;
         }
-        return $yearPrefix . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
+
+        return $yearPrefix
+            . $newId
+            . str_pad($newStockNumber, 6, '0', STR_PAD_LEFT);
     }
 
     public function goToStep($step)
@@ -250,7 +257,7 @@ new class extends Component {
         <div class="flex flex-col space-x-4 mb-4">
             <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
                 <div class="bg-(--color-accent) h-2 rounded-full transition-all duration-500" 
-                    style="width: {{ ($currentStep / 3) * 100 }}%">
+                    style="width: {{ min(100, ($currentStep / 3) * 100) }}%">
                 </div>
             </div>
         
@@ -292,7 +299,7 @@ new class extends Component {
                     {{ $currentStep === 3 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                            {{ $currentStep === 2 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
+                            {{ $currentStep === 3 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
                             3
                         </div>
                         <div>

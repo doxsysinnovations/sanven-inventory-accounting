@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Invoice;
 use App\Models\Stock;
 use App\Models\Agent;
+use App\Models\AgentCommission;
 use App\Models\InvoiceItem;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
@@ -524,6 +525,17 @@ new class extends Component {
                 if ($product && $product->track_stock) {
                     $product->decrement('stock_quantity', $item['quantity']);
                 }
+            }
+
+            // If agent_id is set, create agent commission
+            if (!empty($this->assigned_agent)) {
+                \App\Models\AgentCommission::create([
+                    'agent_id' => $this->assigned_agent,
+                    'invoice_id' => $invoice->id,
+                    'commission_amount' => $invoice->grand_total * 0.05, // Example: 5% commission
+                    'status' => 'pending',
+                    'notes' => 'Auto-generated commission for invoice #' . $invoice->invoice_number,
+                ]);
             }
 
             DB::commit();
