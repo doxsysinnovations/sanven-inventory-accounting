@@ -60,7 +60,7 @@
             <div class="px-10 pt-4 pb-10 overflow-auto">
                 <div class="flex flex-col gap-4 my-5">
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
                             <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Per Page:</label>
                             <flux:select wire:model.live="perPage" id="perPage" class="flex-1 sm:flex-none">
                                 <flux:select.option value="5">5</flux:select.option>
@@ -71,7 +71,7 @@
                         </div>
 
                         @if($withFilter)
-                            <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
                                 <label for="categoryFilter" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
                                     Category:
                                 </label>
@@ -85,7 +85,7 @@
                         @endif
 
                         @if($withRoleFilter)
-                            <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
                                 <label for="roleFilter" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
                                     Role:
                                 </label>
@@ -101,8 +101,8 @@
                     </div>
 
                     @if($withPaymentMethodFilter || $withStatusFilter || $withSearch || $withDateFilter)
-                        <div class="flex flex-col xl:flex-row gap-4">
-                            <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex flex-col sm:flex-row gap-4 sm:justify-between">
+                            <div class="flex flex-col sm:flex-row gap-4 flex-wrap mb-5 {{ !($withPaymentMethodFilter || $withStatusFilter) ? 'hidden' : '' }}">
                                 @if($withPaymentMethodFilter)
                                     <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
                                         <label for="paymentMethodFilter" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
@@ -135,13 +135,7 @@
                                 @endif
                             </div>
 
-                            <div class="flex flex-col lg:flex-row gap-4 xl:ml-auto">
-                                @if($withSearch)
-                                    <div class="flex items-center w-full sm:w-auto sm:min-w-fit">
-                                        <x-search-bar placeholder="{{ $searchPlaceholder }}" />
-                                    </div>
-                                @endif
-
+                            <div class="{{ !$withDateFilter ? 'hidden' : '' }}">
                                 @if($withDateFilter)
                                     <div class="flex items-end gap-3 @if($withSearch && $withDateFilter) h-[42px] @endif">
                                         <div class="w-full sm:w-auto">
@@ -153,6 +147,13 @@
                                     </div>
                                 @endif
                             </div>
+                        </div>
+                        <div class="{{ !$withSearch ? 'hidden' : '' }}">
+                            @if($withSearch)
+                                <div class="flex items-center justify-end w-full">
+                                    <x-search-bar placeholder="{{ $searchPlaceholder }}" />
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>
