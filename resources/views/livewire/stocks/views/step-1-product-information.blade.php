@@ -84,7 +84,7 @@
         </div>
 
        <div class="col-span-1 sm:col-span-2 lg:col-span-3 mt-3">
-            <flux:textarea disabl :label="__('Product Description')" id="product_description" readonly class="w-full text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded"> {{ !empty($product_description) ? $product_description : 'No description available.' }} </flux:textarea>
+            <flux:textarea disable :label="__('Product Description')" id="product_description" readonly class="w-full text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded"> {{ !empty($product_description) ? $product_description : 'No description available.' }} </flux:textarea>
         </div>
 
         <div class="mt-2">
@@ -92,7 +92,10 @@
                 Brand Name
             </label>
             <p id="brand_name"
-            class="text-sm rounded border border-gray-300 bg-gray-100 dark:bg-gray-200 dark:text-gray-900 p-2">
+                class="bg-gray-100 dark:bg-[#353F4D] w-full rounded block disabled:shadow-none dark:shadow-none border appearance-none text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3
+                    text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400
+                    dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-gray-300 border-b-zinc-300/80 disabled:border-b-zinc-200
+                    dark:border-white/10 dark:disabled:border-white/5">
                 {{ $brand_name ?: 'No brand specified.' }}
             </p>
         </div>
@@ -102,7 +105,10 @@
                 Product Category
             </label>
             <p id="product_category"
-            class="text-sm rounded border border-gray-300 bg-gray-100 dark:bg-gray-200 dark:text-gray-900 p-2">
+                class="bg-gray-100 dark:bg-[#353F4D] w-full rounded block disabled:shadow-none dark:shadow-none border appearance-none text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3
+                    text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400
+                    dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-gray-300 border-b-zinc-300/80 disabled:border-b-zinc-200
+                    dark:border-white/10 dark:disabled:border-white/5">
                 {{ $product_category ?: 'No category assigned.' }}
             </p>
         </div>

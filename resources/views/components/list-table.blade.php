@@ -44,7 +44,7 @@
                                     <x-status-badges :status="$cell" />
                                 @endif
                             @elseif (strtolower($header) === 'actions')
-                                @if ($model)
+                                 @if ($model)
                                     <x-actions 
                                         :model="$model"
                                         :viewAbility="$viewAbility"
@@ -55,6 +55,8 @@
                                         :deleteAbility="$deleteAbility"
                                         :deleteAction="$deleteAction"
                                     />
+                                @else
+                                    {!! $cell !!}
                                 @endif
                             @else
                                 {!! $cell !!}

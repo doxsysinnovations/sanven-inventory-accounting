@@ -1,7 +1,10 @@
 @props([
-    'quotation' => null,
-    'editRoute' => 'quotations.edit',
-    'modelInstance' => ''
+    'document' => '',
+    'editRoute' => '',
+    'modelInstance' => '',
+    'editLabel' => '',
+    'documentNumber' => '',
+    'streamPdfRoute' => '',
 ])
 
 <div x-data="{ 
@@ -9,13 +12,13 @@
         isLoading: false,
         isIframeLoaded: false
     }">    
-    <div class="flex flex-col md:flex-row md:justify-end mb-5 gap-2">
+    <div class="flex flex-col sm:flex-row md:justify-end mb-5 gap-2">
         <div>
             <flux:button variant="primary" color="blue" icon="printer" wire:click="print">Print/Download</flux:button> 
         </div>
         <div>
-            <a href="{{ route($editRoute, [$modelInstance => $quotation]) }}">
-                <flux:button variant="primary" color="green" icon="pencil" wire:click="edit">Edit Quotation</flux:button>                      
+           <a href="{{ route($editRoute, [$modelInstance => $document]) }}">
+                <flux:button variant="primary" color="green" icon="pencil" wire:click="edit">{{ $editLabel }}</flux:button>                      
             </a>
         </div>
     </div>
@@ -37,7 +40,7 @@
         <div class="relative z-50 my-8 mx-auto p-5 w-11/12 max-w-6xl shadow-lg rounded-md bg-white dark:bg-(--color-accent-4-dark) max-h-[95vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                    Print Preview - {{ $quotation->quotation_number ?? '' }}
+                    Print Preview - {{ $documentNumber ?? '' }}
                 </h3>
                 <button wire:click="closePrintPreview" class="text-gray-400 hover:text-gray-600">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +58,7 @@
                 </div>
             </div>
 
-            @if ($quotation)
+            @if ($document)
                 <div x-show="isLoading" class="flex items-center justify-center h-64 text-gray-600">
                     <svg class="animate-spin h-6 w-6 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -67,7 +70,7 @@
                 <div x-show="!isLoading" class="h-[100vh] border border-gray-300 dark:border-none rounded-lg overflow-hidden">
                     <iframe 
                         id="pdfPreview"
-                        src="{{ route('quotations.stream-pdf', $quotation->id) }}"
+                        src="{{ route($streamPdfRoute, $document->id) }}"
                         width="100%" 
                         height="100%"
                         class="w-full h-full"
@@ -90,6 +93,7 @@
             @endif
         </div>
     </div>
+
     <script>
         function printIframe() {
             const iframe = document.getElementById('pdfPreview');

@@ -79,10 +79,10 @@ $inputLoadingClasses = Flux::classes()
 
 $classes = Flux::classes()
     ->add($attributes->has('readonly')
-        ? 'bg-gray-100 dark:bg-gray-200'
+        ? 'bg-gray-100 dark:bg-[#353F4D]'
         : match ($variant) {
-            'outline' => 'bg-white dark:bg-white/10 dark:disabled:bg-white/[7%]',
-            'filled'  => 'bg-zinc-800/5 dark:bg-white/10 dark:disabled:bg-white/[7%]',
+            'outline' => 'bg-white dark:bg-[#353F4D] dark:disabled:bg-white/[7%]',
+            'filled'  => 'bg-zinc-800/5 dark:bg-[#353F4D] dark:disabled:bg-white/[7%]',
         }
     )
     ->add('w-full rounded block disabled:shadow-none dark:shadow-none border')
