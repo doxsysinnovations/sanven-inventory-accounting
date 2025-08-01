@@ -1,9 +1,20 @@
 @if ($showCustomerForm)
-    <div class="space-y-4 mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-        <div class="bg-gray-50 px-4 py-4 flex items-center rounded-md dark:bg-(--color-accent-4-dark)">
-            <h3 class="font-bold text-base text-(--color-accent) dark:text-white">
-                New Customer Details
-            </h3>
+    <div class="space-y-4 mb-8 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div class="bg-gray-50 px-4 py-4 flex items-center justify-between rounded-md dark:bg-(--color-accent-4-dark)">
+            <div>
+                <h3 class="font-bold text-lg text-(--color-accent) dark:text-white">
+                    New Customer Details
+                </h3>
+            </div>
+            <div class="text-right">
+                <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                        Required fields
+                    <span class="text-red-500 ml-1">*</span>
+                </div>
+            </div>
         </div>
 
         <div class="py-2 px-5 space-y-4">
@@ -37,7 +48,7 @@
             </div>
 
             <div class="flex justify-between pt-4">
-                <flux:button variant="ghost" color="zinc" wire:click="$set('showCustomerForm', false)">
+                <flux:button wire:click="$set('showCustomerForm', false)" variant="ghost" color="zinc">
                     Cancel
                 </flux:button>
                 <flux:button wire:click="addCustomer" variant="primary" color="blue">
