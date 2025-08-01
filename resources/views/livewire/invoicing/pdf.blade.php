@@ -400,7 +400,7 @@
                                 </tr>
                                 <tr>
                                     <th>Sales Agent</th>
-                                    <td>{{ $invoice->agent->name }}</td>
+                                    <td>{{ $invoice->agent->name ?? ''}}</td>
                                 </tr>
                                 <tr>
                                     <th>Due Date</th>
