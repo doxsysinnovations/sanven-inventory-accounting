@@ -195,7 +195,13 @@ new class extends Component {
     {
         if (!isset($this->cart[$cartKey])) return;
 
-        $quantity   = floatval($this->cart[$cartKey]['quantity'] ?? 1);
+        $rawQuantity =  floatval($this->cart[$cartKey]['quantity'] ?? 1);
+        if (!is_numeric($rawQuantity) || $rawQuantity < 1) {
+            $rawQuantity = 1;
+            $this->cart[$cartKey]['quantity'] = 1;
+        }
+
+        $quantity = floatval($rawQuantity);
         $unitPrice  = floatval($this->cart[$cartKey]['price'] ?? 0);
         $isVatable  = $this->cart[$cartKey]['is_vatable'] ?? false;
         $stockId    = $this->cart[$cartKey]['stock_id'] ?? null;
@@ -247,7 +253,7 @@ new class extends Component {
         $this->recalculateTotals();
     }
 
-   public function recalculateTotals()
+    public function recalculateTotals()
     {
         foreach ($this->cart as $cartKey => $item) {
             $quantity = floatval($item['quantity'] ?? 1);
@@ -644,107 +650,71 @@ new class extends Component {
 
         <div class="bg-white dark:bg-(--color-accent-dark) p-8 sm:p-10">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <!-- Left Sidebar - Steps -->
                 <div class="md:col-span-1">
                     <div class="space-y-2">
                         <div @class([
                             'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                            'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' =>
+                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
                                 $currentStep === 1,
                             'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
                                 $currentStep !== 1,
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-blue-600 text-white' => $currentStep === 1,
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 1,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 1,
                             ])>1</div>
                             <div>
-                                <div class="font-medium">Customer</div>
+                                <div class="font-bold">Customer</div>
                                 <div class="text-xs">Information</div>
                             </div>
                         </div>
 
                         <div @class([
                             'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                            'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' =>
+                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
                                 $currentStep === 2,
                             'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
                                 $currentStep !== 2,
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-blue-600 text-white' => $currentStep === 2,
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 2,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 2,
                             ])>2</div>
                             <div>
-                                <div class="font-medium">Products</div>
+                                <div class="font-bold">Products</div>
                                 <div class="text-xs">Selection</div>
                             </div>
                         </div>
 
                         <div @class([
                             'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                            'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' =>
+                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
                                 $currentStep === 3,
                             'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
                                 $currentStep !== 3,
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-blue-600 text-white' => $currentStep === 3,
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 3,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 3,
                             ])>3</div>
                             <div>
-                                <div class="font-medium">Review</div>
+                                <div class="font-bold">Review</div>
                                 <div class="text-xs">& Finalize</div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Progress Summary -->
-                    @if ($currentStep > 1)
-                        <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <h3 class="text-sm font-medium mb-2">Invoice Summary</h3>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Items:</span>
-                                    <span>{{ count($cart) }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Subtotal:</span>
-                                    <span>Php {{ number_format($subtotal, 2) }}</span>
-                                </div>
-                                @if ($discount > 0)
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600 dark:text-gray-300">Discount:</span>
-                                        <span class="text-red-600 dark:text-red-400">-
-                                            Php {{ number_format($total_discount, 2) }}</span>
-                                    </div>
-                                @endif
-                                @if ($tax > 0)
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600 dark:text-gray-300">Vatable Amount:</span>
-                                        <span>+ Php {{ number_format($tax, 2) }}</span>
-                                    </div>
-                                @endif
-                                <div
-                                    class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600 font-medium">
-                                    <span>Total:</span>
-                                    <span>Php {{ number_format($total, 2) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
                 </div>
 
-                <div class="md:col-span-3 bg-white dark:bg-gray-800">
+                <div class="md:col-span-3 bg-white dark:bg-(--color-accent-1-dark)">
                     @include('livewire.invoicing.views.step-1-customer-information')
                     @include('livewire.invoicing.views.step-2-add-products')
-                    @include('livewire.invoicing.views.step-3-review-invoice')
+                    @include('livewire.invoicing.views.step-3-review-invoice',['isEditing' => isset($invoice)])
                 </div>
             </div>
         </div>

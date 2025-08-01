@@ -197,14 +197,14 @@ public function getPendingInvoicesAmountProperty()
         createButtonRoute="invoicing.create"
     >
         <x-slot:statisticsSlot>
-            <div class="flex justify-between overflow-x-auto mb-8 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <x-invoice-statistics-card
                     title="Total"
-                    :label="$this->toDeliverInvoicesCount . ' invoices'"
+                    :label="$this->totalInvoicesCount . ' invoices'"
                     :value="number_format($this->totalInvoicesAmount, 2)"
                 >
                     <x-slot:iconSlot>
-                        <div class="h-14 w-14 rounded-full border-2 border-blue-500 text-blue-500 flex justify-center items-center">
+                        <div class="h-14 w-14 rounded-full border-2 border-(--color-accent) dark:border-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-3-dark) flex justify-center items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-width="1.5">
                                 <path
@@ -222,6 +222,7 @@ public function getPendingInvoicesAmountProperty()
                 >
                     <x-slot:iconSlot>
                         <div class="h-14 w-14 rounded-full border-2 border-green-500 text-green-500 flex justify-center items-center">
+                            
                             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path
@@ -241,7 +242,7 @@ public function getPendingInvoicesAmountProperty()
                 >
                     <x-slot:iconSlot>
                         <div
-                            class="h-14 w-14 rounded-full border-2 border-purple-500 text-purple-500 flex justify-center items-center">
+                            class="h-14 w-14 rounded-full border-2 border-orange-500 text-orange-500 flex justify-center items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path
@@ -306,7 +307,7 @@ public function getPendingInvoicesAmountProperty()
         <x-delete-modal 
             title="Delete Invoice"
             message="Are you sure you want to delete this Invoice #{{ $invoiceToDelete->invoice_number ?? ''}}? This action cannot be undone."
-            onCancel="$set('confirmingDelete', false)"
+            onCancel="$set('showDeleteModal', false)"
         />
     @endif
 </div>
