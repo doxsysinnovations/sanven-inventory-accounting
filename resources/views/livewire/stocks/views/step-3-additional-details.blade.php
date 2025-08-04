@@ -24,13 +24,20 @@
             <small class="text-gray-500 dark:text-gray-400">Add any additional notes or instructions for this batch.</small>
         </div>
         
-        <div class="flex justify-between mt-4 overflow-hidden">
-            <flux:button variant="ghost" color="zinc" wire:click="previousStep">
-                Back
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 mt-8 border-t border-gray-200 dark:border-gray-700 px-6">
+            <flux:button variant="ghost" color="zinc" wire:click="previousStep" icon="chevron-left">
+                    Back to Stock Information
             </flux:button>
-            <flux:button wire:click="save" variant="primary" color="blue">
-                Save
-            </flux:button>
+            
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div class="text-sm text-center sm:text-left text-gray-500 dark:text-gray-400">
+                    <span>Step 3 of 3 - Additional Details</span>
+                </div>
+                
+                <flux:button wire:click="save" variant="primary" color="blue">
+                    <span>Save</span>
+                </flux:button>
+            </div>
         </div>
     </div>
 @endif
