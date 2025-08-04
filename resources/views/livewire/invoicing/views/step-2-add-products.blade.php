@@ -7,7 +7,7 @@
                         Step 2: Add Products
                     </h1>
                     <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                        Search and add products to build your invoice
+                        Search and add products to build your invoice.
                     </span>
                 </div>
                 <div class="flex items-center gap-4">
@@ -17,7 +17,7 @@
                         </svg>
 
                         @if (count($cart) > 0)
-                            <span class="absolute -top-1 -right-1.5 bg-(--color-accent) text-white text-[8px] font-bold w-5.5 h-5.5 flex items-center justify-center rounded-full shadow">
+                            <span class="absolute -top-1 -right-1.5 bg-(--color-accent) text-white dark:text-black text-[8px] font-bold w-5.5 h-5.5 flex items-center justify-center rounded-full shadow">
                                 {{ collect($cart)->sum('quantity') }}
                             </span>
                         @endif
@@ -104,7 +104,7 @@
             </div>
         @endif
 
-        <div class="space-y-8 px-6">
+        <div class="space-y-8 md:px-6">
             <div>
                 <div class="flex flex-col sm:flex-row items-start justify-start gap-2 sm:items-center sm:justify-between mb-4">
                     <div class="flex items-center">
@@ -186,7 +186,7 @@
                 </div>
             @else
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div class="py-12 flex flex-col items-center justify-center text-center">
+                    <div class="py-12 flex flex-col items-center justify-center text-center p-2 md:p-0">
                         <svg class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600"   aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                             <path fill-rule="evenodd" d="M4.857 3A1.857 1.857 0 0 0 3 4.857v4.286C3 10.169 3.831 11 4.857 11h4.286A1.857 1.857 0 0 0 11 9.143V4.857A1.857 1.857 0 0 0 9.143 3H4.857Zm10 0A1.857 1.857 0 0 0 13 4.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 21 9.143V4.857A1.857 1.857 0 0 0 19.143 3h-4.286Zm-10 10A1.857 1.857 0 0 0 3 14.857v4.286C3 20.169 3.831 21 4.857 21h4.286A1.857 1.857 0 0 0 11 19.143v-4.286A1.857 1.857 0 0 0 9.143 13H4.857Zm10 0A1.857 1.857 0 0 0 13 14.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 21 19.143v-4.286A1.857 1.857 0 0 0 19.143 13h-4.286Z" clip-rule="evenodd"/>
                         </svg>
@@ -198,7 +198,7 @@
                 </div>
             @endif
         
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700 px-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700 md:px-6">
                 <flux:button variant="ghost" color="zinc" wire:click="backToStep1" icon="chevron-left">
                         Back to Customer
                 </flux:button>
