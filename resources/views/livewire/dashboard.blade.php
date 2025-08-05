@@ -5,6 +5,7 @@ use App\Models\Invoice;
 use App\Models\Stock;
 use Livewire\Volt\Component;
 use Illuminate\Support\Carbon;
+use App\Services\GeminiService;
 
 new class extends Component {
 
@@ -21,11 +22,13 @@ new class extends Component {
     public $topCustomers = [];
     public $topSuppliers = [];
     public $lowStockItems = [];
-    public $salesToday = 0; //For Income Sales Today card
+    public $salesToday = 0;
+    public $monthlySales = 0;
 
     public function mount()
     {
         $today = Carbon::today();
+        $fiveMonthsAgo = Carbon::now()->startOfMonth()->subMonths(4);
         $this->currentMonth = $today->format('F');
         $startOfMonth = $today->copy()->startOfMonth();
         $endOfMonth = $today->copy()->endOfMonth();
@@ -40,7 +43,10 @@ new class extends Component {
 
         $this->totalExpiredProducts = $this->expiredStocks->count();
 
-        $this->agingReports=Invoice::get();
+        $this->agingReports = Invoice::latest('issued_date')
+            ->take(5)
+            ->get();
+
         $this->overdueInvoices = Invoice::where('due_date', '<', [$today])
             ->whereNotIn('status', ['paid', 'cancelled'])
             ->with('customer')
@@ -129,6 +135,17 @@ new class extends Component {
         $this->salesToday = Invoice::whereDate('issued_date', $today)
             ->where('status', 'paid')
             ->sum('grand_total');
+
+        $this->monthlySales = Invoice::selectRaw("
+            DATE_FORMAT(issued_date, '%b') as month, 
+            SUM(total_amount) as total,
+            DATE_FORMAT(issued_date, '%Y-%m') as sort_month
+        ")
+        ->where('status', 'paid')
+        ->whereDate('issued_date', '>=', $fiveMonthsAgo)
+        ->groupBy('sort_month', 'month')
+        ->orderBy('sort_month')
+        ->get();
     }
 }
 ?>
@@ -137,7 +154,6 @@ new class extends Component {
     <h1 class="font-bold sm:text-base md:text-lg lg:text-xl">
         Dashboard
     </h1>
-    
     <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
         <x-stat-card :value="$salesToday" label="Income Sales Today" cardColor="bg-white" iconColor="text-white" iconBackgroundColor="bg-(--color-accent) dark:bg-(--color-accent-3-dark)">
             <svg class="w-8 h-8"  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -339,6 +355,8 @@ new class extends Component {
     let charts = {};
     let isInitialized = false;
 
+    window.monthlySalesData = @json($monthlySales);
+    
     function getCSSVariable(name) {
         return getComputedStyle(document.documentElement)
             .getPropertyValue(name)
@@ -396,15 +414,19 @@ new class extends Component {
         try {
             const accentColor = getCSSVariable('--color-accent') || '#ef4444';
             const fontSans = getCSSVariable('--font-sans') || 'system-ui';
-            
+
+            const salesData = window.monthlySalesData || [];
+            const labels = salesData.map(item => item.month);
+            const values = salesData.map(item => item.total);
+
             charts.monthlySales = echarts.init(chartDom);
-            
+
             const option = {
                 tooltip: {
                     trigger: 'axis',
                     formatter: function (params) {
                         const data = params[0];
-                        return `Monthly Sales: ${data.value}`;
+                        return `Monthly Sales: ₱${Number(data.value).toLocaleString()}`;
                     }
                 },
                 textStyle: {
@@ -412,15 +434,16 @@ new class extends Component {
                 },
                 xAxis: {
                     type: 'category',
-                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    data: labels,
                 },
                 yAxis: {
                     type: 'value'
                 },
                 series: [
                     {
-                        data: [150, 230, 224, 218, 135, 147, 260],
+                        data: values,
                         type: 'line',
+                        smooth: true,
                         lineStyle: {
                             color: accentColor
                         },
