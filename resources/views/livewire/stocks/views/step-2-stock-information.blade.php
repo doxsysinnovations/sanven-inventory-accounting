@@ -13,10 +13,9 @@
             </div>
         </div>
 
-        <div class="px-6">
+        <div class="md:px-6">
             <div class="mt-3 mb-2">
-                <flux:select :label="__('Supplier')" id="supplier" wire:model="supplier" placeholder="Select a supplier"
-                    class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
+                <flux:select :label="__('Supplier')" id="supplier" wire:model="supplier" placeholder="Select a supplier">
                     <flux:select.option value="">Choose Supplier...</flux:select.option>
                     @foreach ($suppliers as $supplier)
                         <flux:select.option value="{{ $supplier->id }}">{{ $supplier->name }}</flux:select.option>
@@ -47,8 +46,7 @@
                 </div>
 
                 <div>
-                    <flux:select :label="__('Unit of Measurement')" id="unit_id" wire:model="unit_id" placeholder="Select a unit"
-                        class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded">
+                    <flux:select :label="__('Unit of Measurement')" id="unit_id" wire:model="unit_id" placeholder="Select a unit">
                          <flux:select.option value="">Choose Unit...</flux:select.option>
                         @foreach ($units as $unit)
                             <flux:select.option value="{{ $unit->id }}">{{ $unit->name }}</flux:select.option>
@@ -86,7 +84,7 @@
                 </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 mt-8 border-t border-gray-200 dark:border-gray-700 px-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 mt-8 border-t border-gray-200 dark:border-gray-700 md:px-6">
                 <flux:button variant="ghost" color="zinc" wire:click="previousStep" icon="chevron-left">
                         Back to Product Information
                 </flux:button>

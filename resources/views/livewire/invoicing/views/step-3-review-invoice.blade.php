@@ -96,7 +96,7 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <x-flux::input wire:model="invoice_date" type="date" label="Invoice Date" />
                         </div>

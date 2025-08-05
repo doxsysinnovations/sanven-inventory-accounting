@@ -102,7 +102,7 @@
 
                     @if($withPaymentMethodFilter || $withStatusFilter || $withSearch || $withDateFilter)
                         <div class="flex flex-col sm:flex-row gap-4 sm:justify-between">
-                            <div class="flex flex-col sm:flex-row gap-4 flex-wrap mb-5 {{ !($withPaymentMethodFilter || $withStatusFilter) ? 'hidden' : '' }}">
+                            <div class="flex flex-col sm:flex-row gap-4 flex-wrap sm:mb-5 {{ !($withPaymentMethodFilter || $withStatusFilter) ? 'hidden' : '' }}">
                                 @if($withPaymentMethodFilter)
                                     <div class="flex items-center gap-2 w-full sm:w-auto sm:min-w-fit">
                                         <label for="paymentMethodFilter" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
@@ -135,9 +135,9 @@
                                 @endif
                             </div>
 
-                            <div class="{{ !$withDateFilter ? 'hidden' : '' }}">
+                            <div class="{{ !$withDateFilter ? 'hidden' : '' }} {{ !($withPaymentMethodFilter || $withStatusFilter) ? 'sm:ml-auto' : '' }}">
                                 @if($withDateFilter)
-                                    <div class="flex items-end gap-3 @if($withSearch && $withDateFilter) h-[42px] @endif">
+                                    <div class="flex flex-col sm:flex-row sm:items-end gap-3 @if($withSearch && $withDateFilter) h-auto sm:h-[42px] @endif">
                                         <div class="w-full sm:w-auto">
                                             <x-flux::input wire:model.live="startDate" type="date" label="Start" placeholder="Start" />
                                         </div>

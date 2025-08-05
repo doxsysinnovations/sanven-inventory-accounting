@@ -68,7 +68,7 @@
             </div>
         @endif
         
-        <div class="px-6">
+        <div class="md:px-6">
             <div class="overflow-hidden">
                 @if (!$product_code)
                     <div class="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-2 bg-red-50 dark:bg-red-800/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -107,8 +107,8 @@
                     class="dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600 w-full rounded" readonly />
             </div>
 
-        <div class="col-span-1 sm:col-span-2 lg:col-span-3 mt-3">
-                <flux:textarea disable :label="__('Product Description')" id="product_description" readonly class="w-full text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 p-2 rounded"> {{ !empty($product_description) ? $product_description : 'No description available.' }} </flux:textarea>
+            <div class="col-span-1 sm:col-span-2 lg:col-span-3 mt-3">
+                <flux:textarea disable :label="__('Product Description')" id="product_description" readonly> {{ !empty($product_description) ? $product_description : 'No description available.' }} </flux:textarea>
             </div>
 
             <div class="mt-2">
@@ -137,7 +137,7 @@
                 </p>
             </div>
 
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 mt-8 border-t border-gray-200 dark:border-gray-700 px-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 mt-8 border-t border-gray-200 dark:border-gray-700 md:px-6">
                 <div class="text-sm text-center sm:text-left text-gray-500 dark:text-gray-400">
                     <span> Step 1 of 3 - Product Selection</span>
                 </div>
