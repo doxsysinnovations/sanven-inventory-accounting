@@ -207,3 +207,31 @@ Breadcrumbs::for('locations.create', fn (Trail $trail) =>
 Breadcrumbs::for('locations.edit', fn (Trail $trail, $location) =>
     $trail->parent('locations')->push("Edit Location: {$location->name}", route('locations.edit', $location))
 );
+
+Breadcrumbs::for('settings', fn (Trail $trail) =>
+    $trail->push('Settings', route('settings.profile'))
+);
+
+Breadcrumbs::for('settings.profile', fn (Trail $trail) =>
+    $trail->parent('settings')->push('Profile', route('settings.profile'))
+);
+
+Breadcrumbs::for('settings.password', fn (Trail $trail) =>
+    $trail->parent('settings')->push('Password', route('settings.password'))
+);
+
+Breadcrumbs::for('settings.appearance', fn (Trail $trail) =>
+    $trail->parent('settings')->push('Appearance', route('settings.appearance'))
+);
+
+Breadcrumbs::for('settings.2fa-config', fn (Trail $trail) =>
+    $trail->parent('settings')->push('Two-Factor Auth', route('settings.2fa-config'))
+);
+
+Breadcrumbs::for('settings.admin-panel', fn (Trail $trail) =>
+    $trail->parent('settings')->push('Admin Panel', route('settings.admin-panel'))
+);
+
+Breadcrumbs::for('settings.seeders', fn (Trail $trail) =>
+    $trail->parent('settings')->push('Seeders', route('settings.seeders'))
+);
