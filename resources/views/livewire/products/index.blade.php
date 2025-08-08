@@ -20,11 +20,11 @@ new class extends Component {
     public $brand = '';
     public $unit = '';
     public $productType = '';
-    public $perPage = 10;
+    public $perPage = 5;
 
     public function mount()
     {
-        $this->perPage = session('perPage', 10);
+        $this->perPage = session('perPage', 5);
     }
 
     public function updatedPerPage($value)
@@ -58,9 +58,9 @@ new class extends Component {
         $this->resetPage();
     }
 
-    public function confirmDelete($productId)
+    public function confirmDelete($id)
     {
-        $this->productToDelete = $productId;
+        $this->productToDelete = $id;
         $this->confirmingDelete = true;
     }
 
@@ -75,9 +75,9 @@ new class extends Component {
         $this->productToDelete = null;
     }
 
-    public function edit($productId)
+    public function edit($id)
     {
-        return redirect()->route('products.edit', $productId);
+        return redirect()->route('products.edit', $id);
     }
 
     #[Title('Products')]
@@ -107,177 +107,52 @@ new class extends Component {
 };
 ?>
 
-<!-- HTML Blade Template Continues -->
 <div>
-    <div class="mb-4">
-        <nav class="flex justify-end" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Products</span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
+    <x-view-layout
+        title="All Products"
+        :items="$products"
+        :perPage="$perPage"
+        searchPlaceholder="Search Products..."
+        message="No products available."
+        createButtonLabel="Add Product"
+        createButtonAbility="products.create"
+        createButtonRoute="products.create"
+    >
+        <x-slot:emptyIcon>
+            <svg class="w-32 h-32 sm:w-48 sm:h-48 mb-2 text-gray-300 dark:text-gray-600"  aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M4.857 3A1.857 1.857 0 0 0 3 4.857v4.286C3 10.169 3.831 11 4.857 11h4.286A1.857 1.857 0 0 0 11 9.143V4.857A1.857 1.857 0 0 0 9.143 3H4.857Zm10 0A1.857 1.857 0 0 0 13 4.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 21 9.143V4.857A1.857 1.857 0 0 0 19.143 3h-4.286Zm-10 10A1.857 1.857 0 0 0 3 14.857v4.286C3 20.169 3.831 21 4.857 21h4.286A1.857 1.857 0 0 0 11 19.143v-4.286A1.857 1.857 0 0 0 9.143 13H4.857Zm10 0A1.857 1.857 0 0 0 13 14.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 21 19.143v-4.286A1.857 1.857 0 0 0 19.143 13h-4.286Z" clip-rule="evenodd"/>
+            </svg>
+        </x-slot:emptyIcon>
+        <x-list-table
+            :headers="['Image', 'Code', 'Name', 'Capital', 'Selling', 'Stocks', 'Low', 'Actions']"
+            :rows="$products->map(fn($product) => [
+                '<img src=\'' . asset('storage/' . $product->image) . '\' alt=\'Image\' class=\'w-10 h-10 rounded\' />',
+                $product->product_code,
+                $product->name,
+                number_format(optional($product->stocks()->latest()->first())->capital_price ?? 0, 2),
+                number_format(optional($product->stocks()->latest()->first())->selling_price ?? 0, 2),
+                '<span class=\'' . ($product->stocks->sum('quantity') <= $product->low_stock_value ? 'text-(--color-accent-2)' : '') . '\'>'
+                    . $product->stocks->sum('quantity') .
+                '</span>',
+                '<span class=\'' . ($product->stocks->sum('quantity') <= $product->low_stock_value ? 'text-(--color-accent-2)' : '') . '\'>'
+                    . $product->low_stock_value .
+                '</span>',
+                '__model' => $product
+            ])"
+            editAbility="products.edit"
+            editParameter="id"
+            editRoute="products.edit"
+            deleteAbility="products.delete"
+            deleteAction="confirmDelete"
+        />
 
-    <div class="flex flex-col gap-4 rounded-xl">
-        <div class="flex flex-wrap justify-between items-center gap-4">
-            <div class="w-full sm:w-1/3">
-                <input wire:model.live="search" type="search" placeholder="Search products..."
-                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:focus:ring-blue-400/20 transition duration-200">
-            </div>
-
-            <div class="flex gap-2 items-center">
-                <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300">Per Page:</label>
-                <select wire:model="perPage" id="perPage"
-                    class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm">
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                </select>
-            </div>
-        </div>
-
-        @if ($products->isEmpty())
-            <div class="flex flex-col items-center justify-center p-8">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-48 h-48 mb-4 text-gray-300 dark:text-gray-600"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-400">No products found</p>
-                @can('products.create')
-                    <a href="{{ route('products.create') }}"
-                        class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                             fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add Product
-                    </a>
-                @endcan
-            </div>
-        @else
-            <div class="flex justify-end">
-                @can('products.create')
-                    <a href="{{ route('products.create') }}"
-                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="currentColor"
-                            viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Add Product
-                    </a>
-                @endcan
-            </div>
-
-            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Image</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Code</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Name</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Capital</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Selling</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Stocks</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Low</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        @foreach ($products as $product)
-                            <tr wire:key="product-{{ $product->id }}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <img src="{{ $product->getFirstMediaUrl('product-image') }}" alt="{{ $product->name }}"
-                                         class="w-12 h-12 rounded object-cover">
-                                </td>
-                                <td class="px-6 py-4">{{ $product->product_code }}</td>
-                                <td class="px-6 py-4">{{ $product->name }}</td>
-                                <td class="px-6 py-4 text-center">
-                                    {{ number_format(optional($product->stocks()->latest()->first())->capital_price ?? 0, 2) }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    {{ number_format(optional($product->stocks()->latest()->first())->selling_price ?? 0, 2) }}
-                                </td>
-                                <td class="px-6 py-4 text-center {{ $product->stocks->sum('quantity') <= $product->low_stock_value ? 'text-red-600' : '' }}">
-                                    {{ $product->stocks->sum('quantity') }}
-                                </td>
-                                <td class="px-6 py-4 text-center {{ $product->stocks->sum('quantity') <= $product->low_stock_value ? 'text-red-600' : '' }}">
-                                    {{ $product->low_stock_value }}
-                                </td>
-                                <td class="px-6 py-4 text-center space-x-2">
-                                    @can('products.edit')
-                                        <button wire:click="edit({{ $product->id }})"
-                                                class="text-blue-600 hover:underline dark:text-blue-400">Edit</button>
-                                    @endcan
-                                    @can('products.delete')
-                                        <button wire:click="confirmDelete({{ $product->id }})"
-                                                class="text-red-600 hover:underline dark:text-red-400">Delete</button>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-4">
-                {{ $products->links() }}
-            </div>
-        @endif
-    </div>
+    </x-view-layout>
 
     @if ($confirmingDelete)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-500 dark:bg-gray-800 opacity-75"></div>
-                </div>
-                <div
-                    class="inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-900 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                    Delete Product
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        Are you sure you want to delete this product? This action cannot be undone.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button wire:click="delete"
-                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400 sm:ml-3 sm:w-auto sm:text-sm">
-                            Delete
-                        </button>
-                        <button wire:click="$set('confirmingDelete', false)"
-                            class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-delete-modal 
+            title="Delete Product"
+            message="Are you sure you want to delete this product? This action cannot be undone."
+            onCancel="$set('confirmingDelete', false)"
+        />
     @endif
 </div>

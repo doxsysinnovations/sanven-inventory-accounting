@@ -68,6 +68,10 @@ class Invoice extends Model
      */
     public function agent(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'agent_id', 'id');
+        return $this->belongsTo(Agent::class, 'agent_id', 'id');
+    }
+    public function commissions()
+    {
+        return $this->hasMany(AgentCommission::class);
     }
 }

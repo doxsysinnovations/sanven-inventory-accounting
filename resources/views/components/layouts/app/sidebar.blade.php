@@ -5,31 +5,32 @@
     @include('partials.head')
 </head>
 
-<body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-        <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
-
-        <a href="{{ route('dashboard') }}" class="mr-5 flex items-center space-x-2" wire:navigate>
+<body class="min-h-screen bg-[#EAF3FC] dark:bg-[#050811]">
+    <!-- Sidebar -->
+    <flux:sidebar sticky stashable class="bg-white dark:bg-[#050811] border-zinc-100">
+        <a href="{{ route('dashboard') }}" class="mr-5 lg:flex items-center space-x-2 hidden" wire:navigate>
             <x-app-logo />
         </a>
 
-        <livewire:widget.sidebar />
+        <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
+        <livewire:widget.sidebar />
 
         <flux:spacer />
 
         {{-- <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
+            <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit"
+                target="_blank">
                 {{ __('Repository') }}
-                </flux:navlist.item>
+            </flux:navlist.item>
 
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits" target="_blank">
+            <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits" target="_blank">
                 {{ __('Documentation') }}
-                </flux:navlist.item>
-            </flux:navlist> --}}
+            </flux:navlist.item>
+        </flux:navlist> --}}
 
         <!-- Desktop User Menu -->
-        <flux:dropdown position="bottom" align="start">
+        {{-- <flux:dropdown position="bottom" align="start">
             <flux:profile :name="auth()->user()->name" :initials="auth()->user()-> initials()"
                 icon-trailing="chevrons-up-down" />
 
@@ -68,16 +69,26 @@
                     </flux:menu.item>
                 </form>
             </flux:menu>
-        </flux:dropdown>
+        </flux:dropdown> --}}
     </flux:sidebar>
 
-    <!-- Mobile User Menu -->
-    <flux:header class="lg:hidden">
+
+    <!-- Header -->
+    <flux:header class="sticky top-0 z-50 bg-white dark:bg-[#050811] border-zinc-100">
+
+       <div class="hidden lg:block">
+            @if (\Diglactic\Breadcrumbs\Breadcrumbs::exists())
+                    {!! \Diglactic\Breadcrumbs\Breadcrumbs::view('partials.breadcrumbs') !!}
+            @endif
+       </div>
+
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
         <flux:spacer />
 
         <flux:dropdown position="top" align="end">
+
+
             <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
 
             <flux:menu>
@@ -119,7 +130,7 @@
     </flux:header>
 
     {{ $slot }}
-
+    
     @fluxScripts
 </body>
 
