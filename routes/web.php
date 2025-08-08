@@ -152,6 +152,14 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('purchase-orders', 'purchase-orders.index')->name('purchase-orders');
     Volt::route('purchase-orders/create', 'purchase-orders.create')->name('purchase-orders.create');
     Volt::route('purchase-orders/{id}/edit', 'purchase-orders.edit')->name('purchase-orders.edit');
+    Route::get('/purchase-orders/{po}/stream-pdf', function (\App\Models\PurchaseOrder $po) {
+        $po->load(['supplier', 'items.product']);
+        $pdf = Pdf::loadView('livewire.purchase-orders.pdf', [
+            'po' => $po,
+        ]);
+        return $pdf->stream('purchase-order-' . $po->po_number . '.pdf');
+    })->name('purchase-orders.stream-pdf');
+    
 });
 
 Route::middleware(['auth'])->group(function () {
