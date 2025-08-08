@@ -36,8 +36,8 @@ new class extends Component {
 
     public $customers = [];
     public $agents = [];
-
-     public function mount(Quotation $id)
+    
+    public function mount(Quotation $id)
     {
         
         $this->customers = Customer::all();
@@ -103,7 +103,13 @@ new class extends Component {
 ?>
 
 <div>
-    <x-print-pop-up :quotation="$quotation" modelInstance="quotation">
+    <x-print-pop-up 
+        :document="$quotation"
+        modelInstance="quotation" 
+        editRoute="quotations.edit"
+        streamPdfRoute="quotations.stream-pdf"
+        editLabel="Edit Quotation"
+        :documentNumber="$quotation->quotation_number ?? ''">
         <x-quotation-preview :quotation="$quotation" />
     </x-print-pop-up>
 </div>

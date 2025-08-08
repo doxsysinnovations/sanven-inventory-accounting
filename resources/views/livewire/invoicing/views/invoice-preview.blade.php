@@ -1,11 +1,12 @@
+
 @props([
-    'quotation' => 'null'
+    'selectedInvoice' => 'selectedInvoice'
 ])
 
 <div class="bg-white dark:bg-(--color-accent-dark) p-15 rounded-lg flex flex-col space-y-10">
     <div class="flex flex-col sm:flex-row sm:justify-between items-center gap-5">
-            <div><x-app-logo-icon class="h-10 w-auto"/></div>
-            <div class="text-3xl md:text-5xl font-bold text-(--color-accent)">Quotation</div>
+        <div><x-app-logo-icon class="h-10 w-auto"/></div>
+        <div class="text-3xl md:text-5xl font-bold text-(--color-accent)">Invoice</div>
     </div>
 
     <div class="flex flex-col gap-y-4 lg:flex-row lg:justify-between">
@@ -56,10 +57,10 @@
                 <tbody>
                     @php
                         $rows = [
-                            'Date' => $quotation->created_at->format('M d, Y'),
-                            'Quotation Number' => $quotation->quotation_number,
-                            'Customer ID' => $quotation->customer->id,
-                            'Valid Until' => \Carbon\Carbon::parse($quotation->valid_until)->format('M d, Y'),
+                            'Issued Date' => \Carbon\Carbon::parse($selectedInvoice->issued_date ?? '')->format('M d, Y'),
+                            'Invoice #' => $selectedInvoice->invoice_number ?? '',
+                            'Sales Agent' => $selectedInvoice->agent->name ?? '',
+                            'Due:' => \Carbon\Carbon::parse($selectedInvoice->due_date ?? '')->format('M d, Y'),
                         ];
                     @endphp
 
@@ -82,15 +83,18 @@
        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
             <thead class="text-xs text-white uppercase bg-(--color-accent) border border-(--color-accent) dark:bg-(--color-accent-2-dark) dark:text-gray-400 dark:border-none">
                 <tr>
-                    <th colspan="2" class="px-6 py-3">Customer Information</th>
+                    <th colspan="2" class="px-6 py-3">BILL TO</th>
                 </tr>
             </thead>
             <tbody>
                 @php
                     $customerFields = [
-                        'Customer Name' => $quotation->customer->name ?? null,
-                        'Email' => $quotation->customer->email ?? null,
-                        'Phone' => $quotation->customer->phone ?? null,
+                        'Customer Name' => $selectedInvoice->customer->name ?? '',
+                        'Company Name' => $selectedInvoice->customer->company_name ?? '',
+                        'Adresss' => $selectedInvoice->customer->address ?? '',
+                        'Phone' =>  $selectedInvoice->customer->phone ?? '',
+                        'Email' =>  $selectedInvoice->customer->email ?? '',
+                        'Payment Method' => ucfirst(str_replace('_', ' ', $selectedInvoice->payment_method ?? 'N/A')),
                     ];
                 @endphp
 
@@ -119,7 +123,7 @@
             <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                 <thead class="text-xs text-white uppercase bg-(--color-accent) border border-(--color-accent) dark:bg-(--color-accent-2-dark) dark:text-gray-400 dark:border-none">
                     <tr>
-                        @foreach (['Product Name', 'Description' => 2, 'Qty', 'Unit Price', 'VAT (0.12%)', 'TOTAL'] as $label => $colspan)
+                        @foreach (['Item', 'Notes' => 2, 'Qty', 'Price', 'VAT (0.12%)', 'TOTAL'] as $label => $colspan)
                             <th scope="col" class="px-6 py-3" @if(is_int($colspan)) colspan="{{ $colspan }}" @endif>
                                 {{ is_int($label) ? $colspan : $label }}
                             </th>
@@ -127,16 +131,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($quotation->items as $item)
+                    @foreach ($selectedInvoice->items ?? [] as $item)
                         <tr class="bg-white border-b border-x border-zinc-400 dark:bg-(--color-accent-4-dark) dark:border-none">
                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $item->product->name ?? '' }}
+                                {{ $item->product_name ?? '' }}
                             </th>
-                            <td colspan="2" class="px-6 py-4 text-zinc-700 dark:text-white">{{ $item->description ?? '' }}</td>
+                            <td colspan="2" class="px-6 py-4 text-zinc-700 dark:text-white">{{ $item->notes ?? '' }}</td>
                             <td class="px-6 py-4 text-zinc-700 dark:text-white">{{ $item->quantity ?? 0 }}</td>
-                            <td class="px-6 py-4 text-zinc-700 dark:text-white">{!! $currency !!} {{ number_format($item->unit_price ?? 0, 2) }}</td>
-                            <td class="px-6 py-4 text-zinc-700 dark:text-white">{!! $currency !!} {{ number_format($item->vat_tax ?? 0, 2) }}</td>
-                            <td class="px-6 py-4 text-zinc-700 dark:text-white">{!! $currency !!} {{ number_format($item->total_price ?? 0, 2) }}</td>
+                            <td class="px-6 py-4 text-zinc-700 dark:text-white">{!! $currency !!} {{ number_format($item->price ?? 0, 2) }}</td>
+                            <td class="px-6 py-4 text-zinc-700 dark:text-white">{!! $currency !!} {{ number_format($item->tax ?? 0, 2) }}</td>
+                            <td class="px-6 py-4 text-zinc-700 dark:text-white">{!! $currency !!} {{ number_format($item->total ?? 0, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -157,7 +161,7 @@
                         <tbody>
                             <tr class="bg-white border-l border-r border-b dark:bg-(--color-accent-4-dark) dark:border-none border-zinc-400">
                                 <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                    <span>{{ $quotation->notes ?? '' }}</span>
+                                    <span>{{ $selectedInvoice->notes }}</span>
                                 </th>
                             </tr>
                         </tbody>
@@ -167,10 +171,10 @@
             <div class="flex-1 lg:w-1/3 mt-10 sm:mt-0">
                 <div class="overflow-x-auto">
                     @php
-                        $base = $quotation->items->sum('total_price');
-                        $discount = $quotation->discount_type === 'percentage' 
-                            ? ($quotation->discount / 100) * $base 
-                            : $quotation->discount;
+                        $base = $selectedInvoice->items->sum('total');
+                        $discount = $selectedInvoice->discount_type === 'percentage' 
+                            ? ($selectedInvoice->discount / 100) * $base 
+                            : $selectedInvoice->discount;
                         $rate = $base > 0 ? ($discount / $base) * 100 : 0;
                     @endphp
 
@@ -193,13 +197,13 @@
                             <tr class="bg-white border-l border-r border-b dark:bg-(--color-accent-4-dark)  dark:border-none border-zinc-400">
                                 <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">VAT</th>
                                 <td class="px-6 py-4 text-(--color-accent-2)">
-                                    <span style="font-family: Arial;">&#8369;</span> {{ number_format($quotation->tax ?? 0, 2) }}
+                                    <span style="font-family: Arial;">&#8369;</span> {{ number_format($selectedInvoice->tax ?? 0, 2) }}
                                 </td>
                             </tr>
                             <tr class="bg-(--color-accent) border-l border-r border-b dark:bg-(--color-accent-2-dark) dark:border-none border-zinc-400">
                                 <th scope="row" class="px-6 py-4 font-bold text-white whitespace-nowrap dark:text-white">GRAND TOTAL</th>
                                 <td class="px-6 py-4 text-white font-bold">
-                                    <span class="text-base" style="font-family: Arial;">&#8369;</span> {{ number_format($quotation->total_amount ?? 0, 2) }}
+                                    <span class="text-base" style="font-family: Arial;">&#8369;</span> {{ number_format($selectedInvoice->grand_total ?? 0, 2) }}
                                 </td>
                             </tr>
                         </tbody>
@@ -210,27 +214,18 @@
     </div>
 
     <div>
-        <span class="text-sm">This quotation is not a contract or a bill. It is our best guess at the total price for the service and goods described above. 
-            The customer will be billed after indicating acceptance of this quote. Payment will be due prior to the delivery of service and goods.
-            Please fax or mail the signed quote to the address listed above.
-        </span>
-    </div>
-
-    <div>
         <div>
-            <span class="text-base lg:text-lg font-bold">Customer Acceptance</span>
+            <span class="text-base lg:text-lg font-bold">Issued By</span>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-white uppercase bg-(--color-accent) border border-(--color-accent) dark:bg-(--color-accent-2-dark) dark:text-gray-400 dark:border-none">
                         <tr>
-                            <th class="px-6 py-3">Name</th>
-                            <th class="px-6 py-3">Signature</th>
-                            <th class="px-6 py-3">Date</th>
+                            <th class="px-6 py-3">Name and Signature</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="bg-white dark:bg-(--color-accent-4-dark)">
-                            @for ($i = 0; $i < 3; $i++)
+                            @for ($i = 0; $i < 1; $i++)
                                 <td class="px-6 py-4 border border-zinc-400 dark:border-none"></td>
                             @endfor
                         </tr>

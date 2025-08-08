@@ -37,19 +37,19 @@
                     <button
                         type="button"
                         @click="open = !open"
-                        class="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-left text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500"
+                        class="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#353F4D] px-3 py-2 text-left text-sm shadow-sm focus:ring-2 focus:ring-blue-500"
                     >
                         <template x-if="$wire.selectedLocations.length">
                             <div class="flex flex-wrap gap-1">
                                 <template x-for="id in $wire.selectedLocations" :key="id">
-                                    <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded text-xs">
-                                        <span class="font-medium" x-text="$wire.allLocations[id]"></span>
+                                    <span class="text-(--color-accent) dark:text-blue-300 bg-(--color-accent-muted) dark:bg-blue-900 px-2 py-1 rounded text-xs">
+                                        <span class="font-bold" x-text="$wire.allLocations[id]"></span>
                                     </span>
                                 </template>
                             </div>
                         </template>
 
-                        <span x-show="!$wire.selectedLocations.length" class="text-gray-400">Select locations</span>
+                        <span x-show="!$wire.selectedLocations.length" class="text-zinc-700 dark:text-zinc-300">Select locations</span>
                     </button>
 
                     <div

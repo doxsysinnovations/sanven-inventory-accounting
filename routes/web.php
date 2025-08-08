@@ -5,6 +5,7 @@ use App\Livewire\TwoFactorVerify;
 use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Quotation;
+use App\Models\Invoice;
 
 //For testing low stock notification
 use App\Models\Stock;
@@ -88,6 +89,9 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Recievables
     Volt::route('recievables', 'recievables.index')->name('recievables');
 
+    //Recievables
+    Volt::route('recievables', 'recievables.index')->name('recievables');
+
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
@@ -137,8 +141,18 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Invoicing
     Volt::route('invoicing', 'invoicing.index')->name('invoicing');
     Volt::route('invoicing/create', 'invoicing.create')->name('invoicing.create');
-    Volt::route('invoicing/show', 'invoicing.create')->name('invoicing.show');
-    Volt::route('invoicing/{id}/edit', 'invoicing.edit')->name('invoicing.edit');
+    Volt::route('invoicing/view/{id}', 'invoicing.view')->name('invoicing.view');
+    Volt::route('invoicing/edit/{invoice}', 'invoicing.edit')->name('invoicing.edit');
+    Volt::route('invoicing/pdf/{invoice}', 'invoicing.pdf')->name('invoicing.pdf');
+    Route::get('/invoicing/{invoice}/stream-pdf', function (Invoice $invoice) {
+        $invoice->load(['customer', 'agent', 'items',]);
+
+        $pdf = Pdf::loadView('livewire.invoicing.pdf', [
+            'invoice' => $invoice,
+        ]);
+
+        return $pdf->stream('invoice-' . $invoice->invoice_number . '.pdf');
+    })->name('invoicing.stream-pdf');
 
     //Special Features
     Volt::route('pdf-binding', 'special-features.pdf-binding')->name('pdf-binding');

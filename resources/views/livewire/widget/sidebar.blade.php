@@ -24,8 +24,19 @@ new class extends Component {
                         'label' => 'Dashboard',
                         'permission' => 'dashboard.view',
                     ],
+                ]
+            ],
+            [
+                'heading' => 'Invoice Management',
+                'items' => [
                     [
-                        'icon' => 'shopping-cart',
+                        'icon' => 'plus',
+                        'route' => 'invoicing.create',
+                        'label' => 'Create Invoice',
+                        'permission' => 'agents.create'
+                    ],
+                    [
+                        'icon' => 'document-text',
                         'route' => 'invoicing',
                         'label' => 'Invoicing',
                         'permission' => 'invoicing.view',
