@@ -95,6 +95,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
+    Volt::route('stocks/{id}/edit', 'stocks.edit')->name('stocks.edit');
 
     //Expiry
     Volt::route('expiryproducts', 'expiryproducts.index')->name('expiryproducts');
