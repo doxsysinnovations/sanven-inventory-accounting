@@ -76,7 +76,7 @@ new class extends Component {
         $this->productToDelete = null;
     }
 
-    public function edit($productId)
+    public function edit($stockId)
     {
         return redirect()->route('stocks.edit', $stockId);
     }
@@ -164,8 +164,11 @@ new class extends Component {
             editRoute="stocks.edit"
             deleteAbility="products.delete"
             deleteAction="confirmDelete"
+            alterRoute="stocks.alter"
+            alterAbility="stocks.alter" 
         />
     </x-view-layout>
+    
 
     @if ($confirmingDelete)
         <x-delete-modal 

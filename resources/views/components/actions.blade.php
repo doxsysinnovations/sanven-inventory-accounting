@@ -6,7 +6,9 @@
     'editRoute' => null,
     'deleteAbility' => null,
     'deleteAction' => null,
-    'editRouteParameter' => 'id'
+    'editRouteParameter' => 'id',
+    'alterRoute' => null,
+    'alterAbility' => null,
 ])
 
 @php
@@ -20,6 +22,9 @@
         'delete' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
                 text-(--color-accent-2) hover:text-white hover:bg-(--color-accent-2)
                 focus:outline-none focus:ring-2 focus:ring-(--color-accent-2) focus:ring-offset-2 dark:focus:ring-offset-gray-900',
+        'alter' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
+            text-blue-500 hover:text-white hover:bg-blue-500
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900',
     ];
 @endphp
 
@@ -67,5 +72,32 @@
             </button>
         </div>
         @endcan
+    @endif
+    @if ($alterRoute)
+        @if ($alterAbility)
+            @can($alterAbility)
+                <div>
+                    <a href="{{ route($alterRoute, $model->id) }}" class="{{ $actionClasses['alter'] ?? 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all text-blue-500 hover:text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"
+                            class="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]">
+                            <path fill-rule="evenodd"
+                                d="M4.5 12a7.5 7.5 0 0112.72-5.303l1.63-1.629a.75.75 0 011.28.53v5.25a.75.75 0 01-.75.75H14.1a.75.75 0 01-.53-1.28l1.595-1.595A6 6 0 106.75 12a.75.75 0 01-1.5 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
+            @endcan
+        @else
+            <div>
+                <a href="{{ route($alterRoute, $model->id) }}" class="{{ $actionClasses['alter'] ?? 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all text-blue-500 hover:text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"
+                        class="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]">
+                        <path fill-rule="evenodd"
+                            d="M4.5 12a7.5 7.5 0 0112.72-5.303l1.63-1.629a.75.75 0 011.28.53v5.25a.75.75 0 01-.75.75H14.1a.75.75 0 01-.53-1.28l1.595-1.595A6 6 0 106.75 12a.75.75 0 01-1.5 0z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </div>
+        @endif
     @endif
 </div>

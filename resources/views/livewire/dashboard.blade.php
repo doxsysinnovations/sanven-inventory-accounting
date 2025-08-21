@@ -3,6 +3,7 @@
 use App\Models\Product;
 use App\Models\Invoice;
 use App\Models\Stock;
+use App\Models\StockAlteration;
 use Livewire\Volt\Component;
 use Illuminate\Support\Carbon;
 
@@ -11,6 +12,7 @@ new class extends Component {
     public $totalProducts = 0;
     public $totalInvoices = 0;
     public $expiredStocks = [];
+    public $returnedProducts = [];
     public $agingReports = [];
     public $overdueInvoices = [];
     public $invoiceStatusCounts = [];
@@ -75,6 +77,10 @@ new class extends Component {
         $stocks = Stock::whereNotNull('expiration_date')
             ->whereBetween('expiration_date', [$today, $today->copy()->addDays(7)])
             ->with('product')
+            ->get();
+
+        $this->returnedProducts = StockAlteration::where('type', 'return')
+            ->with('stock.product') 
             ->get();
 
         $data = [
@@ -219,17 +225,18 @@ new class extends Component {
                 ])->toArray()" />
 
             <x-reports-data-table 
-                title="Returned Products" 
-                :headers="['Product', 'Returned']" 
-                :rows="[
-                    ['Surgical Gloves (Box of 100)', '10 boxes returned'],
-                    ['Face Masks (Box of 50)', '5 boxes returned'],
-                    ['Digital Thermometers', '3 units rejected'],
-                ]" :rowColors="[
-                    [null, 'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900'],
-                    [null, 'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900'],
-                    [null, 'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900'],
-                ]" />
+                title="Returned Products"
+                description="List of products returned"
+                :headers="['Product', 'Returned']"
+                :rows="$returnedProducts->map(fn($alteration) => [
+                    $alteration->stock->product->name ?? 'Unknown Product',
+                    $alteration->quantity . ' ' . ($alteration->stock->product?->unit?->name ?? '') . ' returned',
+                ])->toArray()" 
+                :rowColors="$returnedProducts->map(fn($alteration) => [
+                    null,
+                    'font-semibold text-(--color-accent-2) dark:text-red-300 bg-(--color-accent-2-muted) dark:bg-red-900',
+                ])->toArray()" 
+            />
         </div>
 
         <x-reports-data-table-with-status 
