@@ -10,7 +10,9 @@
     'editRoute' => '',
     'deleteAbility' => '',
     'deleteAction' => '',
-    'editParameter' => '$id'
+    'editParameter' => '$id',
+    'alterRoute' => null,
+    'alterAbility' => null,
 ])
 
 <div class="overflow-auto">
@@ -54,6 +56,8 @@
                                         :editRoute="$editRoute"
                                         :deleteAbility="$deleteAbility"
                                         :deleteAction="$deleteAction"
+                                        :alterRoute="$alterRoute"
+                                        :alterAbility="$alterAbility"
                                     />
                                 @else
                                     {!! $cell !!}

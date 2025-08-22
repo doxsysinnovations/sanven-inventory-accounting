@@ -95,4 +95,8 @@ class Stock extends Model implements HasMedia
         });
     }
 
+    public function alterations()
+    {
+        return $this->hasMany(StockAlteration::class);
+    }
 }
