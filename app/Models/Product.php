@@ -19,6 +19,7 @@ class Product extends Model implements HasMedia
         'name',
         'slug',
         'description',
+        'volume_weight',
         'brand_id',
         'product_type_id',
         'unit_id',

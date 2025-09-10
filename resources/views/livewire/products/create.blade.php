@@ -23,6 +23,8 @@ new class extends Component {
     public $image;
     public $is_vatable;
 
+    public $volume_weight;
+
     public $productTypes = [];
     public $units = [];
     public $brands = [];
@@ -30,18 +32,41 @@ new class extends Component {
     public $types = [];
     public $suppliers = [];
 
-    protected $rules = [
-        'product_code' => 'required|unique:products',
-        'name' => 'required',
-        'description' => 'nullable',
-        'product_type' => 'required',
-        'unit' => 'required',
-        'brand' => 'required',
-        'is_vatable' => 'required',
-        'category' => 'required',
-        'quantity_per_piece' => 'required|integer|min:1',
-        'low_stock_value' => 'required|integer|min:0',
+    public $showInitialStock = false;
+
+    protected $casts = [
+        'showInitialStock' => 'boolean',
     ];
+
+    protected function rules()
+    {
+        $rules = [
+            'product_code' => 'required|unique:products',
+            'name' => 'required',
+            'description' => 'nullable',
+            'product_type' => 'required',
+            'unit' => 'required',
+            'brand' => 'required',
+            'is_vatable' => 'required',
+            'category' => 'required',
+            'quantity_per_piece' => 'required|integer|min:1',
+            'low_stock_value' => 'required|integer|min:0',
+
+            'volume_weight' => 'nullable|string|max:255',
+        ];
+
+        if ($this->showInitialStock === true) {
+            $rules = array_merge($rules, [
+                'supplier' => 'nullable|integer|exists:suppliers,id',
+                'quantity' => 'nullable|integer|min:1',
+                'capital_price' => 'nullable|numeric|min:0',
+                'selling_price' => 'nullable|numeric|min:0',
+                'expiration_date' => 'nullable|date|after:today',
+            ]);
+        }
+
+        return $rules;
+    }
 
     public function mount()
     {
@@ -99,7 +124,13 @@ new class extends Component {
 
     public function save()
     {
-        $this->validate();
+        // $this->validate();
+        try {
+            $this->validate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            dd($e->errors()); // 👈 shows exactly what field(s) are failing
+        }
+
         $product = Product::create([
             'product_code' => $this->product_code,
             'name' => $this->name,
@@ -111,20 +142,26 @@ new class extends Component {
             'category_id' => $this->category,
             'quantity_per_piece' => $this->quantity_per_piece,
             'low_stock_value' => $this->low_stock_value,
+            'volume_weight' => $this->volume_weight,
         ]);
 
         if ($this->image) {
             $product->addMedia($this->image)->toMediaCollection('product-image');
         }
 
-        $product->stocks()->create([
-            'stock_number' => $this->generateStockNumber(),
-            'supplier_id' => $this->supplier,
-            'quantity' => $this->quantity,
-            'capital_price' => $this->capital_price,
-            'selling_price' => $this->selling_price,
-            'expiration_date' => $this->expiration_date,
-        ]);
+        if ($this->showInitialStock && (
+                $this->supplier || $this->quantity || $this->capital_price || 
+                $this->selling_price || $this->expiration_date
+            )) {
+            $product->stocks()->create([
+                'stock_number' => $this->generateStockNumber(),
+                'supplier_id' => $this->supplier,
+                'quantity' => $this->quantity,
+                'capital_price' => $this->capital_price,
+                'selling_price' => $this->selling_price,
+                'expiration_date' => $this->expiration_date,
+            ]);
+        }
 
         $this->resetForm();
         flash()->success('Product created successfully!');
@@ -149,8 +186,10 @@ new class extends Component {
         $this->quantity_per_piece = 1;
         $this->low_stock_value = 10;
         $this->expiration_date='';
+        $this->volume_weight = '';
         $this->product = null;
         $this->resetValidation();
+        $this->showInitialStock = false;
     }
 
     public function cancel() 
