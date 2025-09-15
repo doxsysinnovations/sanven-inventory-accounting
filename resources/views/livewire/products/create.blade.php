@@ -3,6 +3,12 @@
 use Livewire\Volt\Component;
 use App\Models\Product;
 
+use Illuminate\Support\Str;
+use Livewire\WithFileUploads;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 new class extends Component {
     use Livewire\WithFileUploads;
 
@@ -33,6 +39,7 @@ new class extends Component {
     public $suppliers = [];
 
     public $showInitialStock = false;
+    public $importFile;
 
     protected $casts = [
         'showInitialStock' => 'boolean',
@@ -53,6 +60,8 @@ new class extends Component {
             'low_stock_value' => 'required|integer|min:0',
 
             'volume_weight' => 'nullable|string|max:255',
+
+            'importFile' => 'nullable|file|mimes:xlsx,xls,csv|max:2048',
         ];
 
         if ($this->showInitialStock === true) {
@@ -76,6 +85,8 @@ new class extends Component {
         $this->categories = \App\Models\Category::orderBy('name')->get();
         $this->types = \App\Models\ProductType::orderBy('name')->get();
         $this->suppliers = \App\Models\Supplier::orderBy('name')->get();
+
+        $this->product_code = $this->generateProductCode();
     }
 
     public function messages()
@@ -100,6 +111,14 @@ new class extends Component {
             'low_stock_value.integer' => 'Low stock value must be a whole number.',
             'low_stock_value.min' => 'Low stock value cannot be negative.',
         ];
+    }
+    
+    private function generateProductCode()
+    {
+        do {
+            $code = 'P-' . strtoupper(Str::random(8));
+        } while (Product::where('product_code', $code)->exists());
+        return $code;
     }
 
     private function generateStockNumber()
@@ -196,6 +215,68 @@ new class extends Component {
     {
         $this->resetForm();
     }
+
+    public function downloadTemplate()
+    {
+        $headers = [
+            'product_code', 'name', 'description', 'volume_weight',
+            'product_type_id', 'unit_id', 'brand_id', 'category_id',
+            'quantity_per_piece', 'low_stock_value', 'stock_value',
+            'capital_price', 'selling_price'
+        ];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray([$headers], NULL, 'A1');
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'product_import_template.xlsx';
+        $tempFile = storage_path("app/public/$fileName");
+        $writer->save($tempFile);
+
+        return response()->download($tempFile)->deleteFileAfterSend(true);
+    }
+
+    public function importProducts()
+    {
+        $this->validate([
+            'importFile' => 'required|file|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        $path = $this->importFile->getRealPath();
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        $headers = array_shift($rows);
+        foreach ($rows as $row) {
+            $data = array_combine($headers, $row);
+
+            if (!isset($data['name']) || empty(trim($data['name']))) {
+                continue;
+            }
+
+            Product::create([
+                'product_code'       => $data['product_code'] ?: $this->generateProductCode(),
+                'name'               => $data['name'],
+                'description'        => $data['description'] ?? null,
+                'volume_weight'      => $data['volume_weight'] ?? null,
+                'product_type_id'    => $data['product_type_id'] ?? null,
+                'unit_id'            => $data['unit_id'] ?? null,
+                'brand_id'           => $data['brand_id'] ?? null,
+                'category_id'        => $data['category_id'] ?? null,
+                'quantity_per_piece' => $data['quantity_per_piece'] ?: 1,
+                'low_stock_value'    => $data['low_stock_value'] ?: 10,
+                'stock_value'        => $data['stock_value'] ?: 0,
+                'capital_price'      => $data['capital_price'] ?: 0,
+                'selling_price'      => $data['selling_price'] ?: 0,
+                'is_vatable'         => $data['is_vatable'] ?? 0,
+            ]);
+        }
+
+        $this->importFile = null;
+        flash()->success('Products imported successfully!');
+    }
 }; ?>
 
 <div>
@@ -207,4 +288,27 @@ new class extends Component {
         :units="$units"
         :suppliers="$suppliers"
     />
+
+    <!-- Excel Import & Template Section -->
+    <div class="mt-6 p-4 bg-gray-100 rounded-lg dark:bg-gray-800">
+        <h2 class="font-bold text-lg mb-4 text-gray-700 dark:text-gray-200">Bulk Import Products</h2>
+        <div class="flex flex-col sm:flex-row gap-4">
+            <button 
+                wire:click="downloadTemplate"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow">
+                Download Template
+            </button>
+
+            <input type="file" wire:model="importFile" accept=".xlsx,.xls,.csv" class="block text-sm text-gray-700 dark:text-gray-300">
+            <button 
+                wire:click="importProducts"
+                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow">
+                Import Products
+            </button>
+        </div>
+
+        @error('importFile')
+            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+        @enderror
+    </div>
 </div>
