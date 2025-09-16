@@ -219,10 +219,9 @@ new class extends Component {
     public function downloadTemplate()
     {
         $headers = [
-            'product_code', 'name', 'description', 'volume_weight',
+            'name', 'description', 'volume_weight',
             'product_type_id', 'unit_id', 'brand_id', 'category_id',
-            'quantity_per_piece', 'low_stock_value', 'stock_value',
-            'capital_price', 'selling_price'
+            'quantity_per_piece', 'low_stock_value',
         ];
 
         $spreadsheet = new Spreadsheet();
@@ -256,21 +255,74 @@ new class extends Component {
                 continue;
             }
 
+            $data = array_map(fn($v) => trim((string) $v) === '' ? null : trim($v), $data);
+
+            $productTypeId = null;
+            if ($data['product_type_id']) {
+                $productTypeId = \App\Models\ProductType::whereRaw('LOWER(id) = ?', [strtolower($data['product_type_id'])])
+                    ->orWhereRaw('LOWER(name) = ?', [strtolower($data['product_type_id'])])
+                    ->value('id');
+
+                if (!$productTypeId) {
+                    $productTypeId = \App\Models\ProductType::create([
+                        'name' => ucfirst(strtolower($data['product_type_id'])),
+                    ])->id;
+                }
+            }
+
+            $unitId = null;
+            if ($data['unit_id']) {
+                $unitId = \App\Models\Unit::whereRaw('LOWER(id) = ?', [strtolower($data['unit_id'])])
+                    ->orWhereRaw('LOWER(code) = ?', [strtolower($data['unit_id'])])
+                    ->orWhereRaw('LOWER(name) = ?', [strtolower($data['unit_id'])])
+                    ->value('id');
+
+                if (!$unitId) {
+                    $unitId = \App\Models\Unit::create([
+                        'name' => ucfirst(strtolower($data['unit_id'])),
+                        'code' => strtoupper(Str::slug($data['unit_id'], '_')),
+                    ])->id;
+                }
+            }
+
+            $brandId = null;
+            if ($data['brand_id']) {
+                $brandId = \App\Models\Brand::whereRaw('LOWER(id) = ?', [strtolower($data['brand_id'])])
+                    ->orWhereRaw('LOWER(name) = ?', [strtolower($data['brand_id'])])
+                    ->value('id');
+
+                if (!$brandId) {
+                    $brandId = \App\Models\Brand::create([
+                        'name' => ucfirst(strtolower($data['brand_id'])),
+                    ])->id;
+                }
+            }
+
+            $categoryId = null;
+            if ($data['category_id']) {
+                $categoryId = \App\Models\Category::whereRaw('LOWER(id) = ?', [strtolower($data['category_id'])])
+                    ->orWhereRaw('LOWER(name) = ?', [strtolower($data['category_id'])])
+                    ->value('id');
+
+                if (!$categoryId) {
+                    $categoryId = \App\Models\Category::create([
+                        'name' => ucfirst(strtolower($data['category_id'])),
+                    ])->id;
+                }
+            }
+
             Product::create([
-                'product_code'       => $data['product_code'] ?: $this->generateProductCode(),
+                'product_code'       => $this->generateProductCode(),
                 'name'               => $data['name'],
                 'description'        => $data['description'] ?? null,
                 'volume_weight'      => $data['volume_weight'] ?? null,
-                'product_type_id'    => $data['product_type_id'] ?? null,
-                'unit_id'            => $data['unit_id'] ?? null,
-                'brand_id'           => $data['brand_id'] ?? null,
-                'category_id'        => $data['category_id'] ?? null,
+                'product_type_id'    => $productTypeId,
+                'unit_id'            => $unitId,
+                'brand_id'           => $brandId,
+                'category_id'        => $categoryId,
                 'quantity_per_piece' => $data['quantity_per_piece'] ?: 1,
                 'low_stock_value'    => $data['low_stock_value'] ?: 10,
-                'stock_value'        => $data['stock_value'] ?: 0,
-                'capital_price'      => $data['capital_price'] ?: 0,
-                'selling_price'      => $data['selling_price'] ?: 0,
-                'is_vatable'         => $data['is_vatable'] ?? 0,
+                'is_vatable'         => $data['is_vatable'] ?? 1,
             ]);
         }
 
@@ -280,6 +332,32 @@ new class extends Component {
 }; ?>
 
 <div>
+    <!-- Excel Import & Template Section -->
+    <div class="p-4 bg-gray-100 rounded-lg dark:bg-gray-800 mb-6">
+        <h2 class="font-bold text-lg mb-6 text-gray-700 dark:text-gray-200">Bulk Import Products</h2>
+        <div class="flex flex-col sm:flex-row gap-4">
+
+            <input type="file" wire:model="importFile" accept=".xlsx,.xls,.csv" class="block text-sm text-gray-700 dark:text-gray-300">
+
+            <button 
+                wire:click="importProducts"
+                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow">
+                Import Products
+            </button>
+
+            <button 
+                wire:click="downloadTemplate"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow">
+                Download Template
+            </button>
+            
+        </div>
+
+        @error('importFile')
+            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+        @enderror
+    </div>
+
     <x-products-form 
         :is-editing="false"
         :brands="$brands"
@@ -288,27 +366,4 @@ new class extends Component {
         :units="$units"
         :suppliers="$suppliers"
     />
-
-    <!-- Excel Import & Template Section -->
-    <div class="mt-6 p-4 bg-gray-100 rounded-lg dark:bg-gray-800">
-        <h2 class="font-bold text-lg mb-4 text-gray-700 dark:text-gray-200">Bulk Import Products</h2>
-        <div class="flex flex-col sm:flex-row gap-4">
-            <button 
-                wire:click="downloadTemplate"
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow">
-                Download Template
-            </button>
-
-            <input type="file" wire:model="importFile" accept=".xlsx,.xls,.csv" class="block text-sm text-gray-700 dark:text-gray-300">
-            <button 
-                wire:click="importProducts"
-                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow">
-                Import Products
-            </button>
-        </div>
-
-        @error('importFile')
-            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
-        @enderror
-    </div>
 </div>
