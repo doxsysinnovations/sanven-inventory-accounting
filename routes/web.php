@@ -83,6 +83,7 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('suppliers/view/{id}', 'suppliers.view')->name('suppliers.view');
 
     //Aging
+     Volt::route('chartofaccounts', 'chart-of-accounts.index')->name('chartofaccounts');
      Volt::route('agingreports', 'agingreports.index')->name('agingreports');
      Volt::route('payables', 'payables.index')->name('payables');
      Volt::route('payables/{payable}', 'payables.show')->name('payables.show');

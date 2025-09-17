@@ -24,7 +24,7 @@ new class extends Component {
                         'label' => 'Dashboard',
                         'permission' => 'dashboard.view',
                     ],
-                ]
+                ],
             ],
             [
                 'heading' => 'Invoice Management',
@@ -33,15 +33,15 @@ new class extends Component {
                         'icon' => 'plus',
                         'route' => 'invoicing.create',
                         'label' => 'Create Invoice',
-                        'permission' => 'agents.create'
+                        'permission' => 'agents.create',
                     ],
                     [
                         'icon' => 'document-text',
                         'route' => 'invoicing',
                         'label' => 'Invoicing',
                         'permission' => 'invoicing.view',
-                    ]
-                ]
+                    ],
+                ],
             ],
             [
                 'heading' => 'Agent Management',
@@ -50,32 +50,32 @@ new class extends Component {
                         'icon' => 'user-plus',
                         'route' => 'agents.create',
                         'label' => 'Add Agent',
-                        'permission' => 'agents.create'
+                        'permission' => 'agents.create',
                     ],
                     [
                         'icon' => 'users',
                         'route' => 'agents',
                         'label' => 'Agents',
-                        'permission' => 'agents.view'
-                    ]
-                ]
+                        'permission' => 'agents.view',
+                    ],
+                ],
             ],
             [
                 'heading' => 'Customer Management',
-                'items' =>  [
-                        [
-                            'icon' => 'user-plus',
-                            'route' => 'customers.create',
-                            'label' => 'Add Customer',
-                            'permission' => 'customers.create',
-                        ],
-                        [
-                            'icon' => 'user-group',
-                            'route' => 'customers',
-                            'label' => 'Customers',
-                            'permission' => 'customers.create',
-                        ]
+                'items' => [
+                    [
+                        'icon' => 'user-plus',
+                        'route' => 'customers.create',
+                        'label' => 'Add Customer',
+                        'permission' => 'customers.create',
                     ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'customers',
+                        'label' => 'Customers',
+                        'permission' => 'customers.create',
+                    ],
+                ],
             ],
             [
                 'heading' => 'Quotation Management',
@@ -93,8 +93,7 @@ new class extends Component {
                         'label' => 'Quotations List',
                         'permission' => 'quotations.view',
                     ],
-
-                ]
+                ],
             ],
             [
                 'heading' => 'Stock Management',
@@ -198,7 +197,7 @@ new class extends Component {
                     ],
                 ],
             ],
-             [
+            [
                 'heading' => 'Agents Management',
                 'items' => [
                     [
@@ -234,9 +233,15 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Reporting',
+                'heading' => 'Accounting',
                 'permission' => 'suppliers.view',
                 'items' => [
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'chartofaccounts',
+                        'label' => 'Chart of Accounts',
+                        'permission' => 'suppliers.view',
+                    ],
                     [
                         'icon' => 'user-group',
                         'route' => 'agingreports',
@@ -317,7 +322,6 @@ new class extends Component {
                     ],
                 ],
             ],
-
         ];
 
         // Filter menu items based on search input
