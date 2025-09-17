@@ -2,7 +2,40 @@
     'isEditing' => false,
 ])
 
+
+
 <div>
+    <div class="p-4 bg-gray-100 rounded-lg dark:bg-gray-800 mb-6">
+        <h2 class="font-bold text-lg mb-6 text-gray-700 dark:text-gray-200">Bulk Import Suppliers</h2>
+        <div class="flex flex-col sm:flex-row gap-4">
+
+            <input type="file" wire:model="importFile" accept=".xlsx,.xls,.csv" class="block text-sm text-gray-700 dark:text-gray-300">
+
+            <button 
+                wire:click="importSuppliers"
+                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow">
+                Import Suppliers
+            </button>
+
+            <button 
+                wire:click="downloadTemplate"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow">
+                Download Template
+            </button>
+
+            <button 
+                wire:click="exportSuppliers"
+                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow">
+                Export Suppliers
+            </button>
+            
+        </div>
+
+        @error('importFile')
+            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+        @enderror
+    </div>
+
     <form wire:submit.prevent="save">
         <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
             <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">

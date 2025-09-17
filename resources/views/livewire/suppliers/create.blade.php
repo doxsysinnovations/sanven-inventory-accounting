@@ -4,9 +4,13 @@ use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use App\Models\Supplier;
 use Livewire\Attributes\Title;
+use Livewire\WithFileUploads;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 new class extends Component {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $search = '';
     public $supplier;
@@ -18,6 +22,8 @@ new class extends Component {
     public $email = '';
     public $trade_name = '';
     public $identification_number = '';
+
+    public $importFile;
 
     public function rules()
     {
@@ -124,6 +130,102 @@ new class extends Component {
 
     public function cancel(){
         $this->resetForm();
+    }
+
+    //Download template
+    public function downloadTemplate()
+    {
+        $headers = ['name', 'trade_name', 'identification_number', 'contact_number', 'address', 'email'];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray([$headers], NULL, 'A1');
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'supplier_import_template.xlsx';
+        $tempFile = storage_path("app/public/$fileName");
+        $writer->save($tempFile);
+
+        return response()->download($tempFile)->deleteFileAfterSend(true);
+    }
+
+    //Import suppliers from Excel/CSV
+    public function importSuppliers()
+    {
+        $this->validate([
+            'importFile' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        $path = $this->importFile->getRealPath();
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        $headers = array_map(fn($h) => strtolower(trim($h)), array_shift($rows));
+
+        $suppliers = [];
+
+        foreach ($rows as $row) {
+            $data = array_combine($headers, $row);
+
+            if (!isset($data['name']) || empty(trim($data['name']))) {
+                continue;
+            }
+
+            $suppliers[] = [
+                'name'                  => trim($data['name']),
+                'trade_name'            => isset($data['trade_name']) && trim($data['trade_name']) !== '' ? trim($data['trade_name']) : null,
+                'identification_number' => isset($data['identification_number']) && trim($data['identification_number']) !== '' ? trim($data['identification_number']) : null,
+                'contact_number'        => isset($data['contact_number']) && trim($data['contact_number']) !== '' ? trim($data['contact_number']) : null,
+                'address'               => isset($data['address']) && trim($data['address']) !== '' ? trim($data['address']) : null,
+                'email'                 => isset($data['email']) && trim($data['email']) !== '' ? trim($data['email']) : null,
+                'created_at'            => now(),
+                'updated_at'            => now(),
+            ];
+        }
+
+        if (!empty($suppliers)) {
+            Supplier::insert($suppliers);
+        }
+
+        $this->importFile = null;
+        flash()->success('Suppliers imported successfully!');
+    }
+
+    //Export suppliers to Excel
+    public function exportSuppliers()
+    {
+        $suppliers = Supplier::all();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['Name', 'Trade Name', 'Identification Number', 'Contact Number', 'Address', 'Email'];
+        $sheet->fromArray([$headers], NULL, 'A1');
+
+        $rowIndex = 2;
+        foreach ($suppliers as $supplier) {
+            $sheet->fromArray([[
+                $supplier->name,
+                $supplier->trade_name,
+                $supplier->identification_number,
+                $supplier->contact_number,
+                $supplier->address,
+                $supplier->email,
+            ]], NULL, "A{$rowIndex}");
+            $rowIndex++;
+        }
+
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'suppliers_export_' . now()->format('Y-m-d_His') . '.xlsx';
+        $tempFile = storage_path("app/public/$fileName");
+        $writer->save($tempFile);
+
+        return response()->download($tempFile)->deleteFileAfterSend(true);
     }
 };
 
