@@ -78,6 +78,9 @@ class RolePermissionSeeder extends Seeder
             'stocks.edit',
             'stocks.delete',
             'stocks.view-expiry',
+            'stocks.alter',
+            'stocks.broken',
+            'stocks.returned',
 
             //Orders/POS
             'orders.view',
