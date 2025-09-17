@@ -464,9 +464,9 @@ new class extends Component {
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
                             Close
                         </button>
-                        <a href="#" target="_blank"
+                        <a href="{{ route('purchase-orders.stream-pdf', $selectedOrder->id) }}" target="_blank"
                             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Download PDF
+                            Print/Download PDF
                         </a>
                         @can('purchase-orders.update-status')
                             <div x-data="{ showStatusDropdown: false }" class="flex items-center gap-2 mr-auto">

@@ -78,7 +78,7 @@ new class extends Component {
 
     public function edit($productId)
     {
-        return redirect()->route('products.edit', $productId);
+        return redirect()->route('stocks.edit', $stockId);
     }
 
     #[Title('Products')]
@@ -161,7 +161,7 @@ new class extends Component {
             })"
             editAbility="products.edit"
             editParameter="id"
-            editRoute="products.edit"
+            editRoute="stocks.edit"
             deleteAbility="products.delete"
             deleteAction="confirmDelete"
         />
