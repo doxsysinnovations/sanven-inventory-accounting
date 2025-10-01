@@ -9,6 +9,7 @@ use App\Models\Invoice;
 
 //For testing low stock notification
 use App\Models\Stock;
+
 Route::get('/test-low-stock', function () {
     $stock = Stock::first();
     $stock->quantity = 9;
@@ -24,10 +25,10 @@ Route::get('/', function () {
 //     ->middleware(['auth','check.active', 'verified','2fa'])
 //     ->name('dashboard');
 
-Route::middleware(['auth','check.active','2fa'])->group(function () {
+Route::middleware(['auth', 'check.active', '2fa'])->group(function () {
 
     //Dashboard
-    Volt::route('dashboard', 'dashboard')->middleware(['auth','check.active', 'verified','2fa'])->name('dashboard');
+    Volt::route('dashboard', 'dashboard')->middleware(['auth', 'check.active', 'verified', '2fa'])->name('dashboard');
 
     Route::redirect('settings', 'settings/profile');
 
@@ -83,10 +84,10 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('suppliers/view/{id}', 'suppliers.view')->name('suppliers.view');
 
     //Aging
-     Volt::route('chartofaccounts', 'chart-of-accounts.index')->name('chartofaccounts');
-     Volt::route('agingreports', 'agingreports.index')->name('agingreports');
-     Volt::route('payables', 'payables.index')->name('payables');
-     Volt::route('payables/{payable}', 'payables.show')->name('payables.show');
+    Volt::route('chartofaccounts', 'chart-of-accounts.index')->name('chartofaccounts');
+    Volt::route('agingreports', 'agingreports.index')->name('agingreports');
+    Volt::route('payables', 'payables.index')->name('payables');
+    Volt::route('payables/{payable}', 'payables.show')->name('payables.show');
     //Recievables
     Volt::route('recievables', 'recievables.index')->name('recievables');
 
@@ -167,6 +168,22 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('purchase-orders', 'purchase-orders.index')->name('purchase-orders');
     Volt::route('purchase-orders/create', 'purchase-orders.create')->name('purchase-orders.create');
     Volt::route('purchase-orders/{id}/edit', 'purchase-orders.edit')->name('purchase-orders.edit');
+
+    //sales orders
+    Volt::route('sales-orders', 'sales-orders.index')->name('sales-orders');
+    Volt::route('sales-orders/create', 'sales-orders.create')->name('sales-orders.create');
+    Volt::route('sales-orders/{salesOrder}/show', 'sales-orders.show')
+        ->name('sales-orders.show');
+
+    Volt::route('sales-orders/{id}/print', 'sales-orders.print')->name('sales-orders.print');
+    Volt::route('sales-orders/{id}/edit', 'sales-orders.edit')->name('sales-orders.edit');
+
+    //delivery notes
+    Volt::route('delivery-notes', 'delivery-notes.index')->name('delivery-notes');
+    Volt::route('delivery-notes/create', 'delivery-notes.create')->name('delivery-notes.create');
+    Volt::route('delivery-notes/{id}/show', 'delivery-notes.show')->name('delivery-notes.show');
+    Volt::route('delivery-notes/{id}/print', 'delivery-notes.print')->name('delivery-notes.print');
+    Volt::route('delivery-notes/{id}/edit', 'delivery-notes.edit')->name('delivery-notes.edit');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -185,4 +202,4 @@ Route::get('migrate', function () {
     return 'Migrate';
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

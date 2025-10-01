@@ -29,6 +29,8 @@ class Product extends Model implements HasMedia
         'low_stock_alert',
         'quantity_per_piece',
         'is_vatable',
+        'is_pdea_approved',
+        'strength',
     ];
 
     /**
@@ -80,7 +82,15 @@ class Product extends Model implements HasMedia
     {
         return $this->hasMany(Stock::class, 'product_id', 'id');
     }
-
+    public function getAvailableQtyAttribute()
+    {
+        return $this->stocks()
+            ->where(function ($q) {
+                $q->whereNull('expiration_date')
+                    ->orWhere('expiration_date', '>', now());
+            })
+            ->sum('quantity');
+    }
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

@@ -27,6 +27,41 @@ new class extends Component {
                 ],
             ],
             [
+                'heading' => 'Sales',
+                'items' => [
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'sales-orders',
+                        'label' => 'Sales Orders',
+                        'permission' => 'purchase-orders.view',
+                    ],
+                    [
+                        'icon' => 'truck',
+                        'route' => 'delivery-notes',
+                        'label' => 'Delivery Notes',
+                        'permission' => 'purchase-orders.view',
+                    ],
+                ],
+            ],
+
+            [
+                'heading' => 'Purchasing Management',
+                'items' => [
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'purchase-orders',
+                        'label' => 'Purchase Orders',
+                        'permission' => 'purchase-orders.view',
+                    ],
+                    [
+                        'icon' => 'truck',
+                        'route' => 'suppliers',
+                        'label' => 'Suppliers',
+                        'permission' => 'suppliers.view',
+                    ],
+                ],
+            ],
+            [
                 'heading' => 'Invoice Management',
                 'items' => [
                     [
@@ -123,12 +158,6 @@ new class extends Component {
                     //     'label' => 'Purchase Requests',
                     //     'permission' => 'purchase-requests.view',
                     // ],
-                    [
-                        'icon' => 'document-text',
-                        'route' => 'purchase-orders',
-                        'label' => 'Purchase Orders',
-                        'permission' => 'purchase-orders.view',
-                    ],
                 ],
             ],
             [
@@ -218,12 +247,12 @@ new class extends Component {
                 'heading' => 'Supplier Management',
                 'permission' => 'suppliers.view',
                 'items' => [
-                    [
-                        'icon' => 'plus',
-                        'route' => 'suppliers.create',
-                        'label' => 'Add Supplier',
-                        'permission' => 'suppliers.create',
-                    ],
+                    // [
+                    //     'icon' => 'plus',
+                    //     'route' => 'suppliers.create',
+                    //     'label' => 'Add Supplier',
+                    //     'permission' => 'suppliers.create',
+                    // ],
                     [
                         'icon' => 'truck',
                         'route' => 'suppliers',
@@ -367,7 +396,7 @@ new class extends Component {
                         @foreach ($group['items'] as $item)
                             @if (!$item['permission'] || auth()->user()->can($item['permission']))
                                 <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                    :current="request()->routeIs($item['route'])" wire:navigate>
+                                    :current="request()->routeIs($item['route'].'*')" wire:navigate>
                                     {{ __($item['label']) }}
                                 </flux:navlist.item>
                             @endif
@@ -377,7 +406,7 @@ new class extends Component {
                     @foreach ($group['items'] as $item)
                         @if (!$item['permission'] || auth()->user()->can($item['permission']))
                             <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                :current="request()->routeIs($item['route'])" wire:navigate>
+                                :current="request()->routeIs($item['route'].'*')" wire:navigate>
                                 {{ __($item['label']) }}
                             </flux:navlist.item>
                         @endif

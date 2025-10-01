@@ -176,6 +176,7 @@ class RolePermissionSeeder extends Seeder
             'purchase-orders.create',
             'purchase-orders.edit',
             'purchase-orders.delete',
+            'purchase-orders.approve',
             'purchase-orders.update-status',
         ];
 
