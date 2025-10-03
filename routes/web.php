@@ -166,6 +166,8 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
     Volt::route('purchase-orders', 'purchase-orders.index')->name('purchase-orders');
     Volt::route('purchase-orders/create', 'purchase-orders.create')->name('purchase-orders.create');
     Volt::route('purchase-orders/{id}/edit', 'purchase-orders.edit')->name('purchase-orders.edit');
+
+    Volt::route('database-backup', 'database-backup.index')->name('database-backup');
 });
 
 Route::middleware(['auth'])->group(function () {
