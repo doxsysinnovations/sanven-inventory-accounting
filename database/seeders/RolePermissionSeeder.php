@@ -18,6 +18,19 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             //Dashboard
             'dashboard.view',
+            'dashboard.view-monthly-sales-trend',
+            'dashboard.view-7-days-sales-performance',
+            'dashboard.view-fast-moving-items',
+            'dashboard.view-slow-moving-items',
+            'dashboard.view-top-suppliers',
+            'dashboard.view-over-due-invoices',
+            'dashboard.view-low-stock-items',
+            'dashboard.view-expired-products',
+            'dashboard.view-aging-reports',
+            'dashboard.view-top-customers',
+            'dashboard.view-top-agents',
+            'dashboard.view-invoice-status-chart',
+            'dashboard.view-expiring-products-soon',
 
             //Users
             'users.view',
@@ -177,6 +190,26 @@ class RolePermissionSeeder extends Seeder
             'purchase-orders.edit',
             'purchase-orders.delete',
             'purchase-orders.update-status',
+
+            //General Settings
+            'general-settings.view',
+
+            //Stock Transfer
+            'stock-transfer.view',
+            'stock-transfer.create',
+            'stock-transfer.edit',
+            'stock-transfer.delete',
+
+            //Stock Adjustment
+            'stock-adjustment.view',
+            'stock-adjustment.create',
+            'stock-adjustment.edit',
+            'stock-adjustment.delete',
+
+            //Database Backup
+            'database-backup.view',
+            'database-backup.create',
+            'database-backup.delete',
         ];
 
         foreach ($permissions as $permission) {
