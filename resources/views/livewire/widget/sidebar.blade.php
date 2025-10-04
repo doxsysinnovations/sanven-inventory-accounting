@@ -317,6 +317,18 @@ new class extends Component {
                     ],
                 ],
             ],
+            [
+                'heading' => 'General Settings',
+                'permission' => 'general-settings.view',
+                'items' => [
+                    [
+                        'icon' => 'server',
+                        'route' => 'database-backup',
+                        'label' => 'Database Backup',
+                        'permission' => 'database-backup.view',
+                    ],
+                ],
+            ],
 
         ];
 
