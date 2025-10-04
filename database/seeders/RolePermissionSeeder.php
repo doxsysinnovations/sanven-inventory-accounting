@@ -190,6 +190,26 @@ class RolePermissionSeeder extends Seeder
             'purchase-orders.edit',
             'purchase-orders.delete',
             'purchase-orders.update-status',
+
+            //General Settings
+            'general-settings.view',
+
+            //Stock Transfer
+            'stock-transfer.view',
+            'stock-transfer.create',
+            'stock-transfer.edit',
+            'stock-transfer.delete',
+
+            //Stock Adjustment
+            'stock-adjustment.view',
+            'stock-adjustment.create',
+            'stock-adjustment.edit',
+            'stock-adjustment.delete',
+
+            //Database Backup
+            'database-backup.view',
+            'database-backup.create',
+            'database-backup.delete',
         ];
 
         foreach ($permissions as $permission) {
