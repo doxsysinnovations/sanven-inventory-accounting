@@ -18,6 +18,19 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             //Dashboard
             'dashboard.view',
+            'dashboard.view-monthly-sales-trend',
+            'dashboard.view-7-days-sales-performance',
+            'dashboard.view-fast-moving-items',
+            'dashboard.view-slow-moving-items',
+            'dashboard.view-top-suppliers',
+            'dashboard.view-over-due-invoices',
+            'dashboard.view-low-stock-items',
+            'dashboard.view-expired-products',
+            'dashboard.view-aging-reports',
+            'dashboard.view-top-customers',
+            'dashboard.view-top-agents',
+            'dashboard.view-invoice-status-chart',
+            'dashboard.view-expiring-products-soon',
 
             //Users
             'users.view',
