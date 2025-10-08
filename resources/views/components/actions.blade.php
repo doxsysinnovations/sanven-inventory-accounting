@@ -6,7 +6,9 @@
     'editRoute' => null,
     'deleteAbility' => null,
     'deleteAction' => null,
-    'editRouteParameter' => 'id'
+    'editRouteParameter' => 'id',
+    'alterRoute' => null,
+    'alterAbility' => null,
 ])
 
 @php
@@ -20,6 +22,9 @@
         'delete' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
                 text-(--color-accent-2) hover:text-white hover:bg-(--color-accent-2)
                 focus:outline-none focus:ring-2 focus:ring-(--color-accent-2) focus:ring-offset-2 dark:focus:ring-offset-gray-900',
+        'alter' => 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all
+            text-orange-500 hover:text-white hover:bg-orange-500
+            focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900',
     ];
 @endphp
 
@@ -67,5 +72,28 @@
             </button>
         </div>
         @endcan
+    @endif
+    @if ($alterRoute)
+        @if ($alterAbility)
+            @can($alterAbility)
+                <div>
+                    <a href="{{ route($alterRoute, $model->id) }}" class="{{ $actionClasses['alter'] ?? 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all text-blue-500 hover:text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" 
+                            class="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]">
+                        <path d="M5 12a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/>
+                    </svg>
+                    </a>
+                </div>
+            @endcan
+        @else
+            <div>
+                <a href="{{ route($alterRoute, $model->id) }}" class="{{ $actionClasses['alter'] ?? 'inline-flex items-center justify-center w-8 h-8 rounded-full transition-all text-blue-500 hover:text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" 
+                        class="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]">
+                        <path d="M5 12a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/>
+                    </svg>
+                </a>
+            </div>
+        @endif
     @endif
 </div>

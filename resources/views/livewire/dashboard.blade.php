@@ -14,6 +14,7 @@ new class extends Component {
     public $totalProducts = 0;
     public $totalInvoices = 0;
     public $expiredStocks = [];
+    public $returnedProducts = [];
     public $agingReports = [];
     public $overdueInvoices = [];
     public $invoiceStatusCounts = [];
