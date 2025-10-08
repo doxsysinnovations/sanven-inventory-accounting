@@ -1,245 +1,366 @@
 <?php
 
 use Livewire\Volt\Component;
-use App\Models\SalesOrder;
 use App\Models\DeliveryNote;
-use App\Models\Stock;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 new class extends Component {
-    public $deliveryNoteNumber;
-    public $salesOrderId;
-    public $salesOrder;
-    public $items = [];
-    public $customer;
-    public $remarks;
+    public DeliveryNote $deliveryNote;
+    public bool $editMode = false;
+    public array $items = [];
+    public $delivery_date, $status, $remarks;
 
-    public function mount()
+    public function mount(DeliveryNote $deliveryNote)
     {
-        $this->salesOrderId = request()->get('sales_order_id');
-        $this->salesOrder = SalesOrder::with(['customer', 'items.product'])->findOrFail($this->salesOrderId);
-        $this->customer = $this->salesOrder->customer;
+        $deliveryNote->load(['salesOrder.customer', 'salesOrder.agent', 'items.product', 'items.batches']);
+        $this->deliveryNote = $deliveryNote;
+        $this->delivery_date = is_string($deliveryNote->delivery_date) ? $deliveryNote->delivery_date : $deliveryNote->delivery_date?->format('Y-m-d');
+        $this->status = $deliveryNote->status;
+        $this->remarks = $deliveryNote->remarks;
 
-        $lastDn = DeliveryNote::latest('id')->first();
-        $nextId = $lastDn ? $lastDn->id + 1 : 1;
-        $this->deliveryNoteNumber = 'DN-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
+        $this->items = $deliveryNote->items
+            ->map(function ($item) {
+                $totalDelivered = $item->batches->sum('quantity_delivered');
+                $totalBackorder = $item->batches->sum('backorder_quantity');
 
-        foreach ($this->salesOrder->items as $item) {
-            $stocks = Stock::where('product_id', $item->product->id)
-                ->orderBy('expiration_date') // FIFO
-                ->get();
+                return [
+                    'id' => $item->id,
+                    'product_name' => $item->product?->name ?? 'N/A',
+                    'strength' => $item->product?->strength ?? 'N/A',
+                    'unit' => $item->product?->unit?->name ?? 'N/A',
+                    'type' => $item->product?->type?->name ?? 'N/A',
+                    'ordered_qty' => $item->ordered_qty,
+                    'delivered_qty' => $item->delivered_qty,
+                    'backorder_qty' => $item->backorder_qty,
+                    'batches' => $item->batches
+                        ->map(function ($batch) {
+                            return [
+                                'id' => $batch->id,
+                                'batch_number' => $batch->batch_number,
+                                'quantity_delivered' => $batch->quantity_delivered,
+                                'backorder_quantity' => $batch->backorder_quantity,
+                                'expiry_date' => $batch->expiry_date,
+                            ];
+                        })
+                        ->toArray(),
+                ];
+            })
+            ->toArray();
+    }
 
-            $totalStock = $stocks->sum('quantity');
-            $allocated = min($item->quantity, $totalStock);
-            $backorder = max(0, $item->quantity - $totalStock);
-
-            $this->items[] = [
-                'product_id' => $item->product->id,
-                'product_name' => $item->product->name,
-                'strength' => $item->product->strength ?? '—',
-                'unit' => $item->product->unit->name ?? ($item->product->unit_name ?? '—'),
-                'type' => $item->product->type->name ?? ($item->product->type_name ?? '—'),
-                'ordered_qty' => $item->quantity,
-                'delivered_qty' => $allocated,
-                'backorder' => $backorder,
-                'total_stock' => $totalStock,
-                'batches' => $stocks
-                    ->map(
-                        fn($s) => [
-                            'stock_id' => $s->id,
-                            'batch_number' => $s->batch_number ?? '—',
-                            'expiration_date' => $s->expiration_date ?? null,
-                            'available_qty' => $s->quantity,
-                            'allocated_qty' => 0,
-                        ],
-                    )
-                    ->toArray(),
-            ];
+    public function enableEdit()
+    {
+        if ($this->deliveryNote->status !== 'delivered') {
+            $this->editMode = true;
         }
     }
 
-    public function updatedItems($value, $key)
+    public function saveAll()
     {
-        [$index, $field] = explode('.', $key);
+        $this->validate([
+            'delivery_date' => 'required|date',
+            'status' => 'required|string|in:pending,partially_delivered,delivered,completed,cancelled',
+            'remarks' => 'nullable|string|max:1000',
+            'items.*.delivered_qty' => 'required|integer|min:0',
+            'items.*.backorder_qty' => 'required|integer|min:0',
+        ]);
 
-        if ($field === 'delivered_qty') {
-            $ordered = $this->items[$index]['ordered_qty'];
-            $totalStock = $this->items[$index]['total_stock'];
-            $delivered = min($value, $totalStock); // cap at stock
+        $this->deliveryNote->delivery_date = $this->delivery_date;
+        $this->deliveryNote->status = $this->status;
+        $this->deliveryNote->remarks = $this->remarks;
+        $this->deliveryNote->save();
 
-            // reset batches
-            foreach ($this->items[$index]['batches'] as &$batch) {
-                $batch['allocated_qty'] = 0;
-            }
-
-            $remaining = $delivered;
-            foreach ($this->items[$index]['batches'] as &$batch) {
-                if ($remaining <= 0) {
-                    break;
-                }
-
-                $allocate = min($batch['available_qty'], $remaining);
-                $batch['allocated_qty'] = $allocate;
-                $remaining -= $allocate;
-            }
-
-            $this->items[$index]['backorder'] = max(0, $ordered - $delivered);
-            $this->items[$index]['delivered_qty'] = $delivered;
+        foreach ($this->items as $i => $item) {
+            $deliveryNoteItem = $this->deliveryNote->items[$i];
+            $deliveryNoteItem->delivered_qty = $item['delivered_qty'];
+            $deliveryNoteItem->backorder_qty = $item['backorder_qty'];
+            $deliveryNoteItem->save();
         }
+
+        $this->editMode = false;
+        session()->flash('success', 'Delivery note updated!');
     }
 
-    public function save()
+    public function removeItem($index)
     {
-        DB::beginTransaction();
-
-        try {
-            $dn = DeliveryNote::create([
-                'delivery_note_number' => $this->deliveryNoteNumber,
-                'sales_order_id' => $this->salesOrder->id,
-                'remarks' => $this->remarks,
-            ]);
-
-            foreach ($this->items as $item) {
-                $dnItem = $dn->items()->create([
-                    'product_id' => $item['product_id'],
-                    'ordered_qty' => $item['ordered_qty'],
-                    'delivered_qty' => $item['delivered_qty'],
-                    'backorder_qty' => $item['backorder'],
-                ]);
-
-                foreach ($item['batches'] as $batch) {
-                    if ($batch['allocated_qty'] > 0) {
-                        $dnItem->batches()->create([
-                            'stock_id' => $batch['stock_id'],
-                            'allocated_qty' => $batch['allocated_qty'],
-                        ]);
-
-                        $updated = Stock::where('id', $batch['stock_id'])->decrement('quantity', $batch['allocated_qty']);
-
-                        if ($updated === 0) {
-                            throw new \Exception("Failed to decrement stock ID {$batch['stock_id']}");
-                        }
-                    }
-                }
-            }
-
-            DB::commit();
-            session()->flash('success', 'Delivery Note Created!');
-            return redirect()->route('delivery-notes.show', $dn->id);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to save Delivery Note: ' . $e->getMessage());
-            session()->flash('error', 'Failed to create Delivery Note. ' . $e->getMessage());
-        }
+        $deliveryNoteItem = $this->deliveryNote->items[$index];
+        $deliveryNoteItem->delete();
+        $this->deliveryNote->refresh();
+        $this->items = $this->deliveryNote->items
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product_name' => $item->product?->name ?? 'N/A',
+                    'strength' => $item->product?->strength ?? 'N/A',
+                    'unit' => $item->product?->unit?->name ?? 'N/A',
+                    'type' => $item->product?->type?->name ?? 'N/A',
+                    'ordered_qty' => $item->ordered_qty,
+                    'delivered_qty' => $item->delivered_qty,
+                    'backorder_qty' => $item->backorder_qty,
+                    'batches' => $item->batches
+                        ->map(function ($batch) {
+                            return [
+                                'id' => $batch->id,
+                                'batch_number' => $batch->batch_number,
+                                'quantity_delivered' => $batch->quantity_delivered,
+                                'backorder_quantity' => $batch->backorder_quantity,
+                                'expiry_date' => $batch->expiry_date,
+                            ];
+                        })
+                        ->toArray(),
+                ];
+            })
+            ->toArray();
     }
 };
 ?>
 
-<div class="p-8 bg-white rounded-xl shadow space-y-6">
-    <!-- Header -->
-    <div class="flex justify-between border-b pb-4">
+<div>
+    {{-- Heading and Actions --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 rounded-t-lg gap-2">
         <div>
-            <h1 class="text-2xl font-bold">Delivery Note</h1>
-            <p class="text-sm text-gray-600">Allocation of stocks (FIFO)</p>
-        </div>
-        <div class="text-right">
-            <p><span class="font-semibold">DN #:</span> {{ $deliveryNoteNumber }}</p>
-            <p><span class="font-semibold">Reference SO #:</span> {{ $salesOrder->order_number }}</p>
-            <p><span class="font-semibold">SO Date:</span>
-                {{ $salesOrder->order_date ? \Carbon\Carbon::parse($salesOrder->order_date)->format('M d, Y') : 'N/A' }}
+            <h3 class="font-extrabold text-lg lg:text-xl dark:text-white tracking-tight">
+                Delivery Note Details
+            </h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-300">
+                Review delivery information, customer details, and product breakdown for this delivery note.
             </p>
-            <span class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-                Pending Allocation
-            </span>
+        </div>
+        <div class="flex gap-2 mt-3 sm:mt-0">
+            <flux:button href="{{ route('delivery-notes') }}" icon="arrow-left" variant="outline" size="sm">
+                Back
+            </flux:button>
+            @if ($deliveryNote->status !== 'delivered' && !$editMode)
+                <flux:button wire:click="enableEdit" icon="pencil-square" variant="primary" size="sm">
+                    Edit
+                </flux:button>
+            @endif
+            @if ($editMode)
+                <flux:button wire:click="saveAll" icon="check" variant="primary" size="sm">
+                    Save
+                </flux:button>
+                <flux:button type="button" wire:click="$set('editMode', false)" icon="x-mark" variant="outline"
+                    size="sm">
+                    Cancel
+                </flux:button>
+            @endif
+            <flux:button href="{{ route('delivery-notes.stream-pdf', $deliveryNote->id) }}" icon="printer"
+                variant="primary" size="sm">
+                Print Delivery Note
+            </flux:button>
+            <flux:dropdown>
+                <flux:button icon="ellipsis-vertical" variant="outline" size="sm" />
+                <flux:menu>
+                    <flux:menu.item wire:click="cancelDeliveryNote({{ $deliveryNote->id }})" icon="x-circle"
+                        class="text-red-600">
+                        Cancel Delivery Note
+                    </flux:menu.item>
+                </flux:menu>
+            </flux:dropdown>
         </div>
     </div>
 
-    <!-- Customer Info -->
-    <div class="grid grid-cols-2 gap-6 text-sm">
-        <div class="bg-gray-50 p-4 rounded">
-            <h2 class="font-semibold mb-2">Customer</h2>
-            <p>{{ $customer->name }}</p>
-            <p>{{ $customer->address ?? 'No address' }}</p>
-            <p>{{ $customer->contact ?? 'No contact' }}</p>
-        </div>
-        <div class="bg-gray-50 p-4 rounded">
-            <h2 class="font-semibold mb-2">Delivery Details</h2>
-            <p><span class="font-semibold">Planned Date:</span> {{ now()->format('M d, Y') }}</p>
-            <p><span class="font-semibold">Status:</span> Draft</p>
-            <p><span class="font-semibold">Prepared By:</span> {{ auth()->user()->name ?? 'System' }}</p>
+    {{-- Customer Info --}}
+    <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg mb-6">
+        <h4 class="font-semibold text-md text-blue-800 dark:text-blue-200 mb-4">Customer Information</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base text-sm">
+            <div><span class="font-medium text-gray-700 dark:text-gray-300">Name:</span> <span
+                    class="text-gray-900 dark:text-white">{{ $deliveryNote->salesOrder->customer?->name ?? 'N/A' }}</span>
+            </div>
+            <div><span class="font-medium text-gray-700 dark:text-gray-300">Email:</span> <span
+                    class="text-gray-900 dark:text-white">{{ $deliveryNote->salesOrder->customer?->email ?? 'N/A' }}</span>
+            </div>
+            <div><span class="font-medium text-gray-700 dark:text-gray-300">Phone:</span> <span
+                    class="text-gray-900 dark:text-white">{{ $deliveryNote->salesOrder->customer?->phone ?? 'N/A' }}</span>
+            </div>
+            <div><span class="font-medium text-gray-700 dark:text-gray-300">Address:</span> <span
+                    class="text-gray-900 dark:text-white">{{ $deliveryNote->salesOrder->customer?->address ?? 'N/A' }}</span>
+            </div>
         </div>
     </div>
 
-    <!-- Items Table -->
-    <div>
-        <h2 class="font-semibold mb-2">Products</h2>
-        <table class="w-full border text-sm">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="border p-2 text-left">Product</th>
-                    <th class="border p-2 text-center">Strength</th>
-                    <th class="border p-2 text-center">Unit</th>
-                    <th class="border p-2 text-center">Type</th>
-                    <th class="border p-2 text-center">Ordered Qty</th>
-                    <th class="border p-2 text-center">Inventory Stock</th>
-                    <th class="border p-2 text-center">Allocated Qty</th>
-                    <th class="border p-2 text-center">Backorder Qty</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($items as $index => $item)
-                    <tr class="bg-white">
-                        <td class="border p-2">{{ $item['product_name'] }}</td>
-                        <td class="border p-2 text-center">{{ $item['strength'] }}</td>
-                        <td class="border p-2 text-center">{{ $item['unit'] }}</td>
-                        <td class="border p-2 text-center">{{ $item['type'] }}</td>
-                        <td class="border p-2 text-center">{{ $item['ordered_qty'] }}</td>
-                        <td class="border p-2 text-center">{{ $item['total_stock'] }}</td>
-                        <td class="border p-2 text-center">
-                            <input type="number" wire:model="items.{{ $index }}.delivered_qty"
-                                class="w-20 border rounded p-1 text-center" />
-                        </td>
-                        <td
-                            class="border p-2 text-center {{ $item['backorder'] > 0 ? 'text-red-600 font-semibold' : '' }}">
-                            {{ $item['backorder'] }}
-                        </td>
-                    </tr>
-                    <!-- Batch allocations -->
-                    <tr class="bg-gray-50 text-xs">
-                        <td colspan="8" class="p-2">
-                            <div class="space-y-1">
-                                @foreach ($item['batches'] as $batch)
-                                    <div class="flex justify-between">
-                                        <span>
-                                            Batch: {{ $batch['batch_number'] }}
-                                            @if ($batch['expiration_date'])
-                                                (Exp:
-                                                {{ \Carbon\Carbon::parse($batch['expiration_date'])->format('M d, Y') }})
+    <div class="bg-white dark:bg-gray-900 p-6 space-y-10 rounded-lg shadow-lg">
+
+        {{-- Delivery Note Info --}}
+        <form wire:submit.prevent="saveAll">
+            <div>
+                <h4 class="font-semibold text-xl text-blue-800 dark:text-blue-200 mb-4">Delivery Information</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
+                    <div>
+                        <span class="font-medium text-gray-700 dark:text-gray-300">DN Number:</span>
+                        <span
+                            class="text-gray-900 dark:text-white">{{ $deliveryNote->delivery_note_number ?? 'N/A' }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700 dark:text-gray-300">SO Number:</span>
+                        <span
+                            class="text-gray-900 dark:text-white">{{ $deliveryNote->salesOrder->order_number ?? 'N/A' }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Delivery Date:</span>
+                        @if ($editMode)
+                            <input type="date" wire:model="delivery_date" class="form-input w-full" />
+                        @else
+                            <span
+                                class="text-gray-900 dark:text-white">{{ $deliveryNote->delivery_date ?? 'N/A' }}</span>
+                        @endif
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                        @if ($editMode)
+                            <select wire:model.defer="status" class="form-select w-full">
+                                <option value="pending">Pending</option>
+                                <option value="partially_delivered">Partially Delivered</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        @else
+                            <span
+                                class="inline-block px-2 py-1 rounded-full text-xs font-semibold
+                                @if ($deliveryNote->status === 'delivered' || $deliveryNote->status === 'completed') bg-green-100 text-green-800
+                                @elseif($deliveryNote->status === 'partially_delivered') bg-yellow-100 text-yellow-800
+                                @elseif($deliveryNote->status === 'cancelled') bg-red-100 text-red-800
+                                @else bg-blue-100 text-blue-800 @endif">
+                                {{ ucfirst(str_replace('_', ' ', $deliveryNote->status ?? 'N/A')) }}
+                            </span>
+                        @endif
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Agent:</span>
+                        <span
+                            class="text-gray-900 dark:text-white">{{ $deliveryNote->salesOrder->agent?->name ?? 'N/A' }}</span>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Remarks:</span>
+                        @if ($editMode)
+                            <textarea wire:model.defer="remarks" class="form-input w-full" rows="3"></textarea>
+                        @else
+                            <span class="text-gray-900 dark:text-white">{{ $deliveryNote->remarks ?? 'N/A' }}</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- Items Table --}}
+            <div class="mt-10">
+                <h4 class="font-semibold text-xl text-blue-800 dark:text-blue-200 mb-4">Delivery Items</h4>
+                <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                    <table class="min-w-full text-base">
+                        <thead class="bg-blue-50 dark:bg-blue-900">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 dark:text-blue-200">Product
+                                </th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 dark:text-blue-200">Strength
+                                </th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 dark:text-blue-200">Unit</th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 dark:text-blue-200">Type</th>
+                                <th class="px-4 py-3 text-right font-semibold text-blue-900 dark:text-blue-200">Ordered
+                                    Qty</th>
+                                <th class="px-4 py-3 text-right font-semibold text-blue-900 dark:text-blue-200">
+                                    Delivered Qty</th>
+                                <th class="px-4 py-3 text-right font-semibold text-blue-900 dark:text-blue-200">
+                                    Backorder Qty</th>
+                                @if ($editMode)
+                                    <th class="px-4 py-3"></th>
+                                @endif
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($items as $i => $item)
+                                <tr class="border-t dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-800">
+                                    <td class="px-4 py-2">{{ $item['product_name'] }}</td>
+                                    <td class="px-4 py-2">{{ $item['strength'] }}</td>
+                                    <td class="px-4 py-2">{{ $item['unit'] }}</td>
+                                    <td class="px-4 py-2">{{ $item['type'] }}</td>
+                                    <td class="px-4 py-2 text-right">{{ $item['ordered_qty'] }}</td>
+                                    <td class="px-4 py-2 text-right">
+                                        @if ($editMode)
+                                            <input type="number" min="0" max="{{ $item['ordered_qty'] }}"
+                                                wire:model.defer="items.{{ $i }}.delivered_qty"
+                                                class="form-input w-20" />
+                                        @else
+                                            {{ $item['delivered_qty'] }}
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-2 text-right">
+                                        @if ($editMode)
+                                            <input type="number" min="0"
+                                                wire:model.defer="items.{{ $i }}.backorder_qty"
+                                                class="form-input w-20" />
+                                        @else
+                                            {{ $item['backorder_qty'] }}
+                                        @endif
+                                    </td>
+                                    @if ($editMode)
+                                        <td class="px-4 py-2 text-right">
+                                            <button type="button" wire:click="removeItem({{ $i }})"
+                                                class="text-red-600 hover:underline">Remove</button>
+                                        </td>
+                                    @endif
+                                </tr>
+
+                                {{-- Batch Details --}}
+                                @if (!empty($item['batches']))
+                                    @foreach ($item['batches'] as $batch)
+                                        <tr class="border-t dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                                            <td colspan="4"
+                                                class="px-4 py-1 text-sm text-gray-600 dark:text-gray-400">
+                                                Batch: {{ $batch['batch_number'] }}
+                                                @if ($batch['expiry_date'])
+                                                    (Exp:
+                                                    {{ \Carbon\Carbon::parse($batch['expiry_date'])->format('M Y') }})
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-1 text-right text-sm text-gray-600 dark:text-gray-400">
+                                                -
+                                            </td>
+                                            <td class="px-4 py-1 text-right text-sm text-gray-600 dark:text-gray-400">
+                                                {{ $batch['quantity_delivered'] }} delivered
+                                            </td>
+                                            <td class="px-4 py-1 text-right text-sm text-gray-600 dark:text-gray-400">
+                                                {{ $batch['backorder_quantity'] }} backorder
+                                            </td>
+                                            @if ($editMode)
+                                                <td class="px-4 py-1"></td>
                                             @endif
-                                        </span>
-                                        <span>Available: {{ $batch['available_qty'] }} |
-                                            Allocated: {{ $batch['allocated_qty'] }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-    <!-- Remarks -->
-    <div>
-        <label class="block font-semibold mb-1">Remarks</label>
-        <textarea wire:model="remarks" rows="3" class="w-full border rounded p-2"></textarea>
-    </div>
+            {{-- Save/Cancel Buttons --}}
+            @if ($editMode)
+                <div class="mt-4 flex gap-2">
+                    <flux:button type="submit" icon="check" variant="primary" size="sm">
+                        Save
+                    </flux:button>
+                    <flux:button type="button" wire:click="$set('editMode', false)" icon="x-mark"
+                        variant="outline" size="sm">
+                        Cancel
+                    </flux:button>
+                </div>
+            @endif
+        </form>
 
-    <!-- Save -->
-    <div class="flex justify-end">
-        <button wire:click="save" class="bg-accent text-white px-6 py-2 rounded-lg cursor-pointer hover:bg-cyan-700">
-            Create Delivery Note
-        </button>
+        {{-- Delivery Summary --}}
+        <div class="text-right space-y-1 mt-8">
+            <div><span class="font-medium text-gray-700 dark:text-gray-300">Total Items Ordered:</span> <span
+                    class="text-gray-900 dark:text-white">{{ number_format(array_sum(array_column($items, 'ordered_qty')) ?? 0, 0) }}</span>
+            </div>
+            <div><span class="font-medium text-gray-700 dark:text-gray-300">Total Items Delivered:</span> <span
+                    class="text-gray-900 dark:text-white">{{ number_format(array_sum(array_column($items, 'delivered_qty')) ?? 0, 0) }}</span>
+            </div>
+            <div><span class="font-medium text-gray-700 dark:text-gray-300">Total Backorder Items:</span> <span
+                    class="text-gray-900 dark:text-white">{{ number_format(array_sum(array_column($items, 'backorder_qty')) ?? 0, 0) }}</span>
+            </div>
+            <div class="font-extrabold text-2xl text-blue-900 dark:text-blue-200 mt-4">
+                Delivery Completion:
+                {{ number_format((array_sum(array_column($items, 'delivered_qty')) / max(array_sum(array_column($items, 'ordered_qty')), 1)) * 100, 1) }}%
+            </div>
+        </div>
     </div>
 </div>

@@ -83,6 +83,10 @@ Breadcrumbs::for('stocks.create', fn (Trail $trail) =>
      $trail->parent('stocks')->push('Create Stock', route('stocks.create'))
 );
 
+Breadcrumbs::for('stocks.edit', fn (Trail $trail, $stock) =>
+     $trail->parent('stocks')->push('Edit', route('stocks.edit', $stock))
+);
+
 Breadcrumbs::for('expiryproducts', fn (Trail $trail) =>
     $trail->push('Expiry Products', route('expiryproducts'))
 );
@@ -95,7 +99,7 @@ Breadcrumbs::for('products.create', fn (Trail $trail) =>
     $trail->parent('products')->push('Add Product', route('products.create'))
 );
 
-Breadcrumbs::for('products.edit', fn (Trail $trail, $product) => 
+Breadcrumbs::for('products.edit', fn (Trail $trail, $product) =>
     $trail->parent('products')->push("Edit Product: {$product}", route('products.edit', $product)
     )
 );
@@ -234,4 +238,49 @@ Breadcrumbs::for('settings.admin-panel', fn (Trail $trail) =>
 
 Breadcrumbs::for('settings.seeders', fn (Trail $trail) =>
     $trail->parent('settings')->push('Seeders', route('settings.seeders'))
+);
+
+Breadcrumbs::for('delivery-notes', fn (Trail $trail) =>
+    $trail->push('Delivery Notes', route('delivery-notes'))
+);
+
+Breadcrumbs::for('delivery-notes.show', fn (Trail $trail, $deliveryNote) =>
+    $trail->parent('delivery-notes')->push('Info', route('delivery-notes.show', $deliveryNote))
+);
+
+
+Breadcrumbs::for('sales-orders', fn (Trail $trail) =>
+    $trail->push('Sales Orders', route('sales-orders'))
+);
+
+Breadcrumbs::for('sales-orders.show', fn (Trail $trail, $salesOrder) =>
+    $trail->parent('sales-orders')->push('Info', route('sales-orders.show', $salesOrder))
+);
+
+Breadcrumbs::for('database-backup', fn (Trail $trail) =>
+    $trail->push('Database Backup', route('database-backup'))
+);
+
+Breadcrumbs::for('pdf-binding', fn (Trail $trail) =>
+    $trail->push('PDF Binding', route('pdf-binding'))
+);
+
+Breadcrumbs::for('chartofaccounts', fn (Trail $trail) =>
+    $trail->push('Chart Of Accounts', route('chartofaccounts'))
+);
+
+Breadcrumbs::for('agingreports', fn (Trail $trail) =>
+    $trail->push('Aging Reports', route('agingreports'))
+);
+
+Breadcrumbs::for('receivables', fn (Trail $trail) =>
+    $trail->push('Receivables', route('receivables'))
+);
+
+Breadcrumbs::for('payables', fn (Trail $trail) =>
+    $trail->push('Account Payables', route('payables'))
+);
+
+Breadcrumbs::for('chart-of-accounts.view-ledger', fn (Trail $trail, $chartOfAccount) =>
+    $trail->parent('chartofaccounts')->push("{$chartOfAccount->name} Ledger", route('chart-of-accounts.view-ledger', $chartOfAccount))
 );
