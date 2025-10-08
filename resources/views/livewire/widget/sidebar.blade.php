@@ -55,12 +55,12 @@ new class extends Component {
                         'label' => 'Purchase Orders',
                         'permission' => 'purchase-orders.view',
                     ],
-                    [
-                        'icon' => 'truck',
-                        'route' => 'suppliers',
-                        'label' => 'Suppliers',
-                        'permission' => 'suppliers.view',
-                    ],
+                    // [
+                    //     'icon' => 'truck',
+                    //     'route' => 'suppliers',
+                    //     'label' => 'Suppliers',
+                    //     'permission' => 'suppliers.view',
+                    // ],
                 ],
             ],
             [
@@ -110,7 +110,7 @@ new class extends Component {
                         'icon' => 'user-group',
                         'route' => 'customers',
                         'label' => 'Customers',
-                        'permission' => 'customers.create',
+                        'permission' => 'customers.view',
                     ],
                 ],
             ],
@@ -377,7 +377,6 @@ new class extends Component {
                     ],
                 ],
             ],
-
         ];
 
         // Filter menu items based on search input
@@ -388,7 +387,7 @@ new class extends Component {
         ];
     }
 
-    protected function filterMenuItems($menuItems, $search)
+    protected function filterMenuItems(array $menuItems, string $search): array
     {
         return collect($menuItems)
             ->map(function ($group) use ($search) {
@@ -407,39 +406,68 @@ new class extends Component {
             ->values()
             ->toArray();
     }
+
+    // Method to check if any route in the group matches current route
+    public function isGroupActive(array $group): bool
+    {
+        return collect($group['items'])->contains(function ($item) {
+            return request()->routeIs($item['route'] . '*');
+        });
+    }
 }; ?>
 
 <div>
     <flux:navlist variant="outline" searchable>
-        {{--
-        <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
-        {{--
-        <flux:input type="search" placeholder="Search navigation..." class="mb-4" wire:model.live="search" /> --}}
-
         @foreach ($menuItems as $group)
-            <flux:navlist.group :heading="__($group['heading'])" class="grid">
-                @if (isset($group['permission']))
-                    @can($group['permission'])
+            @if ($group['heading'] === 'Navigations')
+                <flux:navlist.group :heading="__($group['heading'])" class="grid">
+                    @if (isset($group['permission']))
+                        @can($group['permission'])
+                            @foreach ($group['items'] as $item)
+                                @if (!$item['permission'] || auth()->user()->can($item['permission']))
+                                    <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
+                                        :current="request()->routeIs($item['route'])" wire:navigate>
+                                        {{ __($item['label']) }}
+                                    </flux:navlist.item>
+                                @endif
+                            @endforeach
+                        @endcan
+                    @else
                         @foreach ($group['items'] as $item)
                             @if (!$item['permission'] || auth()->user()->can($item['permission']))
                                 <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                    :current="request()->routeIs($item['route'].'*')" wire:navigate>
+                                    :current="request()->routeIs($item['route'])" wire:navigate>
                                     {{ __($item['label']) }}
                                 </flux:navlist.item>
                             @endif
                         @endforeach
-                    @endcan
-                @else
-                    @foreach ($group['items'] as $item)
-                        @if (!$item['permission'] || auth()->user()->can($item['permission']))
-                            <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                :current="request()->routeIs($item['route'].'*')" wire:navigate>
-                                {{ __($item['label']) }}
-                            </flux:navlist.item>
-                        @endif
-                    @endforeach
-                @endif
-            </flux:navlist.group>
+                    @endif
+                </flux:navlist.group>
+            @elseif($group['heading'] !== 'Navigations')
+                <flux:navlist.group :heading="__($group['heading'])" :expanded="($this->isGroupActive($group))" expandable>
+                    @if (isset($group['permission']))
+                        @can($group['permission'])
+                            @foreach ($group['items'] as $item)
+                                @if (!$item['permission'] || auth()->user()->can($item['permission']))
+                                    <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
+                                        :current="request()->routeIs($item['route'])" wire:navigate>
+                                        {{ __($item['label']) }}
+                                    </flux:navlist.item>
+                                @endif
+                            @endforeach
+                        @endcan
+                    @else
+                        @foreach ($group['items'] as $item)
+                            @if (!$item['permission'] || auth()->user()->can($item['permission']))
+                                <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
+                                    :current="request()->routeIs($item['route'])" wire:navigate>
+                                    {{ __($item['label']) }}
+                                </flux:navlist.item>
+                            @endif
+                        @endforeach
+                    @endif
+                </flux:navlist.group>
+            @endif
         @endforeach
     </flux:navlist>
 </div>
