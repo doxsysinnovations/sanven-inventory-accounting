@@ -47,7 +47,7 @@ new class extends Component {
             ],
 
             [
-                'heading' => 'Purchasing Management',
+                'heading' => 'Purchasing',
                 'items' => [
                     [
                         'icon' => 'document-text',
@@ -64,7 +64,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Invoice Management',
+                'heading' => 'Invoicing',
                 'items' => [
                     [
                         'icon' => 'plus',
@@ -81,7 +81,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Agent Management',
+                'heading' => 'Agents',
                 'items' => [
                     [
                         'icon' => 'user-plus',
@@ -95,10 +95,16 @@ new class extends Component {
                         'label' => 'Agents',
                         'permission' => 'agents.view',
                     ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'agent-commissions',
+                        'label' => 'Commissions',
+                        'permission' => 'customers.view',
+                    ],
                 ],
             ],
             [
-                'heading' => 'Customer Management',
+                'heading' => 'Customers',
                 'items' => [
                     [
                         'icon' => 'user-plus',
@@ -115,7 +121,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Quotation Management',
+                'heading' => 'Quotations',
                 'permission' => 'products.view',
                 'items' => [
                     [
@@ -133,7 +139,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Stock Management',
+                'heading' => 'Stocks',
                 'permission' => 'stocks.view',
                 'items' => [
                     [
@@ -175,7 +181,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Product Management',
+                'heading' => 'Products',
                 'permission' => 'products.view',
                 'items' => [
                     [
@@ -241,24 +247,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Agents Management',
-                'items' => [
-                    [
-                        'icon' => 'user-group',
-                        'route' => 'agents',
-                        'label' => 'Agents',
-                        'permission' => 'agents.view',
-                    ],
-                    [
-                        'icon' => 'user-group',
-                        'route' => 'agent-commissions',
-                        'label' => 'Commissions',
-                        'permission' => 'customers.view',
-                    ],
-                ],
-            ],
-            [
-                'heading' => 'Supplier Management',
+                'heading' => 'Suppliers',
                 'permission' => 'suppliers.view',
                 'items' => [
                     // [
@@ -293,7 +282,7 @@ new class extends Component {
                     ],
                     [
                         'icon' => 'user-group',
-                        'route' => 'recievables',
+                        'route' => 'receivables',
                         'label' => 'Receivables',
                         'permission' => 'suppliers.view',
                     ],
@@ -306,7 +295,7 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'User Management',
+                'heading' => 'Users',
                 'permission' => 'users.view',
                 'items' => [
                     [

@@ -20,19 +20,19 @@
                 </div>
 
                 <div class="mb-4">
-                    <x-search-bar-2 
+                    <x-search-bar-2
                         placeholder="Search by name, email, or phone number..."
                         wireModel="searchCustomer"
                     />
                 </div>
-                
+
                 @if ($searchCustomer)
                     <div class="space-y-2 max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
                         @forelse($this->customers() as $customer)
                             <div wire:key="customer-{{ $customer->id }}"
                                 class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $customer_id == $customer->id ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-500' : '' }}"
                                 wire:click="$set('customer_id', '{{ $customer->id }}')">
-                                
+
                                 <div class="flex items-center space-x-4">
                                     <div class="flex-shrink-0">
                                         <div class="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
@@ -41,7 +41,7 @@
                                             </svg>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="flex-grow">
                                         <div class="font-medium text-gray-900 dark:text-white">{{ $customer->name }}</div>
                                         <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center">
@@ -101,7 +101,7 @@
                 @endif
             </div>
 
-            {{-- @if ($customer_id && !$showCustomerForm)
+            @if ($customer_id && !$showCustomerForm)
                 @php $selectedCustomer = \App\Models\Customer::find($customer_id); @endphp
                 <div class="bg-green-50 dark:bg-green-800/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
                     <div class="flex items-center justify-center sm:justify-start mb-4">
@@ -120,10 +120,10 @@
                                     </svg>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <div class="font-semibold text-base text-green-800 dark:text-green-100">{{ $selectedCustomer->name }}</div>
-                                
+
                                 @if($selectedCustomer->email)
                                     <div class="flex items-center text-sm text-green-700 dark:text-green-300 mt-1">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +132,7 @@
                                         {{ $selectedCustomer->email }}
                                     </div>
                                 @endif
-                                
+
                                 @if ($selectedCustomer->company_name)
                                     <div class="flex items-center text-sm text-green-700 dark:text-green-300 mt-1">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,7 +141,7 @@
                                         {{ $selectedCustomer->company_name }}
                                     </div>
                                 @endif
-                                
+
                                 @if ($selectedCustomer->phone)
                                     <div class="flex items-center text-sm text-green-700 dark:text-green-300 mt-1">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,14 +162,14 @@
                                 @endif
                             </div>
                         </div>
-                        
+
                         <flux:button variant="primary" color="green" icon="arrow-path" wire:click="$set('customer_id', '')">
                             Change Customer
                         </flux:button>
                     </div>
                 </div>
-            @endif --}}
-            
+            @endif
+
             <div class="mb-8">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">

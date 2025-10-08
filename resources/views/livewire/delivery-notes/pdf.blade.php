@@ -4,7 +4,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Order</title>
+    <title>Delivery Note</title>
     <style>
         @page {
             size: letter;
@@ -192,10 +192,18 @@
             text-align: right;
         }
 
+        .products-table tbody td:nth-child(1),
         .products-table tbody td:nth-child(2),
-        .products-table tbody td:nth-child(3) {
+        .products-table tbody td:nth-child(3),
+        .products-table tbody td:nth-child(4) {
             text-align: left;
         }
+
+         .products-table tbody td:nth-child(5),
+         .products-table tbody td:nth-child(6),
+         .products-table tbody td:nth-child(7) {
+            text-align: center;
+         }
 
         .products-table th,
         .products-table td {
@@ -349,6 +357,30 @@
         .no-break {
             page-break-inside: avoid;
         }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-delivered {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-partial {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
     </style>
 </head>
 
@@ -361,7 +393,7 @@
                         <img src="{{ public_path('images/sanven-logo-3.png') }}" alt="Sanven" height="40">
                     </td>
                     <td style="width: 50%;">
-                        <div class="title">Sales Order</div>
+                        <div class="title">Delivery Note</div>
                     </td>
                 </tr>
             </table>
@@ -385,25 +417,29 @@
                         <table class="info-table">
                             <tbody>
                                 <tr>
-                                    <th>Order Date</th>
-                                    <td>{{ \Carbon\Carbon::parse($salesOrder->order_date)->format('M d, Y')  ?? ''}}</td>
-                                </tr>
-                                <tr>
-                                    <th>Order Number</th>
-                                    <td>{{ $salesOrder->order_number ?? '' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Sales Agent</th>
-                                    <td>{{ $salesOrder->agent->name ?? '' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Requested Delivery Date</th>
-                                    <td>{{ \Carbon\Carbon::parse($salesOrder->requested_delivery_date)->format('M d, Y')  ?? ''}}
+                                    <th>Delivery Date</th>
+                                    <td>{{ \Carbon\Carbon::parse($deliveryNote->delivery_date)->format('M d, Y') ?? '' }}
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th>Payment Terms</th>
-                                    <td>{{ $salesOrder->payment_terms ?? '' }}</td>
+                                    <th>Delivery Note Number</th>
+                                    <td>{{ $deliveryNote->delivery_note_number ?? '' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status</th>
+                                    <td>
+                                        <span class="status-badge status-{{ $deliveryNote->status ?? 'pending' }}">
+                                            {{ $deliveryNote->status ?? 'pending' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Sales Order Number</th>
+                                    <td>{{ $deliveryNote->salesOrder->order_number ?? '' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Sales Agent</th>
+                                    <td>{{ $deliveryNote->salesOrder->agent->name ?? '' }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -419,7 +455,7 @@
                         <th colspan="2">CUSTOMER INFORMATION</th>
                     </tr>
                 </thead>
-                @php $customer = $salesOrder->customer; @endphp
+                @php $customer = $deliveryNote->salesOrder->customer; @endphp
                 <tbody>
                     @if (!empty($customer->name))
                         <tr>
@@ -456,10 +492,10 @@
                         </tr>
                     @endif
 
-                    @if (!empty($salesOrder->payment_method))
+                    @if (!empty($deliveryNote->salesOrder->payment_method))
                         <tr>
                             <th>Payment Method</th>
-                            <td>{{ ucfirst(str_replace('_', ' ', $salesOrder->payment_method)) }}</td>
+                            <td>{{ ucfirst(str_replace('_', ' ', $deliveryNote->salesOrder->payment_method)) }}</td>
                         </tr>
                     @endif
                 </tbody>
@@ -474,23 +510,21 @@
                         <th style="width: 25%;">Product Name</th>
                         <th style="width: 10%;">Strength</th>
                         <th style="width: 8%;">Unit</th>
-                        <th style="width: 8%;">Qty</th>
-                        <th style="width: 12%;">Unit Price</th>
-                        <th style="width: 12%;">VAT</th>
-                        <th style="width: 10%;">TOTAL</th>
+                        <th style="width: 8%;">Ordered Qty</th>
+                        <th style="width: 8%;">Delivered Qty</th>
+                        <th style="width: 8%;">Backorder Qty</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($salesOrder->items as $item)
+                    @foreach ($deliveryNote->items as $item)
                         <tr>
-                            <td>{{ $item->code ?? '' }}</td>
-                            <td>{{ $item->name ?? '' }}</td>
-                            <td>{{ $item->strength ?? '' }}</td>
-                            <td>{{ $item->unit ?? '' }}</td>
-                            <td>{{ $item->quantity ?? 0 }}</td>
-                            <td><span class="currency">₱</span> {{ number_format($item->price, 2) ?? 0 }}</td>
-                            <td><span class="currency">₱</span> {{ number_format($item->vat, 2) ?? 0.0 }}</td>
-                            <td><span class="currency">₱</span> {{ number_format($item->total, 2) ?? 0.0 }}</td>
+                            <td>{{ $item->product->product_code ?? '' }}</td>
+                            <td>{{ $item->product->name ?? '' }}</td>
+                            <td>{{ $item->product->strength ?? '' }}</td>
+                            <td>{{ $item->product->unit->name ?? '' }}</td>
+                            <td>{{ $item->ordered_qty ?? 0 }}</td>
+                            <td>{{ $item->delivered_qty ?? 0 }}</td>
+                            <td>{{ $item->backorder_qty ?? 0 }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -504,25 +538,12 @@
                         <table class="notes-table">
                             <thead>
                                 <tr>
-                                    <th>Special Notes and Instructions</th>
+                                    <th>Remarks</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <th>{{ $salesOrder->notes ?? '' }}</th>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <br>
-                        <table class="notes-table">
-                            <thead>
-                                <tr>
-                                    <th>Terms and Conditions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th>{{ $salesOrder->terms_conditions ?? '' }}</th>
+                                    <th>{{ $deliveryNote->remarks ?? '' }}</th>
                                 </tr>
                             </tbody>
                         </table>
@@ -531,28 +552,27 @@
                         <table class="totals-table">
                             <tbody>
                                 <tr>
-                                    <th>Subtotal</th>
-                                    <td><span class="currency">₱</span>{{ number_format($salesOrder->subtotal, 2) }}
-                                    </td>
+                                    <th>Total Items Ordered</th>
+                                    <td>{{ $deliveryNote->items->sum('ordered_qty') ?? 0 }}</td>
                                 </tr>
                                 <tr>
-                                    @php
-                                        $base = $salesOrder->subtotal;
-                                        $discount = $salesOrder->discount;
-                                        $rate = $base > 0 ? ($discount / $base) * 100 : 0;
-                                    @endphp
-                                    <th>Discount ({{ number_format($rate, 2) }}%)</th>
-                                    <td class="discount-color">-<span
-                                            class="currency">₱</span>{{ number_format($discount, 2) }}</td>
+                                    <th>Total Items Delivered</th>
+                                    <td>{{ $deliveryNote->items->sum('delivered_qty') ?? 0 }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Total VAT ({{ number_format($salesOrder->tax_rate, 2) }}%)</th>
-                                    <td><span class="currency">₱</span> {{ number_format($salesOrder->tax, 2) }}</td>
+                                    <th>Total Backorder Items</th>
+                                    <td>{{ $deliveryNote->items->sum('backorder_qty') ?? 0 }}</td>
                                 </tr>
                                 <tr class="grand-total-row">
-                                    <th>GRAND TOTAL</th>
-                                    <td><span class="currency" style="font-size: 14px;">₱</span>
-                                        {{ number_format($salesOrder->grand_total, 2) }}</td>
+                                    <th>Delivery Completion</th>
+                                    <td>
+                                        @php
+                                            $ordered = $deliveryNote->items->sum('ordered_qty');
+                                            $delivered = $deliveryNote->items->sum('delivered_qty');
+                                            $completion = $ordered > 0 ? ($delivered / $ordered) * 100 : 0;
+                                        @endphp
+                                        {{ number_format($completion, 1) }}%
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

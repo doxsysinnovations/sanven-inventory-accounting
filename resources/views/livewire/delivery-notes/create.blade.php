@@ -105,7 +105,7 @@ new class extends Component {
             $this->items[$index]['delivered_qty'] = $delivered;
         }
     }
-        
+
     public function save()
     {
         // 1. Check if all items are already fully delivered for this SO
@@ -119,7 +119,7 @@ new class extends Component {
         foreach ($this->items as $item) {
 
             $delivered = $existingDelivered[$item['product_id']] ?? 0;
-dd($item['ordered_qty']);
+// dd($item['ordered_qty']);
 
             if ($delivered < $item['ordered_qty']) {
                 $alreadyDelivered = false;

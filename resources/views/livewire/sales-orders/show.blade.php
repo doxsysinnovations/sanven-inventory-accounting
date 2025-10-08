@@ -111,14 +111,6 @@ new class extends Component {
 ?>
 
 <div>
-    {{-- Breadcrumbs --}}
-    <nav class="flex items-center text-sm text-gray-500 dark:text-gray-300 mb-4" aria-label="Breadcrumb">
-        <a href="{{ route('dashboard') }}" class="hover:underline flex items-center gap-1">Dashboard</a>
-        <span class="mx-2">/</span>
-        <a href="{{ route('sales-orders') }}" class="hover:underline">Sales Orders</a>
-        <span class="mx-2">/</span>
-        <span class="text-blue-700 dark:text-blue-300 font-semibold">{{ $salesOrder->order_number }}</span>
-    </nav>
 
     {{-- Heading and Actions --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 rounded-t-lg gap-2">
@@ -148,7 +140,7 @@ new class extends Component {
                     Cancel
                 </flux:button>
             @endif
-            <flux:button href="{{ route('sales-orders.print', $salesOrder->id) }}" icon="printer" variant="primary"
+            <flux:button href="{{ route('sales-order.stream-pdf', $salesOrder->id) }}" icon="printer" variant="primary"
                 size="sm">
                 Print Sales Order
             </flux:button>

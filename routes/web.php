@@ -1,14 +1,16 @@
 <?php
 
-use Livewire\Volt\Volt;
-use App\Livewire\TwoFactorVerify;
-use Illuminate\Support\Facades\Route;
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\Quotation;
+use App\Models\Stock;
 use App\Models\Invoice;
+use Livewire\Volt\Volt;
+use App\Models\Quotation;
+use App\Models\SalesOrder;
+use App\Models\DeliveryNote;
 
 //For testing low stock notification
-use App\Models\Stock;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Livewire\TwoFactorVerify;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/test-low-stock', function () {
     $stock = Stock::first();
@@ -84,15 +86,14 @@ Route::middleware(['auth', 'check.active', '2fa'])->group(function () {
     Volt::route('suppliers/view/{id}', 'suppliers.view')->name('suppliers.view');
 
     //Aging
-    Volt::route('chartofaccounts', 'chart-of-accounts.index')->name('chartofaccounts');
-    Volt::route('agingreports', 'agingreports.index')->name('agingreports');
+    Volt::route('chart-of-accounts', 'chart-of-accounts.index')->name('chartofaccounts');
+    Volt::route('aging-reports', 'agingreports.index')->name('agingreports');
     Volt::route('payables', 'payables.index')->name('payables');
     Volt::route('payables/{payable}', 'payables.show')->name('payables.show');
-    //Recievables
-    Volt::route('recievables', 'recievables.index')->name('recievables');
+    Volt::route('chart-of-accounts/{chartOfAccount}/view-ledger', 'chart-of-accounts.view-ledger')->name('chart-of-accounts.view-ledger');
 
-    //Recievables
-    Volt::route('recievables', 'recievables.index')->name('recievables');
+    //Receivables
+    Volt::route('receivables', 'recievables.index')->name('receivables');
 
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
@@ -180,23 +181,34 @@ Route::middleware(['auth', 'check.active', '2fa'])->group(function () {
     Volt::route('sales-orders/{salesOrder}/show', 'sales-orders.show')
         ->name('sales-orders.show');
 
-    Volt::route('sales-orders/{id}/print', 'sales-orders.print')->name('sales-orders.print');
+    // Volt::route('sales-orders/{id}/print', 'sales-orders.print')->name('sales-orders.print');
     Volt::route('sales-orders/{id}/edit', 'sales-orders.edit')->name('sales-orders.edit');
+    Route::get('/sales-orders/{salesOrder}/stream-pdf', function (SalesOrder $salesOrder) {
+        $salesOrder->load(['customer', 'agent', 'items',]);
+
+        $pdf = Pdf::loadView('livewire.sales-orders.pdf', [
+            'salesOrder' => $salesOrder,
+        ]);
+
+        return $pdf->stream('sales-orders-' . $salesOrder->order_number . '.pdf');
+    })->name('sales-order.stream-pdf');
 
     //delivery notes
     Volt::route('delivery-notes', 'delivery-notes.index')->name('delivery-notes');
     Volt::route('delivery-notes/create', 'delivery-notes.create')->name('delivery-notes.create');
-    Volt::route('delivery-notes/{id}/show', 'delivery-notes.show')->name('delivery-notes.show');
+    Volt::route('delivery-notes/{deliveryNote}/show', 'delivery-notes.show')->name('delivery-notes.show');
     Volt::route('delivery-notes/{id}/print', 'delivery-notes.print')->name('delivery-notes.print');
     Volt::route('delivery-notes/{id}/edit', 'delivery-notes.edit')->name('delivery-notes.edit');
-    Route::get('/purchase-orders/{po}/stream-pdf', function (\App\Models\PurchaseOrder $po) {
-        $po->load(['supplier', 'items.product']);
-        $pdf = Pdf::loadView('livewire.purchase-orders.pdf', [
-            'po' => $po,
+    Route::get('/delivery-notes/{deliveryNote}/stream-pdf', function (DeliveryNote $deliveryNote) {
+        $deliveryNote->load(['customer', 'items', 'items.product']);
+
+        $pdf = Pdf::loadView('livewire.delivery-notes.pdf', [
+            'deliveryNote' => $deliveryNote,
         ]);
-        return $pdf->stream('purchase-order-' . $po->po_number . '.pdf');
-    })->name('purchase-orders.stream-pdf');
-    
+
+        return $pdf->stream('delivery-notes-' . $deliveryNote->delivery_note_number . '.pdf');
+    })->name('delivery-notes.stream-pdf');
+
 
     Volt::route('database-backup', 'database-backup.index')->name('database-backup');
 });
