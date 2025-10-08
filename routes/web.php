@@ -179,6 +179,8 @@ Route::middleware(['auth','check.active','2fa'])->group(function () {
         return $pdf->stream('purchase-order-' . $po->po_number . '.pdf');
     })->name('purchase-orders.stream-pdf');
     
+
+    Volt::route('database-backup', 'database-backup.index')->name('database-backup');
 });
 
 Route::middleware(['auth'])->group(function () {

@@ -76,6 +76,12 @@
     <!-- Header -->
     <flux:header class="sticky top-0 z-50 bg-white dark:bg-[#050811] border-zinc-100">
 
+       <div class="hidden lg:block">
+            @if (\Diglactic\Breadcrumbs\Breadcrumbs::exists())
+                    {!! \Diglactic\Breadcrumbs\Breadcrumbs::view('partials.breadcrumbs') !!}
+            @endif
+       </div>
+
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
         <flux:spacer />
@@ -124,7 +130,7 @@
     </flux:header>
 
     {{ $slot }}
-
+    
     @fluxScripts
 </body>
 

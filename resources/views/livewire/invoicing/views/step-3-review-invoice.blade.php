@@ -17,7 +17,7 @@
                     </svg>
 
                     @if (count($cart) > 0)
-                        <span class="absolute -top-1 -right-1.5 bg-(--color-accent) text-white text-[8px] font-bold w-5.5 h-5.5 flex items-center justify-center rounded-full shadow">
+                        <span class="absolute -top-1 -right-1.5 bg-(--color-accent) text-white dark:text-black text-[8px] font-bold w-5.5 h-5.5 flex items-center justify-center rounded-full shadow">
                             {{ collect($cart)->sum('quantity') }}
                         </span>
                     @endif
@@ -96,7 +96,7 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <x-flux::input wire:model="invoice_date" type="date" label="Invoice Date" />
                         </div>
@@ -281,7 +281,7 @@
             @endif
         </div>
 
-        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700 px-6">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700 md:px-6">
             <flux:button variant="ghost" color="zinc" wire:click="backToStep2" icon="chevron-left">
                 Back to Products
             </flux:button>

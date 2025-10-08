@@ -37,7 +37,7 @@
                     </tr>
                 @else
                     @foreach ($rows as $rowIndex => $row)
-                        <tr class="border-b-1 border-border-zinc-700">
+                        <tr class="border-b-1">
                             @foreach ($row as $colIndex => $cell)
                                 @php
                                     $textClass = $rowColors[$rowIndex][$colIndex] ?? null;
