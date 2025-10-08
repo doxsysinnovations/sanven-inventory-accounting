@@ -14,6 +14,8 @@ new class extends Component {
     public function with()
     {
         $expiryStocksCount = \App\Models\Stock::whereDate('expiration_date', '<=', now()->addDays(30))->count(); // Count expiry stocks
+        $returnedProducts = \App\Models\StockAlteration::query()->where('type', 'return')->count(); // Count returned products
+        $brokenProducts = \App\Models\StockAlteration::query()->where('type', 'broken')->count(); // Count returned products
         $this->menuItems = [
             [
                 'heading' => 'Navigations',
@@ -24,7 +26,42 @@ new class extends Component {
                         'label' => 'Dashboard',
                         'permission' => 'dashboard.view',
                     ],
-                ]
+                ],
+            ],
+            [
+                'heading' => 'Sales',
+                'items' => [
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'sales-orders',
+                        'label' => 'Sales Orders',
+                        'permission' => 'purchase-orders.view',
+                    ],
+                    [
+                        'icon' => 'truck',
+                        'route' => 'delivery-notes',
+                        'label' => 'Delivery Notes',
+                        'permission' => 'purchase-orders.view',
+                    ],
+                ],
+            ],
+
+            [
+                'heading' => 'Purchasing Management',
+                'items' => [
+                    [
+                        'icon' => 'document-text',
+                        'route' => 'purchase-orders',
+                        'label' => 'Purchase Orders',
+                        'permission' => 'purchase-orders.view',
+                    ],
+                    [
+                        'icon' => 'truck',
+                        'route' => 'suppliers',
+                        'label' => 'Suppliers',
+                        'permission' => 'suppliers.view',
+                    ],
+                ],
             ],
             [
                 'heading' => 'Invoice Management',
@@ -33,15 +70,15 @@ new class extends Component {
                         'icon' => 'plus',
                         'route' => 'invoicing.create',
                         'label' => 'Create Invoice',
-                        'permission' => 'agents.create'
+                        'permission' => 'agents.create',
                     ],
                     [
                         'icon' => 'document-text',
                         'route' => 'invoicing',
                         'label' => 'Invoicing',
                         'permission' => 'invoicing.view',
-                    ]
-                ]
+                    ],
+                ],
             ],
             [
                 'heading' => 'Agent Management',
@@ -50,32 +87,32 @@ new class extends Component {
                         'icon' => 'user-plus',
                         'route' => 'agents.create',
                         'label' => 'Add Agent',
-                        'permission' => 'agents.create'
+                        'permission' => 'agents.create',
                     ],
                     [
                         'icon' => 'users',
                         'route' => 'agents',
                         'label' => 'Agents',
-                        'permission' => 'agents.view'
-                    ]
-                ]
+                        'permission' => 'agents.view',
+                    ],
+                ],
             ],
             [
                 'heading' => 'Customer Management',
-                'items' =>  [
-                        [
-                            'icon' => 'user-plus',
-                            'route' => 'customers.create',
-                            'label' => 'Add Customer',
-                            'permission' => 'customers.create',
-                        ],
-                        [
-                            'icon' => 'user-group',
-                            'route' => 'customers',
-                            'label' => 'Customers',
-                            'permission' => 'customers.create',
-                        ]
+                'items' => [
+                    [
+                        'icon' => 'user-plus',
+                        'route' => 'customers.create',
+                        'label' => 'Add Customer',
+                        'permission' => 'customers.create',
                     ],
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'customers',
+                        'label' => 'Customers',
+                        'permission' => 'customers.create',
+                    ],
+                ],
             ],
             [
                 'heading' => 'Quotation Management',
@@ -93,8 +130,7 @@ new class extends Component {
                         'label' => 'Quotations List',
                         'permission' => 'quotations.view',
                     ],
-
-                ]
+                ],
             ],
             [
                 'heading' => 'Stock Management',
@@ -118,18 +154,24 @@ new class extends Component {
                         'label' => 'Expiry Stocks (' . $expiryStocksCount . ')', // Add the count here
                         'permission' => 'stocks.view-expiry',
                     ],
+                    [
+                        'icon' => 'arrow-uturn-left',
+                        'route' => 'stocks.returned',
+                        'label' => 'Returned Stocks (' . $returnedProducts . ')', // Add the count here
+                        'permission' => 'stocks.returned',
+                    ],
+                    [
+                        'icon' => 'exclamation-triangle',
+                        'route' => 'stocks.broken',
+                        'label' => 'Broken Stocks (' . $brokenProducts . ')', // Add the count here
+                        'permission' => 'stocks.broken',
+                    ],
                     // [
                     //     'icon' => 'pencil-square',
                     //     'route' => 'purchase-requests',
                     //     'label' => 'Purchase Requests',
                     //     'permission' => 'purchase-requests.view',
                     // ],
-                    [
-                        'icon' => 'document-text',
-                        'route' => 'purchase-orders',
-                        'label' => 'Purchase Orders',
-                        'permission' => 'purchase-orders.view',
-                    ],
                 ],
             ],
             [
@@ -198,7 +240,7 @@ new class extends Component {
                     ],
                 ],
             ],
-             [
+            [
                 'heading' => 'Agents Management',
                 'items' => [
                     [
@@ -219,12 +261,12 @@ new class extends Component {
                 'heading' => 'Supplier Management',
                 'permission' => 'suppliers.view',
                 'items' => [
-                    [
-                        'icon' => 'plus',
-                        'route' => 'suppliers.create',
-                        'label' => 'Add Supplier',
-                        'permission' => 'suppliers.create',
-                    ],
+                    // [
+                    //     'icon' => 'plus',
+                    //     'route' => 'suppliers.create',
+                    //     'label' => 'Add Supplier',
+                    //     'permission' => 'suppliers.create',
+                    // ],
                     [
                         'icon' => 'truck',
                         'route' => 'suppliers',
@@ -234,9 +276,15 @@ new class extends Component {
                 ],
             ],
             [
-                'heading' => 'Reporting',
+                'heading' => 'Accounting',
                 'permission' => 'suppliers.view',
                 'items' => [
+                    [
+                        'icon' => 'user-group',
+                        'route' => 'chartofaccounts',
+                        'label' => 'Chart of Accounts',
+                        'permission' => 'suppliers.view',
+                    ],
                     [
                         'icon' => 'user-group',
                         'route' => 'agingreports',
@@ -375,7 +423,7 @@ new class extends Component {
                         @foreach ($group['items'] as $item)
                             @if (!$item['permission'] || auth()->user()->can($item['permission']))
                                 <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                    :current="request()->routeIs($item['route'])" wire:navigate>
+                                    :current="request()->routeIs($item['route'].'*')" wire:navigate>
                                     {{ __($item['label']) }}
                                 </flux:navlist.item>
                             @endif
@@ -385,7 +433,7 @@ new class extends Component {
                     @foreach ($group['items'] as $item)
                         @if (!$item['permission'] || auth()->user()->can($item['permission']))
                             <flux:navlist.item :icon="$item['icon']" :href="route($item['route'])"
-                                :current="request()->routeIs($item['route'])" wire:navigate>
+                                :current="request()->routeIs($item['route'].'*')" wire:navigate>
                                 {{ __($item['label']) }}
                             </flux:navlist.item>
                         @endif

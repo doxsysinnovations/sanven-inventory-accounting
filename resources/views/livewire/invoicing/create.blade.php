@@ -13,6 +13,9 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use App\Models\ChartOfAccount;
+use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
 
 new class extends Component {
     use WithFileUploads;
@@ -171,8 +174,8 @@ new class extends Component {
                 'code' => $product->product_code,
                 'price' => $product->selling_price,
                 'cost' => $product->cost_price,
-                'is_vatable' => (bool) ($product->is_vatable ?? 0), 
-                'vat_tax' => 0, 
+                'is_vatable' => (bool) ($product->is_vatable ?? 0),
+                'vat_tax' => 0,
                 'quantity' => 1,
                 'total' => 0,
             ];
@@ -194,18 +197,20 @@ new class extends Component {
 
     public function updateCartItem($cartKey)
     {
-        if (!isset($this->cart[$cartKey])) return;
+        if (!isset($this->cart[$cartKey])) {
+            return;
+        }
 
-        $rawQuantity =  floatval($this->cart[$cartKey]['quantity'] ?? 1);
+        $rawQuantity = floatval($this->cart[$cartKey]['quantity'] ?? 1);
         if (!is_numeric($rawQuantity) || $rawQuantity < 1) {
             $rawQuantity = 1;
             $this->cart[$cartKey]['quantity'] = 1;
         }
 
         $quantity = floatval($rawQuantity);
-        $unitPrice  = floatval($this->cart[$cartKey]['price'] ?? 0);
-        $isVatable  = $this->cart[$cartKey]['is_vatable'] ?? false;
-        $stockId    = $this->cart[$cartKey]['stock_id'] ?? null;
+        $unitPrice = floatval($this->cart[$cartKey]['price'] ?? 0);
+        $isVatable = $this->cart[$cartKey]['is_vatable'] ?? false;
+        $stockId = $this->cart[$cartKey]['stock_id'] ?? null;
 
         // Check against available stock
         if ($stockId) {
@@ -214,10 +219,7 @@ new class extends Component {
                 $availableQuantity = $stock->quantity;
 
                 // Adjust for other quantities of the same stock in cart (optional)
-                $otherQuantity = collect($this->cart)
-                    ->except($cartKey)
-                    ->where('stock_id', $stockId)
-                    ->sum('quantity');
+                $otherQuantity = collect($this->cart)->except($cartKey)->where('stock_id', $stockId)->sum('quantity');
 
                 $remainingStock = $availableQuantity - $otherQuantity;
 
@@ -226,7 +228,7 @@ new class extends Component {
                     $stockNumber = $stock->stock_number ?? 'N/A';
 
                     flash()->warning("Only {$remainingStock} available for {$productName} (Stock #: {$stockNumber}). Quantity has been adjusted.");
-                    
+
                     $quantity = $remainingStock;
                     $this->cart[$cartKey]['quantity'] = $quantity;
                 }
@@ -276,7 +278,7 @@ new class extends Component {
         $this->subtotal = collect($this->cart)->sum('total');
         $this->tax = collect($this->cart)->sum('vat_tax');
         $this->total_vat = $this->tax;
-        
+
         $discountAmount = $this->getTotalDiscountProperty();
         $this->total = floatval(sprintf('%.2f', $this->subtotal - $discountAmount));
     }
@@ -299,12 +301,12 @@ new class extends Component {
 
     public function getSubtotalProperty()
     {
-        return (float)collect($this->cart)->sum('total');
+        return (float) collect($this->cart)->sum('total');
     }
 
     public function getTotalDiscountProperty()
     {
-        $discount = (float)$this->discount;
+        $discount = (float) $this->discount;
         $baseTotal = $this->getSubtotalProperty();
 
         if ($this->discount_type === 'percentage') {
@@ -315,12 +317,12 @@ new class extends Component {
 
         return $this->total_discount;
     }
-    
+
     public function getTotalProperty()
     {
         $baseTotal = $this->getSubtotalProperty();
         $discountAmount = $this->getTotalDiscountProperty();
-        
+
         return floatval(sprintf('%.2f', $baseTotal - $discountAmount));
     }
 
@@ -500,7 +502,7 @@ new class extends Component {
                 'created_by' => auth()->id(),
                 'agent_id' => $this->assigned_agent,
             ]);
-            
+
             foreach ($this->cart as $item) {
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
@@ -538,6 +540,42 @@ new class extends Component {
                 ]);
             }
 
+            // --- Journal Entry Creation ---
+            $journalEntry = JournalEntry::create([
+                'journal_no' => 'JE-' . now()->format('YmdHis'),
+                'journal_date' => now(),
+                'reference_type' => Invoice::class,
+                'reference_id' => $invoice->id,
+                'description' => 'Invoice #' . $invoice->invoice_number . ' for Customer ' . $invoice->customer->name,
+                'status' => 'posted',
+            ]);
+            $accounts = ChartOfAccount::whereIn('code', [1100, 4000, 2100])->pluck('id', 'code');
+
+            $journalEntry->lines()->create([
+                'account_id' => $accounts[1100],
+                'debit' => $invoice->grand_total,
+                'credit' => 0,
+                'memo' => 'Accounts Receivable for Invoice #' . $invoice->invoice_number,
+            ]);
+
+            $journalEntry->lines()->create([
+                'account_id' => $accounts[4000],
+                'debit' => 0,
+                'credit' => $invoice->total_amount,
+                'memo' => 'Sales Revenue for Invoice #' . $invoice->invoice_number,
+            ]);
+
+            if ($invoice->tax > 0) {
+                $journalEntry->lines()->create([
+                    'account_id' => $accounts[2100],
+                    'debit' => 0,
+                    'credit' => $invoice->tax,
+                    'memo' => 'VAT Payable for Invoice #' . $invoice->invoice_number,
+                ]);
+            }
+
+            // --- End Journal Entry Creation ---
+
             DB::commit();
 
             $this->invoice = $invoice;
@@ -554,7 +592,6 @@ new class extends Component {
                 flash()->success('Invoice created successfully!');
                 return $invoice;
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
             $this->invoice = null;
@@ -572,11 +609,10 @@ new class extends Component {
         try {
             $this->isLoading = true;
             $this->showPrintPreview = true;
-            
-            $createdInvoice = $this->submitInvoice();
-            
-            if ($createdInvoice) {
 
+            $createdInvoice = $this->submitInvoice();
+
+            if ($createdInvoice) {
                 $this->invoice = Invoice::with(['customer', 'agent', 'items'])->find($createdInvoice->id);
 
                 if ($this->invoice) {
@@ -603,7 +639,7 @@ new class extends Component {
     {
         $this->loadStocks();
     }
-    
+
     public function downloadPDF()
     {
         if (!$this->invoice) {
@@ -621,7 +657,6 @@ new class extends Component {
 
     public function streamPDF()
     {
-
         $this->loadingPDFPreview = true;
         $this->dispatch('pdf-loading-started');
 
@@ -634,14 +669,18 @@ new class extends Component {
         ]);
 
         $this->loadingPDFPreview = false;
-        $this->dispatch('pdf-generation-complete'); 
+        $this->dispatch('pdf-generation-complete');
 
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->stream();
-        }, 'invoice-preview-' . $this->invoice->invoice_number . '.pdf', [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="invoice-preview-' . $this->invoice->invoice_number . '.pdf"'
-        ]);
+        return response()->streamDownload(
+            function () use ($pdf) {
+                echo $pdf->stream();
+            },
+            'invoice-preview-' . $this->invoice->invoice_number . '.pdf',
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="invoice-preview-' . $this->invoice->invoice_number . '.pdf"',
+            ],
+        );
     }
 
     public function closePrintPreview()
@@ -673,7 +712,8 @@ new class extends Component {
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 1,
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' =>
+                                    $currentStep === 1,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 1,
                             ])>1</div>
@@ -692,7 +732,8 @@ new class extends Component {
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 2,
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' =>
+                                    $currentStep === 2,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 2,
                             ])>2</div>
@@ -711,7 +752,8 @@ new class extends Component {
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 3,
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' =>
+                                    $currentStep === 3,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 3,
                             ])>3</div>
@@ -726,7 +768,9 @@ new class extends Component {
                 <div class="md:col-span-3 bg-white dark:bg-(--color-accent-1-dark)">
                     @include('livewire.invoicing.views.step-1-customer-information')
                     @include('livewire.invoicing.views.step-2-add-products')
-                    @include('livewire.invoicing.views.step-3-review-invoice',['isEditing' => isset($invoice)])
+                    @include('livewire.invoicing.views.step-3-review-invoice', [
+                        'isEditing' => isset($invoice),
+                    ])
                 </div>
             </div>
         </div>

@@ -74,4 +74,19 @@ class Invoice extends Model
     {
         return $this->hasMany(AgentCommission::class);
     }
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+    // Accessor for paid_amount
+    public function getPaidAmountAttribute()
+    {
+        return $this->payments()->sum('amount_paid');
+    }
+
+    // Accessor for balance
+    public function getBalanceAttribute()
+    {
+        return $this->grand_total - $this->paid_amount;
+    }
 }

@@ -6,5 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
-    protected $guarded = [];
+    protected $table = 'customers';
+    protected $fillable = ['name', 'email', 'phone', 'address'];
+    // Remove this line:
+    public function salesOrders()
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
 }

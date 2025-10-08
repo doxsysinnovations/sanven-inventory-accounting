@@ -35,7 +35,7 @@ class Stock extends Model implements HasMedia
         'invoice_number', // Add invoice number
         'batch_notes', // Add batch notes
         'barcode',
-        'remarks'
+        'remarks',
     ];
 
     protected $casts = [
@@ -95,4 +95,8 @@ class Stock extends Model implements HasMedia
         });
     }
 
+    public function alterations()
+    {
+        return $this->hasMany(StockAlteration::class);
+    }
 }

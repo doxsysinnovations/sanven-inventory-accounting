@@ -91,6 +91,9 @@ class RolePermissionSeeder extends Seeder
             'stocks.edit',
             'stocks.delete',
             'stocks.view-expiry',
+            'stocks.alter',
+            'stocks.broken',
+            'stocks.returned',
 
             //Orders/POS
             'orders.view',
@@ -189,6 +192,7 @@ class RolePermissionSeeder extends Seeder
             'purchase-orders.create',
             'purchase-orders.edit',
             'purchase-orders.delete',
+            'purchase-orders.approve',
             'purchase-orders.update-status',
 
             //General Settings

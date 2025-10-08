@@ -4,6 +4,10 @@ use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use App\Models\Invoice;
 use Livewire\Attributes\Title;
+use App\Models\JournalEntry;
+use App\Models\JournalLine;
+use App\Models\ChartOfAccount;
+use Livewire\WithFileUploads;
 
 new class extends Component {
     use WithPagination;
@@ -19,11 +23,21 @@ new class extends Component {
     public $deleteError = null;
 
     public $showInvoiceModal = false;
-    public $selectedInvoice = null;
+    public $invoice = null;
+    public $collectAmount;
+    public $collectMethod = 'cash';
+    public $collectReference;
+    public $collectNotes;
+    public $payFull;
+    public $collectDate; // New property for payment date
+    public $paymentProof = []; // For multiple files
+    // Add the trait at the top of your class
+    use WithFileUploads;
 
     public function mount()
     {
         $this->perPage = session('perPage', 10);
+        $this->collectDate = now()->toDateString(); // Set default payment date to today
     }
 
     public function updatedPerPage($value)
@@ -64,6 +78,165 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function collectPayment($invoiceId)
+    {
+        $this->validate([
+            'collectAmount' => 'required|numeric|min:1',
+            'collectMethod' => 'required|string',
+            'collectReference' => 'nullable|string|max:255',
+            'collectNotes' => 'nullable|string',
+            'collectDate' => ['required', 'date', 'before_or_equal:today'],
+            'paymentProof.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        $invoice = \App\Models\Invoice::findOrFail($invoiceId);
+
+        // Prevent overpayment
+        $remaining = $invoice->balance;
+        if ($this->collectAmount > $remaining) {
+            $this->addError('collectAmount', 'Payment exceeds invoice balance.');
+            return;
+        }
+
+        DB::transaction(function () use ($invoice) {
+            $previousPayments = \App\Models\Payment::where('invoice_id', $invoice->id)->orderBy('payment_date')->orderBy('created_at')->get();
+
+            $runningBalance = $invoice->grand_total;
+            foreach ($previousPayments as $p) {
+                $runningBalance -= $p->amount_paid;
+            }
+            $balanceAfter = $runningBalance - $this->collectAmount;
+            // Create payment record
+            $payment = \App\Models\Payment::create([
+                'invoice_id' => $invoice->id,
+                'user_id' => Auth::id(),
+                'amount_paid' => $this->collectAmount,
+                'payment_method' => $this->collectMethod,
+                'payment_date' => $this->collectDate,
+                'reference' => $this->collectReference,
+                'notes' => $this->collectNotes,
+                'status' => 'collected',
+                'balance_after' => $balanceAfter,
+            ]);
+
+            // Store payment proofs
+            if (!empty($this->paymentProof)) {
+                foreach ($this->paymentProof as $file) {
+                    $path = $file->store('payment-proofs', 'public');
+                    \App\Models\PaymentProof::create([
+                        'payment_id' => $payment->id,
+                        'file_path' => $path,
+                        'file_type' => $file->getMimeType(),
+                        'original_name' => $file->getClientOriginalName(),
+                    ]);
+                }
+            }
+
+            // Update invoice status only
+            $newBalance = $invoice->balance - $this->collectAmount;
+            $isOverdue = \Carbon\Carbon::parse($invoice->due_date)->lt(now());
+
+            if ($newBalance <= 0) {
+                $invoice->status = 'paid';
+            } elseif ($isOverdue) {
+                $invoice->status = 'overdue';
+            } else {
+                $invoice->status = 'partially_paid';
+            }
+            $invoice->save();
+
+            // --- Journal Entry Creation ---
+            $journalEntry = JournalEntry::create([
+                'journal_no' => 'JE-' . now()->format('YmdHis'),
+                'journal_date' => now(),
+                'reference_type' => Invoice::class,
+                'reference_id' => $invoice->id,
+                'description' => 'Invoice #' . $invoice->invoice_number . ' for Customer ' . $invoice->customer->name,
+                'status' => 'posted',
+            ]);
+            // Get account IDs
+            $cashAccount = \App\Models\ChartOfAccount::where('code', '1200')->first();
+            $arAccount = \App\Models\ChartOfAccount::where('code', '1100')->first();
+
+            // Journal entries
+            \App\Models\JournalLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'invoice_id' => $invoice->id,
+                'account_id' => $cashAccount ? $cashAccount->id : null,
+                'debit' => $this->collectAmount,
+                'credit' => 0,
+                'notes' => "Payment collected for Invoice #{$invoice->invoice_number}",
+            ]);
+            \App\Models\JournalLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'invoice_id' => $invoice->id,
+                'account_id' => $arAccount ? $arAccount->id : null,
+                'debit' => 0,
+                'credit' => $this->collectAmount,
+                'notes' => "Payment applied to Invoice #{$invoice->invoice_number}",
+            ]);
+        });
+
+        flash()->success('Payment collected successfully!');
+
+        $this->reset(['collectAmount', 'collectMethod', 'collectReference', 'collectNotes', 'collectDate', 'paymentProof']);
+
+        $this->dispatch('paymentCollected', message: 'Payment collected successfully!');
+        $this->dispatch('flux:close-modal', name: 'make-payment-' . $invoiceId);
+        Flux::modals()->close();
+    }
+    public function removeProof($idx)
+    {
+        $files = $this->paymentProof;
+        unset($files[$idx]);
+        $this->paymentProof = array_values($files);
+    }
+    public function getReceivablesProperty()
+    {
+        $receivableId = ChartOfAccount::where('code', '1100')->value('id');
+        return \App\Models\JournalLine::with(['journalEntry.invoice.customer', 'journalEntry.invoice.agent'])
+            ->where('account_id', $receivableId)
+            ->where('debit', '>', 0)
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('memo', 'like', '%' . $this->search . '%')
+                        ->orWhereHas('journalEntry', function ($je) {
+                            $je->where('reference', 'like', '%' . $this->search . '%')->orWhere('description', 'like', '%' . $this->search . '%');
+                        })
+                        ->orWhereHas('journalEntry.invoice', function ($inv) {
+                            $inv->where('invoice_number', 'like', '%' . $this->search . '%');
+                        })
+                        ->orWhereHas('journalEntry.invoice.customer', function ($cust) {
+                            $cust->where('name', 'like', '%' . $this->search . '%');
+                        });
+                });
+            })
+            // Status filter
+            ->when($this->status, function ($query) {
+                $query->whereHas('journalEntry.invoice', function ($inv) {
+                    $inv->where('status', $this->status);
+                });
+            })
+            // Date range filter (on invoice issued_date)
+            ->when($this->startDate && $this->endDate, function ($query) {
+                $query->whereHas('journalEntry.invoice', function ($inv) {
+                    $inv->whereBetween('issued_date', [$this->startDate, $this->endDate]);
+                });
+            })
+            ->when($this->startDate && !$this->endDate, function ($query) {
+                $query->whereHas('journalEntry.invoice', function ($inv) {
+                    $inv->where('issued_date', '>=', $this->startDate);
+                });
+            })
+            ->when($this->endDate && !$this->startDate, function ($query) {
+                $query->whereHas('journalEntry.invoice', function ($inv) {
+                    $inv->where('issued_date', '<=', $this->endDate);
+                });
+            })
+            ->latest()
+            ->paginate($this->perPage);
+    }
+
     public function confirmDelete($invoiceId)
     {
         $this->invoiceToDelete = Invoice::find($invoiceId);
@@ -92,91 +265,107 @@ new class extends Component {
         $this->reset(['invoiceToDelete', 'showDeleteModal', 'deleteError']);
     }
 
-    #[Title('Invoices')]
+    #[Title('Receivables')]
     public function with(): array
     {
         return [
-            'invoices' => $this->invoices,
+            'receivables' => $this->receivables,
+            'totalReceivablesCount' => $this->totalReceivablesCount,
+            'totalReceivablesAmount' => $this->totalReceivablesAmount,
+            'overdueReceivablesCount' => $this->overdueReceivablesCount,
+            'overdueReceivablesAmount' => $this->overdueReceivablesAmount,
+            'dueThisMonthCount' => $this->dueThisMonthCount,
+            'dueThisMonthAmount' => $this->dueThisMonthAmount,
+            'collectedThisMonthCount' => $this->collectedThisMonthCount,
+            'collectedThisMonthAmount' => $this->collectedThisMonthAmount,
         ];
     }
 
     public function showInvoice($invoiceId)
     {
-        $this->selectedInvoice = Invoice::with(['customer', 'items.stock.product'])->find($invoiceId);
+        $this->invoice = Invoice::with(['customer', 'items.stock.product'])->find($invoiceId);
         $this->showInvoiceModal = true;
     }
 
     public function closeInvoiceModal()
     {
-        $this->reset(['selectedInvoice', 'showInvoiceModal']);
+        $this->reset(['invoice', 'showInvoiceModal']);
     }
 
-
-public function getTotalInvoicesCountProperty()
-{
-    return $this->filteredInvoicesQuery()->count();
-}
-
-public function getTotalInvoicesAmountProperty()
-{
-    return $this->filteredInvoicesQuery()->sum('grand_total');
-}
-
-public function getToDeliverInvoicesCountProperty()
-{
-    return $this->filteredInvoicesQuery()->where('status', 'to_deliver')->count();
-}
-
-public function getToDeliverInvoicesAmountProperty()
-{
-    return $this->filteredInvoicesQuery()->where('status', 'to_deliver')->sum('grand_total');
-}
-
-public function getDeliveredInvoicesCountProperty()
-{
-    return $this->filteredInvoicesQuery()->where('status', 'delivered')->count();
-}
-
-public function getDeliveredInvoicesAmountProperty()
-{
-    return $this->filteredInvoicesQuery()->where('status', 'delivered')->sum('grand_total');
-}
-
-public function getPendingInvoicesCountProperty()
-{
-    return $this->filteredInvoicesQuery()->where('status', 'pending')->count();
-}
-
-public function getPendingInvoicesAmountProperty()
-{
-    return $this->filteredInvoicesQuery()->where('status', 'pending')->sum('grand_total');
-}
-    public function getInvoicesProperty()
+    public function getTotalReceivablesCountProperty()
     {
-        return $this->filteredInvoicesQuery()
-        ->latest()
-        ->paginate($this->perPage);
+        $receivableId = ChartOfAccount::where('code', '1100')->value('id');
+        return JournalLine::where('account_id', $receivableId)->where('debit', '>', 0)->distinct('journal_entry_id')->count('journal_entry_id');
     }
 
-    protected function filteredInvoicesQuery()
+    public function getTotalReceivablesAmountProperty()
     {
-        return Invoice::with('customer')
-            ->when($this->search, function ($query) {
-                $query->where('invoice_number', 'like', '%' . $this->search . '%')->orWhereHas('customer', function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%');
-                });
+        $receivableId = ChartOfAccount::where('code', '1100')->value('id');
+        return JournalLine::where('account_id', $receivableId)->where('debit', '>', 0)->with('journalEntry.invoice')->get()->pluck('journalEntry.invoice.grand_total')->filter()->sum();
+    }
+
+    public function getOverdueReceivablesCountProperty()
+    {
+        $receivableId = ChartOfAccount::where('code', '1100')->value('id');
+        return JournalLine::where('account_id', $receivableId)
+            ->where('debit', '>', 0)
+            ->whereHas('journalEntry.invoice', function ($q) {
+                $q->where('status', 'overdue');
             })
-            ->when($this->paymentMethod, fn($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->startDate && $this->endDate, function ($query) {
-                $query->whereBetween('issued_date', [$this->startDate, $this->endDate]);
+            ->distinct('journal_entry_id')
+            ->count('journal_entry_id');
+    }
+
+    public function getOverdueReceivablesAmountProperty()
+    {
+        $receivableId = ChartOfAccount::where('code', '1100')->value('id');
+        return JournalLine::where('account_id', $receivableId)
+            ->where('debit', '>', 0)
+            ->whereHas('journalEntry.invoice', function ($q) {
+                $q->where('status', 'overdue');
             })
-            ->when($this->startDate && !$this->endDate, function ($query) {
-                $query->where('issued_date', '>=', $this->startDate);
+            ->with('journalEntry.invoice')
+            ->get()
+            ->pluck('journalEntry.invoice.grand_total')
+            ->filter()
+            ->sum();
+    }
+
+    public function getDueThisMonthCountProperty()
+    {
+        $receivableId = ChartOfAccount::where('code', '1100')->value('id');
+        return JournalLine::where('account_id', $receivableId)
+            ->where('debit', '>', 0)
+            ->whereHas('journalEntry.invoice', function ($q) {
+                $q->whereMonth('due_date', now()->month)->whereYear('due_date', now()->year);
             })
-            ->when($this->endDate && !$this->startDate, function ($query) {
-                $query->where('issued_date', '<=', $this->endDate);
-            });
+            ->distinct('journal_entry_id')
+            ->count('journal_entry_id');
+    }
+
+    public function getDueThisMonthAmountProperty()
+    {
+        $receivableId = ChartOfAccount::where('code', '1100')->value('id');
+        return JournalLine::where('account_id', $receivableId)
+            ->where('debit', '>', 0)
+            ->whereHas('journalEntry.invoice', function ($q) {
+                $q->whereMonth('due_date', now()->month)->whereYear('due_date', now()->year);
+            })
+            ->with('journalEntry.invoice')
+            ->get()
+            ->pluck('journalEntry.invoice.grand_total')
+            ->filter()
+            ->sum();
+    }
+
+    public function getCollectedThisMonthCountProperty()
+    {
+        return \App\Models\Payment::whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->count();
+    }
+
+    public function getCollectedThisMonthAmountProperty()
+    {
+        return \App\Models\Payment::whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount_paid');
     }
 }; ?>
 
@@ -203,7 +392,8 @@ public function getPendingInvoicesAmountProperty()
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Receivables</span>
+                        <span
+                            class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Receivables</span>
                     </div>
                 </li>
             </ol>
@@ -236,19 +426,6 @@ public function getPendingInvoicesAmountProperty()
             </div>
         </div>
 
-        <!-- Payment Method -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Method</label>
-            <select wire:model.live="paymentMethod"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
-                <option value="">All Methods</option>
-                <option value="cash">Cash</option>
-                <option value="credit_card">Credit Card</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="paypal">PayPal</option>
-                <option value="other">Other</option>
-            </select>
-        </div>
 
         <!-- Status -->
         <div>
@@ -258,8 +435,10 @@ public function getPendingInvoicesAmountProperty()
                 <option value="">All Statuses</option>
                 <option value="pending">Pending</option>
                 <option value="paid">Paid</option>
+                <option value="partially_paid">Partially Paid</option>
                 <option value="overdue">Overdue</option>
                 <option value="cancelled">Cancelled</option>
+
             </select>
         </div>
 
@@ -286,89 +465,83 @@ public function getPendingInvoicesAmountProperty()
         </div>
     </div>
 
+
     <div class="flex justify-between overflow-x-auto mb-8 gap-6">
-        <!-- Total -->
+
+        <!-- Total AR -->
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            class="flex gap-3 items-center sm:w-4/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
             <div class="h-14 w-14 rounded-full border-2 border-blue-500 text-blue-500 flex justify-center items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-linecap="round" stroke-width="1.5">
-                    <path
-                        d="M13.358 21c2.227 0 3.341 0 4.27-.533c.93-.532 1.52-1.509 2.701-3.462l.681-1.126c.993-1.643 1.49-2.465 1.49-3.379s-.497-1.736-1.49-3.379l-.68-1.126c-1.181-1.953-1.771-2.93-2.701-3.462C16.699 4 15.585 4 13.358 4h-2.637C9.683 4 8.783 4 8 4.024m-4.296 1.22C2.5 6.49 2.5 8.495 2.5 12.5s0 6.01 1.204 7.255c.998 1.033 2.501 1.209 5.196 1.239M7.5 7.995V17">
-                    </path>
+                <!-- Total AR: Banknotes Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 9V7a5 5 0 00-10 0v2M5 9h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z" />
                 </svg>
             </div>
             <div>
-                <h5 class="text-base font-medium">Total</h5>
-                <p class="text-sm opacity-80">{{ $this->totalInvoicesCount }} invoices</p>
-                <h6 class="text-sm font-semibold">₱{{ number_format($this->totalInvoicesAmount, 2) }}</h6>
+                <h5 class="text-base font-medium">Total AR</h5>
+                <p class="text-sm opacity-80">{{ $totalReceivablesCount }} receivables</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($totalReceivablesAmount, 2) }}</h6>
             </div>
         </div>
 
-        <!-- Shipped -->
+        <!-- Overdue -->
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
-            <div
-                class="h-14 w-14 rounded-full border-2 border-green-500 text-green-500 flex justify-center items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path
-                        d="M3 10.417c0-3.198 0-4.797.378-5.335c.377-.537 1.88-1.052 4.887-2.081l.573-.196C10.405 2.268 11.188 2 12 2s1.595.268 3.162.805l.573.196c3.007 1.029 4.51 1.544 4.887 2.081C21 5.62 21 7.22 21 10.417v1.574c0 5.638-4.239 8.375-6.899 9.536C13.38 21.842 13.02 22 12 22s-1.38-.158-2.101-.473C7.239 20.365 3 17.63 3 11.991z">
-                    </path>
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M16 11.55L12.6 9a1 1 0 0 0-1.2 0L8 11.55m6 2.5l-2-1.5l-2 1.5"></path>
+            class="flex gap-3 items-center sm:w-4/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            <div class="h-14 w-14 rounded-full border-2 border-red-500 text-red-500 flex justify-center items-center">
+                <!-- Overdue: Exclamation Circle Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
                 </svg>
             </div>
             <div>
-                <h5 class="text-base font-medium">To Deliver</h5>
-                <p class="text-sm opacity-80">{{ $this->toDeliverInvoicesCount }} invoices</p>
-                <h6 class="text-sm font-semibold">₱{{ number_format($this->toDeliverInvoicesAmount, 2) }}</h6>
+                <h5 class="text-base font-medium">Overdue</h5>
+                <p class="text-sm opacity-80">{{ $overdueReceivablesCount }} receivables</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($overdueReceivablesAmount, 2) }}</h6>
             </div>
         </div>
 
-        <!-- Delivered -->
+        <!-- Due This Month -->
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
-            <div
-                class="h-14 w-14 rounded-full border-2 border-purple-500 text-purple-500 flex justify-center items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path
-                        d="M5 8.515C5 4.917 8.134 2 12 2s7 2.917 7 6.515c0 3.57-2.234 7.735-5.72 9.225a3.28 3.28 0 0 1-2.56 0C7.234 16.25 5 12.084 5 8.515Z">
-                    </path>
-                    <path d="M14 9a2 2 0 1 1-4 0a2 2 0 0 1 4 0Z"></path>
-                    <path stroke-linecap="round"
-                        d="M20.96 15.5c.666.602 1.04 1.282 1.04 2c0 2.485-4.477 4.5-10 4.5S2 19.985 2 17.5c0-.718.374-1.398 1.04-2">
-                    </path>
-                </svg>
-            </div>
-            <div>
-                <h5 class="text-base font-medium">Delivered</h5>
-                <p class="text-sm opacity-80">{{ $this->deliveredInvoicesCount }} invoices</p>
-                <h6 class="text-sm font-semibold">₱{{ number_format($this->deliveredInvoicesAmount, 2) }}</h6>
-            </div>
-        </div>
-
-        <!-- Pending -->
-        <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            class="flex gap-3 items-center sm:w-4/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
             <div
                 class="h-14 w-14 rounded-full border-2 border-yellow-500 text-yellow-500 flex justify-center items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5">
-                    <path stroke-linejoin="round"
-                        d="m14.52 10.68l-.28-.28a3.168 3.168 0 1 0 .907 2.6m-.627-2.32L13 11m1.52-.32V9"></path>
-                    <path
-                        d="M2 13.364c0-3.065 0-4.597.749-5.697a4.4 4.4 0 0 1 1.226-1.204c.72-.473 1.622-.642 3.003-.702c.659 0 1.226-.49 1.355-1.125A2.064 2.064 0 0 1 10.366 3h3.268c.988 0 1.839.685 2.033 1.636c.129.635.696 1.125 1.355 1.125c1.38.06 2.282.23 3.003.702c.485.318.902.727 1.226 1.204c.749 1.1.749 2.632.749 5.697s0 4.596-.749 5.697a4.4 4.4 0 0 1-1.226 1.204C18.904 21 17.343 21 14.222 21H9.778c-3.121 0-4.682 0-5.803-.735A4.4 4.4 0 0 1 2.75 19.06A3.4 3.4 0 0 1 2.277 18">
-                    </path>
+                <!-- Due This Month: Calendar Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             </div>
             <div>
-                <h5 class="text-base font-medium">Pending</h5>
-                <p class="text-sm opacity-80">{{ $this->pendingInvoicesCount }} invoices</p>
-                <h6 class="text-sm font-semibold">₱{{ number_format($this->pendingInvoicesAmount, 2) }}</h6>
+                <h5 class="text-base font-medium">Due This Month</h5>
+                <p class="text-sm opacity-80">{{ $dueThisMonthCount }} receivables</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($dueThisMonthAmount, 2) }}</h6>
             </div>
         </div>
+
+        <!-- Collected This Month -->
+        <div
+            class="flex gap-3 items-center sm:w-4/12 w-full cursor-pointer p-5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+            <div
+                class="h-14 w-14 rounded-full border-2 border-green-500 text-green-500 flex justify-center items-center">
+                <!-- Collected: Check Circle Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2l4-4m5 2a9 9 0 11-18 0a9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <h5 class="text-base font-medium">Collected ({{ now()->format('M') }})</h5>
+                <p class="text-sm opacity-80">{{ $collectedThisMonthCount }} payments</p>
+                <h6 class="text-sm font-semibold">₱{{ number_format($collectedThisMonthAmount, 2) }}</h6>
+            </div>
+        </div>
+
     </div>
 
 
@@ -389,7 +562,7 @@ public function getPendingInvoicesAmountProperty()
 
     <!-- Invoice Table -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        @if ($invoices->isEmpty())
+        @if ($receivables->isEmpty())
             <div class="p-8 text-center">
                 <svg xmlns="http://www.w3.org/2000/svg"
                     class="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none"
@@ -404,122 +577,554 @@ public function getPendingInvoicesAmountProperty()
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Invoice #
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Customer
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Agent
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Amount
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Date
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Payment
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Action
-                            </th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Invoice #</th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Customer</th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Invoice Date</th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Due Date</th>
+                            <th
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Original Amount</th>
+                            <th
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Amount Paid</th>
+                            <th
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Balance</th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Status</th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                Action</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        @foreach ($invoices as $invoice)
-                            <tr wire:key="invoice-{{ $invoice->id }}"
+                        @foreach ($receivables as $line)
+                            @php
+                                $invoice = $line->journalEntry->invoice ?? null;
+                                $originalAmount = $invoice->grand_total ?? 0;
+                                $amountPaid = $invoice ? $invoice->payments()->sum('amount_paid') : 0;
+                                $balance = $originalAmount - $amountPaid;
+
+                                // Default status
+                                $status = 'Pending';
+
+                                if ($invoice) {
+                                    if ($invoice->status === 'cancelled') {
+                                        $status = 'Cancelled';
+                                    } elseif ($invoice->status === 'written_off') {
+                                        $status = 'Written Off';
+                                    } elseif ($invoice->status === 'overdue') {
+                                        $status = 'Overdue';
+                                    } elseif ($balance == 0 && $originalAmount > 0) {
+                                        $status = 'Paid';
+                                    } elseif ($amountPaid > 0 && $balance > 0) {
+                                        $status = 'Partially Paid';
+                                    } elseif (\Carbon\Carbon::parse($invoice->due_date)->lt(now()) && $balance > 0) {
+                                        $status = 'Overdue';
+                                    } elseif (\Carbon\Carbon::parse($invoice->due_date)->isToday() && $balance > 0) {
+                                        $status = 'Due';
+                                    }
+                                }
+                            @endphp
+                            <tr wire:key="receivable-{{ $line->id }}"
                                 class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <td
                                     class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    {{ $invoice->invoice_number }}
+                                    {{ $invoice->invoice_number ?? '' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $invoice->customer->name }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $invoice->customer->email }}</div>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                    {{ $invoice->customer->name ?? '' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $invoice->agent->name }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $invoice->agent->email }}</div>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ \Carbon\Carbon::parse($invoice->issued_date ?? '')->format('M d, Y') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ \Carbon\Carbon::parse($invoice->due_date ?? '')->format('M d, Y') }}
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900 dark:text-gray-100">
-                                    Php {{ number_format($invoice->grand_total, 2) }}
+                                    class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-gray-100">
+                                    ₱{{ number_format($originalAmount, 2) }}
                                 </td>
                                 <td
-                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400">
-                                    {{ \Carbon\Carbon::parse($invoice->issued_date)->format('M d, Y') }} </td>
+                                    class="px-6 py-4 whitespace-nowrap text-right text-sm text-green-600 dark:text-green-400 font-semibold">
+                                    ₱{{ number_format($amountPaid, 2) }}
+                                </td>
+                                <td
+                                    class="px-6 py-4 whitespace-nowrap text-right text-sm text-blue-600 dark:text-blue-400 font-semibold">
+                                    ₱{{ number_format($balance, 2) }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-left">
                                     <span @class([
+
                                         'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' =>
-                                            $invoice->status === 'pending',
+                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' => in_array(
+                                            $status,
+                                            ['Pending', 'Due']),
                                         'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' =>
-                                            $invoice->status === 'paid',
+                                            $status === 'Paid',
+                                        'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100' =>
+                                            $status === 'Partially Paid',
                                         'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' =>
-                                            $invoice->status === 'overdue',
-                                        'bg-gray-50 text-gray-800 dark:bg-gray-700 dark:text-gray-100' =>
-                                            $invoice->status === 'cancelled',
+                                            $status === 'Overdue',
+                                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100' => in_array(
+                                            $status,
+                                            ['Cancelled', 'Written Off']),
                                     ])>
-                                        {{ ucfirst($invoice->status) }}
+                                        {{ $status }}
                                     </span>
                                 </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400">
-                                    {{ ucfirst(str_replace('_', ' ', $invoice->payment_method)) }}
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        @can('invoicing.show')
-                                            <button wire:click="showInvoice({{ $invoice->id }})"
-                                                class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
-                                            </button>
-                                        @endcan
-                                        @can('invoicing.edit')
-                                            <a href="{{ route('invoicing.edit', $invoice->id) }}"
-                                                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </a>
-                                        @endcan
-                                        @can('invoicing.delete')
-                                            <button wire:click="confirmDelete({{ $invoice->id }})"
-                                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        @endcan
+                                    <flux:dropdown>
+                                        <flux:button class="cursor-pointer hover:bg-gray-50 hover:shadow-md"
+                                            icon:trailing="chevron-down">Actions</flux:button>
+                                        <flux:menu>
+                                            <flux:modal.trigger name="view-invoice-{{ $invoice->id ?? '' }}">
+                                                <flux:menu.item icon="eye"
+                                                    class="hover:bg-gray-50 hover:font-bold cursor-pointer">
+                                                    &nbsp;View
+                                                </flux:menu.item>
+                                            </flux:modal.trigger>
+                                            @if ($balance > 0)
+                                                <flux:modal.trigger name="make-payment-{{ $invoice->id ?? '' }}">
+                                                    <flux:menu.item
+                                                        class="hover:bg-gray-50 hover:font-bold cursor-pointer"
+                                                        icon="credit-card">
+                                                        Make Payment
+                                                    </flux:menu.item>
+                                                </flux:modal.trigger>
+                                            @endif
+                                        </flux:menu>
+                                    </flux:dropdown>
 
-                                    </div>
+
+
+                                    <flux:modal name="view-invoice-{{ $invoice->id ?? '' }}"
+                                        class="sm:max-w-4xl w-full">
+                                        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                            <!-- Modal Header -->
+                                            <div
+                                                class="flex justify-between items-start border-b border-gray-200 dark:border-gray-700 pb-3 mb-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                                        Invoice #{{ $invoice->invoice_number ?? '' }}
+                                                    </h3>
+                                                    <div
+                                                        class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+                                                        <div
+                                                            class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                            <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                                fill="currentColor">
+                                                                <path fill-rule="evenodd"
+                                                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                                                    clip-rule="evenodd" />
+                                                            </svg>
+                                                            Issued:
+                                                            {{ \Carbon\Carbon::parse($invoice->issued_date ?? '')->format('M d, Y') }}
+                                                        </div>
+                                                        <div
+                                                            class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                            <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                                fill="currentColor">
+                                                                <path fill-rule="evenodd"
+                                                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                                                    clip-rule="evenodd" />
+                                                            </svg>
+                                                            Due:
+                                                            {{ \Carbon\Carbon::parse($invoice->due_date ?? '')->format('M d, Y') }}
+                                                        </div>
+                                                        <div
+                                                            class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                            <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                                fill="currentColor">
+                                                                <path
+                                                                    d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                                            </svg>
+                                                            Agent: {{ $invoice->agent->name ?? '' }}
+                                                        </div>
+                                                        <div
+                                                            class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                            <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
+                                                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                                fill="currentColor">
+                                                                <path
+                                                                    d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                                            </svg>
+                                                            Customer: {{ $invoice->customer->name ?? '' }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                            <!-- Invoice Details -->
+                                            <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                                {{-- <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">BILL FROM</h4>
+                    <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">Your Company Name</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">123 Business Street</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">City, State 12345</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Phone: (123) 456-7890</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Email: billing@yourcompany.com</p>
+                </div> --}}
+                                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                                    <h4
+                                                        class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                                                        BILL TO</h4>
+                                                    <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                                        {{ $invoice->customer->name ?? '' }}</p>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                        {{ $invoice->customer->address ?? '' }}</p>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                        {{ $invoice->customer->phone ?? '' }}</p>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                        {{ $invoice->customer->email ?? '' }}</p>
+                                                </div>
+                                            </div>
+
+                                            <!-- Invoice Items -->
+                                            <div class="mt-6">
+                                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                                                    INVOICE ITEMS</h4>
+                                                <div class="overflow-x-auto">
+                                                    <table
+                                                        class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                        <thead class="bg-gray-50 dark:bg-gray-700">
+                                                            <tr>
+                                                                <th
+                                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                                    Item</th>
+                                                                <th
+                                                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                                    Qty</th>
+                                                                <th
+                                                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                                    Price</th>
+                                                                <th
+                                                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                                    Discount</th>
+                                                                <th
+                                                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                                    Tax</th>
+                                                                <th
+                                                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                                    Total</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody
+                                                            class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                            @foreach ($invoice->items ?? [] as $item)
+                                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                                    <td
+                                                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                                                        {{ $item->product_name ?? 'N/A' }}
+                                                                        @if (!empty($item->notes))
+                                                                            <p
+                                                                                class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                                {{ $item->notes }}</p>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td
+                                                                        class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                                        {{ $item->quantity }}
+                                                                    </td>
+                                                                    <td
+                                                                        class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                                        ₱{{ number_format($item->price, 2) }}
+                                                                    </td>
+                                                                    <td
+                                                                        class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                                        ₱{{ number_format($item->discount ?? 0, 2) }}
+                                                                    </td>
+                                                                    <td
+                                                                        class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                                                                        ₱{{ number_format($item->tax ?? 0, 2) }}
+                                                                    </td>
+                                                                    <td
+                                                                        class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100 font-medium">
+                                                                        ₱{{ number_format($item->total, 2) }}
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <!-- Invoice Summary -->
+                                            <div class="mt-6 flex justify-end">
+                                                <div class="w-full max-w-md">
+                                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                                        <div
+                                                            class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                            <span>Subtotal</span>
+                                                            <span>₱{{ number_format($invoice->total_amount ?? 0, 2) }}</span>
+                                                        </div>
+                                                        @if ($invoice->discount ?? 0 > 0)
+                                                            <div
+                                                                class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                                <span>Discount</span>
+                                                                <span>-
+                                                                    ₱{{ number_format($invoice->discount ?? 0, 2) }}</span>
+                                                            </div>
+                                                        @endif
+                                                        @if ($invoice->tax ?? 0 > 0)
+                                                            <div
+                                                                class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                                <span>Tax</span>
+                                                                <span>₱{{ number_format($invoice->tax ?? 0, 2) }}</span>
+                                                            </div>
+                                                        @endif
+                                                        <div
+                                                            class="flex justify-between py-2 text-lg font-medium text-gray-900 dark:text-gray-100 border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                                                            <span>Total</span>
+                                                            <span>₱{{ number_format($invoice->grand_total ?? 0, 2) }}</span>
+                                                        </div>
+                                                        <div
+                                                            class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                            <span>Payment Method</span>
+                                                            <span>{{ ucfirst(str_replace('_', ' ', $invoice->payment_method ?? 'N/A')) }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Invoice Notes -->
+                                            @if (!empty($invoice->notes))
+                                                <div class="mt-6">
+                                                    <h4
+                                                        class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                                                        NOTES</h4>
+                                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                                        <p class="text-sm text-gray-900 dark:text-gray-100">
+                                                            {{ $invoice->notes }}</p>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div
+                                            class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                            <flux:modal.close>
+                                                <flux:button variant="primary">Close</flux:button>
+                                            </flux:modal.close>
+                                            <a href="#" target="_blank"
+                                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                                Download PDF
+                                            </a>
+                                        </div>
+                                    </flux:modal>
+                                    <!-- Payment Modal -->
+                                    <flux:modal name="make-payment-{{ $invoice->id ?? '' }}"
+                                        class="md:max-w-3xl md:w-2/3">
+                                        <form wire:submit.prevent="collectPayment({{ $invoice->id ?? '' }})">
+                                            <div class="space-y-6">
+                                                <!-- Header -->
+                                                <div>
+                                                    <flux:heading size="lg">Record Payment</flux:heading>
+                                                    <flux:text class="mt-2">
+                                                        Payment for <b>Invoice
+                                                            #{{ $invoice->invoice_number ?? '' }}</b>.
+                                                    </flux:text>
+                                                </div>
+
+                                                <!-- Invoice Summary -->
+                                                <div
+                                                    class="p-3 rounded-md bg-gray-50 dark:bg-gray-800 text-sm space-y-1">
+                                                    <div class="flex justify-between">
+                                                        <span>Invoice Total:</span>
+                                                        <span
+                                                            class="font-semibold">₱{{ number_format($invoice->grand_total, 2) }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Total Paid:</span>
+                                                        <span
+                                                            class="font-semibold text-green-600">₱{{ number_format($amountPaid, 2) }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Balance Due:</span>
+                                                        <span
+                                                            class="font-semibold text-red-600">₱{{ number_format($balance, 2) }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Pay Full Balance Checkbox -->
+                                                <div class="flex items-center space-x-2">
+                                                    <input type="checkbox" wire:model="payFull"
+                                                        id="payFull-{{ $invoice->id }}"
+                                                        @change="if($event.target.checked){ $wire.set('collectAmount', {{ $balance }}); }else{ $wire.set('collectAmount', ''); }"
+                                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
+                                                    <label for="payFull-{{ $invoice->id }}"
+                                                        class="text-sm text-gray-700 dark:text-gray-300">
+                                                        Pay full balance
+                                                    </label>
+                                                </div>
+
+                                                <!-- Two Column Form -->
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div class="space-y-4">
+                                                        <flux:input label="Amount Received" type="number"
+                                                            min="1"
+                                                            max="{{ number_format($balance, 2, '.', '') }}"
+                                                            step="0.01" wire:model.defer="collectAmount"
+                                                            placeholder="Enter amount (max ₱{{ number_format($balance, 2) }})"
+                                                            required />
+                                                        <flux:input label="Payment Date" type="date"
+                                                            wire:model.defer="collectDate" :max="now()->toDateString()"
+                                                            required />
+                                                    </div>
+                                                    <div class="space-y-4">
+                                                        <flux:select label="Payment Method"
+                                                            wire:model.defer="collectMethod" required>
+                                                            <option value="cash">Cash</option>
+                                                            <option value="bank_transfer">Bank Transfer</option>
+                                                            <option value="credit_card">Credit Card</option>
+                                                            <option value="paypal">PayPal</option>
+                                                            <option value="gcash">GCash</option>
+                                                            <option value="other">Other</option>
+                                                        </flux:select>
+                                                        <flux:input label="Reference No. (optional)"
+                                                            wire:model.defer="collectReference"
+                                                            placeholder="Bank ref, OR#, transaction ID, etc." />
+                                                    </div>
+                                                </div>
+
+                                                <!-- Proof of Payment -->
+                                                <flux:input label="Proof of Payment (optional)" type="file"
+                                                    wire:model="paymentProof" accept="image/*,.pdf" multiple />
+                                                @if ($paymentProof)
+                                                    <div class="mt-2 flex flex-wrap gap-4">
+                                                        @foreach ($paymentProof as $idx => $file)
+                                                            <div class="relative">
+                                                                @if (Str::startsWith($file->getMimeType(), 'image/'))
+                                                                    <img src="{{ $file->temporaryUrl() }}"
+                                                                        class="rounded shadow max-h-32"
+                                                                        alt="Proof of Payment">
+                                                                @else
+                                                                    <span
+                                                                        class="text-xs text-gray-500 dark:text-gray-400">
+                                                                        {{ $file->getClientOriginalName() }}
+                                                                    </span>
+                                                                @endif
+                                                                <button type="button"
+                                                                    wire:click="removeProof({{ $idx }})"
+                                                                    class="absolute top-1 right-1 bg-white dark:bg-gray-800 rounded-full p-1 shadow hover:bg-red-100 dark:hover:bg-red-900">
+                                                                    <svg class="w-4 h-4 text-red-600" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M6 18L18 6M6 6l12 12" />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+
+                                                <flux:textarea label="Notes (optional)"
+                                                    wire:model.defer="collectNotes"
+                                                    placeholder="Any remarks about this payment" />
+
+                                                <!-- Footer -->
+                                                <div class="flex">
+                                                    <flux:spacer />
+                                                    <flux:button class="hover:bg-black cursor-pointer" type="submit"
+                                                        variant="primary">Save Payment
+                                                    </flux:button>
+                                                </div>
+
+                                                <!-- Collapsible Payment History -->
+                                                <!-- Payment History -->
+                                                <div x-data="{ open: false }" class="mt-6">
+                                                    <!-- Trigger -->
+                                                    <button type="button" @click="open = !open"
+                                                        class="w-full flex justify-between items-center px-3 py-2 text-sm font-medium border rounded-md bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                        <span>Payment History</span>
+                                                        <svg :class="{ 'rotate-180': open }"
+                                                            class="w-4 h-4 text-gray-500 transform transition-transform"
+                                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+
+                                                    <!-- Content -->
+                                                    <div x-show="open" x-collapse class="mt-3">
+
+                                                        @if ($invoice->payments()->count() > 0)
+                                                            <div
+                                                                class="border rounded-md dark:border-gray-700 overflow-x-auto">
+                                                                <table
+                                                                    class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                                                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                                                        <tr>
+                                                                            <th
+                                                                                class="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                                                                                Amount</th>
+                                                                            <th
+                                                                                class="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                                                                                Method</th>
+                                                                            <th
+                                                                                class="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                                                                                Reference</th>
+                                                                            <th
+                                                                                class="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                                                                                Date</th>
+                                                                            <th
+                                                                                class="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                                                                                Balance After</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach ($invoice->payments()->orderByDesc('payment_date')->orderByDesc('created_at')->get() as $payment)
+                                                                            <tr>
+                                                                                <td class="px-4 py-2 font-semibold">
+                                                                                    ₱{{ number_format($payment->amount_paid, 2) }}
+                                                                                </td>
+                                                                                <td
+                                                                                    class="px-4 py-2 text-gray-600 dark:text-gray-300">
+                                                                                    {{ ucfirst($payment->payment_method) }}
+                                                                                </td>
+                                                                                <td
+                                                                                    class="px-4 py-2 text-gray-600 dark:text-gray-300">
+                                                                                    {{ $payment->reference ?? 'N/A' }}
+                                                                                </td>
+                                                                                <td
+                                                                                    class="px-4 py-2 text-gray-600 dark:text-gray-300">
+                                                                                    {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
+                                                                                </td>
+                                                                                <td
+                                                                                    class="px-4 py-2 text-gray-600 dark:text-gray-300">
+                                                                                    ₱{{ number_format($payment->balance_after, 2) }}
+                                                                                </td>
+                                                                            </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        @else
+                                                            <div class="text-sm text-gray-500 dark:text-gray-400 p-3">
+                                                                No payments recorded yet.
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </form>
+                                    </flux:modal>
+
+
                                 </td>
                             </tr>
                         @endforeach
@@ -527,248 +1132,12 @@ public function getPendingInvoicesAmountProperty()
                 </table>
             </div>
             <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                {{ $invoices->links() }}
+                {{ $receivables->links() }}
             </div>
         @endif
     </div>
 
-    <!-- Invoice Detail Modal -->
-    <div x-cloak x-data="{ show: @entangle('showInvoiceModal') }" x-show="show" class="fixed inset-0 z-50 overflow-y-auto"
-        aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <!-- Background overlay -->
-            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
 
-            <!-- Modal panel -->
-            <div x-show="show" x-transition:enter="ease-out duration-300"
-                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                x-transition:leave="ease-in duration-200"
-                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100"
-                                id="modal-title">
-                                Invoice #{{ $selectedInvoice->invoice_number ?? '' }}
-                            </h3>
-                            <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
-                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        aria-hidden="true">
-                                        <path fill-rule="evenodd"
-                                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                    Issued:
-                                    {{ \Carbon\Carbon::parse($selectedInvoice->issued_date ?? '')->format('M d, Y') }}
-                                </div>
-                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        aria-hidden="true">
-                                        <path fill-rule="evenodd"
-                                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                    Due:
-                                    {{ \Carbon\Carbon::parse($selectedInvoice->due_date ?? '')->format('M d, Y') }}
-                                </div>
-                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        aria-hidden="true">
-                                        <path
-                                            d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                                    </svg>
-                                    Agent: {{ $selectedInvoice->agent->name ?? '' }}
-                                </div>
-                                <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        aria-hidden="true">
-                                        <path
-                                            d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                                    </svg>
-                                    Customer: {{ $selectedInvoice->customer->name ?? '' }}
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <span @class([
-                                'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
-                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' =>
-                                    isset($selectedInvoice) && $selectedInvoice->status === 'pending',
-                                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' =>
-                                    isset($selectedInvoice) && $selectedInvoice->status === 'paid',
-                                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' =>
-                                    isset($selectedInvoice) && $selectedInvoice->status === 'overdue',
-                                'bg-gray-50 text-gray-800 dark:bg-gray-700 dark:text-gray-100' =>
-                                    isset($selectedInvoice) && $selectedInvoice->status === 'cancelled',
-                            ])>
-                                {{ isset($selectedInvoice) ? ucfirst($selectedInvoice->status) : '' }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Invoice Details -->
-                    <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">BILL FROM</h4>
-                            <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">Your Company Name</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">123 Business Street</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">City, State 12345</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Phone: (123) 456-7890</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Email: billing@yourcompany.com</p>
-                        </div>
-
-                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">BILL TO</h4>
-                            <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {{ $selectedInvoice->customer->name ?? '' }}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                {{ $selectedInvoice->customer->address ?? '' }}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                {{ $selectedInvoice->customer->phone ?? '' }}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                {{ $selectedInvoice->customer->email ?? '' }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Invoice Items -->
-                    <div class="mt-6">
-                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">INVOICE ITEMS</h4>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Item
-                                        </th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Qty
-                                        </th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Price
-                                        </th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Discount
-                                        </th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Tax
-                                        </th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            Total
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @foreach ($selectedInvoice->items ?? [] as $item)
-                                        <tr>
-                                            <td
-                                                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $item->product_name ?? 'N/A' }}
-                                                @if (!empty($item->notes))
-                                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                        {{ $item->notes }}</p>
-                                                @endif
-                                            </td>
-                                            <td
-                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                {{ $item->quantity }}
-                                            </td>
-                                            <td
-                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                ₱{{ number_format($item->price, 2) }}
-                                            </td>
-                                            <td
-                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                ₱{{ number_format($item->discount ?? 0, 2) }}
-                                            </td>
-                                            <td
-                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                ₱{{ number_format($item->tax ?? 0, 2) }}
-                                            </td>
-                                            <td
-                                                class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100 font-medium">
-                                                ₱{{ number_format($item->total, 2) }}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Invoice Summary -->
-                    <div class="mt-6 flex justify-end">
-                        <div class="w-full max-w-md">
-                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <span>Subtotal</span>
-                                    <span>₱{{ number_format($selectedInvoice->total_amount ?? 0, 2) }}</span>
-                                </div>
-                                @if ($selectedInvoice->discount ?? 0 > 0)
-                                    <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
-                                        <span>Discount</span>
-                                        <span>- ₱{{ number_format($selectedInvoice->discount ?? 0, 2) }}</span>
-                                    </div>
-                                @endif
-                                @if ($selectedInvoice->tax ?? 0 > 0)
-                                    <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
-                                        <span>Tax</span>
-                                        <span>₱{{ number_format($selectedInvoice->tax ?? 0, 2) }}</span>
-                                    </div>
-                                @endif
-                                <div
-                                    class="flex justify-between py-2 text-lg font-medium text-gray-900 dark:text-gray-100 border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
-                                    <span>Total</span>
-                                    <span>₱{{ number_format($selectedInvoice->grand_total ?? 0, 2) }}</span>
-                                </div>
-                                <div class="flex justify-between py-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <span>Payment Method</span>
-                                    <span>{{ ucfirst(str_replace('_', ' ', $selectedInvoice->payment_method ?? 'N/A')) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Invoice Notes -->
-                    @if (!empty($selectedInvoice->notes))
-                        <div class="mt-6">
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">NOTES</h4>
-                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                <p class="text-sm text-gray-900 dark:text-gray-100">{{ $selectedInvoice->notes }}</p>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-                <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="button" wire:click="closeInvoiceModal"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Close
-                    </button>
-                    {{-- <a href="{{ route('invoicing.download', $selectedInvoice->id ?? '') }}" target="_blank" --}}
-                    <a href="#" target="_blank"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Download PDF
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Delete Confirmation Modal -->
     <div x-cloak x-data="{ show: @entangle('showDeleteModal') }" x-show="show" class="fixed inset-0 z-50 overflow-y-auto"
