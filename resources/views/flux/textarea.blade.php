@@ -3,7 +3,7 @@
     'resize' => 'vertical',
     'invalid' => null,
     'rows' => 4,
-    'readonly' => false, // ✅ Add this line
+    'readonly' => false,
 ])
 
 @php

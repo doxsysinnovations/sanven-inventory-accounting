@@ -153,11 +153,11 @@ new class extends Component {
                     number_format($stock->selling_price, 2),
                     $stock->quantity,
                     $stock->formatted_manufactured_date,
-                    [ // <-- Expiry column: both date and status
+                    [
                         'date' => $expirationDate->format('F j, Y'),
                         'status' => $status,
                     ],
-                    '__model' => $stock
+                    '__model' => $stock->product
                 ];
             })"
             editAbility="products.edit"

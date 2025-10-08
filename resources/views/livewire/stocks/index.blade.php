@@ -128,7 +128,7 @@ new class extends Component {
                 <path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Z"/>
             </svg>
         </x-slot:emptyIcon>
-         <x-list-table
+        <x-list-table
             :headers="[
                 'Code', 'Name', 'Capital', 'Selling', 'Stocks',
                 'Manufactured Date', 'Expiry Date', 'Actions'
@@ -156,7 +156,7 @@ new class extends Component {
                         'date' => $expirationDate->format('F j, Y'),
                         'status' => $status,
                     ],
-                    '__model' => $stock
+                    '__model' => $stock->product
                 ];
             })"
             editAbility="products.edit"
