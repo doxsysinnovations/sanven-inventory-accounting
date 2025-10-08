@@ -14,6 +14,8 @@ new class extends Component {
     public function with()
     {
         $expiryStocksCount = \App\Models\Stock::whereDate('expiration_date', '<=', now()->addDays(30))->count(); // Count expiry stocks
+        $returnedProducts = \App\Models\StockAlteration::query()->where('type', 'return')->count(); // Count returned products
+        $brokenProducts = \App\Models\StockAlteration::query()->where('type', 'broken')->count(); // Count returned products
         $this->menuItems = [
             [
                 'heading' => 'Navigations',
@@ -151,6 +153,18 @@ new class extends Component {
                         'route' => 'expiryproducts',
                         'label' => 'Expiry Stocks (' . $expiryStocksCount . ')', // Add the count here
                         'permission' => 'stocks.view-expiry',
+                    ],
+                    [
+                        'icon' => 'arrow-uturn-left',
+                        'route' => 'stocks.returned',
+                        'label' => 'Returned Stocks (' . $returnedProducts . ')', // Add the count here
+                        'permission' => 'stocks.returned',
+                    ],
+                    [
+                        'icon' => 'exclamation-triangle',
+                        'route' => 'stocks.broken',
+                        'label' => 'Broken Stocks (' . $brokenProducts . ')', // Add the count here
+                        'permission' => 'stocks.broken',
                     ],
                     // [
                     //     'icon' => 'pencil-square',
@@ -351,6 +365,19 @@ new class extends Component {
                     ],
                 ],
             ],
+            [
+                'heading' => 'General Settings',
+                'permission' => 'general-settings.view',
+                'items' => [
+                    [
+                        'icon' => 'server',
+                        'route' => 'database-backup',
+                        'label' => 'Database Backup',
+                        'permission' => 'database-backup.view',
+                    ],
+                ],
+            ],
+
         ];
 
         // Filter menu items based on search input

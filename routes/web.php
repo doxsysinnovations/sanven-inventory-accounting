@@ -97,6 +97,11 @@ Route::middleware(['auth', 'check.active', '2fa'])->group(function () {
     //Stocks
     Volt::route('stocks', 'stocks.index')->name('stocks');
     Volt::route('stocks/create', 'stocks.create')->name('stocks.create');
+    Volt::route('stocks/{id}/edit', 'stocks.edit')->name('stocks.edit');
+    Volt::route('stocks/{id}/alter', 'stocks.alter')->name('stocks.alter');
+    Volt::route('stocks/returned', 'stocks.returned')->name('stocks.returned');
+    Volt::route('stocks/returned', 'stocks.returned')->name('stocks.returned');
+    Volt::route('stocks/broken', 'stocks.broken')->name('stocks.broken');
 
     //Expiry
     Volt::route('expiryproducts', 'expiryproducts.index')->name('expiryproducts');
@@ -184,6 +189,16 @@ Route::middleware(['auth', 'check.active', '2fa'])->group(function () {
     Volt::route('delivery-notes/{id}/show', 'delivery-notes.show')->name('delivery-notes.show');
     Volt::route('delivery-notes/{id}/print', 'delivery-notes.print')->name('delivery-notes.print');
     Volt::route('delivery-notes/{id}/edit', 'delivery-notes.edit')->name('delivery-notes.edit');
+    Route::get('/purchase-orders/{po}/stream-pdf', function (\App\Models\PurchaseOrder $po) {
+        $po->load(['supplier', 'items.product']);
+        $pdf = Pdf::loadView('livewire.purchase-orders.pdf', [
+            'po' => $po,
+        ]);
+        return $pdf->stream('purchase-order-' . $po->po_number . '.pdf');
+    })->name('purchase-orders.stream-pdf');
+    
+
+    Volt::route('database-backup', 'database-backup.index')->name('database-backup');
 });
 
 Route::middleware(['auth'])->group(function () {
