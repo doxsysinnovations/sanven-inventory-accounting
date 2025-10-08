@@ -7,20 +7,17 @@ use App\Models\Product;
 use App\Models\Invoice;
 use App\Models\Stock;
 use App\Models\Agent;
-use App\Models\AgentCommission;
 use App\Models\InvoiceItem;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-use App\Models\ChartOfAccount;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
 
 new class extends Component {
     use WithFileUploads;
 
-    public $products = [];
+    public Invoice $invoice;
+     public $products = [];
     public $lastInvoice = null;
 
     // Step tracking
@@ -65,7 +62,7 @@ new class extends Component {
     public $discount_type = 'fixed'; // 'fixed' or 'percentage'
     public $invoice_prefix = 'INV';
     public $invoice_date;
-    public $invoice_status;
+    public $invoice_status = '';
     public $terms_conditions = 'Payment due within 7 days. Late payments subject to 1.5% monthly interest.';
     public $payment_terms = '';
     public $assigned_agent = '';
@@ -84,14 +81,46 @@ new class extends Component {
 
     public $showPrintPreview = false;
     public $loadingPDFPreview = false;
-    public $invoice = null;
-
-    public function mount()
+    
+    public function mount(Invoice $invoice) // Use route model binding
     {
+        $this->invoice = $invoice->load(['customer', 'items.stock.product', 'items.stock', 'agent']);
+
+        // Initialize form with invoice data
+        $this->customer_id = $this->invoice->customer_id;
+        $this->payment_method = $this->invoice->payment_method;
+        $this->due_date = is_string($this->invoice->due_date) ? $this->invoice->due_date : $this->invoice->due_date?->format('Y-m-d');
+        $this->invoice_date = is_string($this->invoice->issued_date) ? $this->invoice->issued_date : $this->invoice->issued_date?->format('Y-m-d');
+        $this->notes = $this->invoice->notes;
+        $this->invoice_status = $this->invoice->status;
+        $this->subtotal = $this->invoice->total_amount;
+        $this->discount = $this->invoice->discount;
+        $this->tax = $this->invoice->tax;
+        $this->total = $this->invoice->grand_total;
+        $this->payment_terms = $this->invoice->payment_terms;
+        $this->assigned_agent = $this->invoice->agent_id;
+        $this->terms_conditions = $this->invoice->terms_conditions ?? $this->terms_conditions;
+
+        // Initialize cart with invoice items
+        foreach ($this->invoice->items as $item) {
+            $cartKey = $item->stock_id ? 'stock-' . $item->stock_id : 'product-' . $item->product_id;
+
+            $this->cart[$cartKey] = [
+                'id' => $item->product_id,
+                'stock_id' => $item->stock_id,
+                'name' => $item->product_name,
+                'code' => $item->product->product_code ?? '',
+                'price' => $item->price,
+                'quantity' => $item->quantity,
+                'total' => $item->total,
+                'available_quantity' => $item->stock ? $item->stock->quantity + $item->quantity : ($item->product->stock_quantity + $item->quantity),
+                'stock_number' => $item->stock->stock_number ?? '',
+                'expiration_date' => $item->stock->expiration_date?->format('Y-m-d') ?? '',
+                'batch_number' => $item->stock->batch_number ?? '',
+            ];
+        }
+
         $this->agents = Agent::all();
-        $this->due_date = now()->addDays(7)->format('Y-m-d');
-        $this->invoice_date = now()->format('Y-m-d');
-        $this->invoice_prefix = config('invoicing.prefix', 'INV');
         $this->loadStocks();
     }
 
@@ -174,8 +203,8 @@ new class extends Component {
                 'code' => $product->product_code,
                 'price' => $product->selling_price,
                 'cost' => $product->cost_price,
-                'is_vatable' => (bool) ($product->is_vatable ?? 0),
-                'vat_tax' => 0,
+                'is_vatable' => (bool) ($product->is_vatable ?? 0), 
+                'vat_tax' => 0, 
                 'quantity' => 1,
                 'total' => 0,
             ];
@@ -197,20 +226,18 @@ new class extends Component {
 
     public function updateCartItem($cartKey)
     {
-        if (!isset($this->cart[$cartKey])) {
-            return;
-        }
+        if (!isset($this->cart[$cartKey])) return;
 
-        $rawQuantity = floatval($this->cart[$cartKey]['quantity'] ?? 1);
+        $rawQuantity =  floatval($this->cart[$cartKey]['quantity'] ?? 1);
         if (!is_numeric($rawQuantity) || $rawQuantity < 1) {
             $rawQuantity = 1;
             $this->cart[$cartKey]['quantity'] = 1;
         }
 
         $quantity = floatval($rawQuantity);
-        $unitPrice = floatval($this->cart[$cartKey]['price'] ?? 0);
-        $isVatable = $this->cart[$cartKey]['is_vatable'] ?? false;
-        $stockId = $this->cart[$cartKey]['stock_id'] ?? null;
+        $unitPrice  = floatval($this->cart[$cartKey]['price'] ?? 0);
+        $isVatable  = $this->cart[$cartKey]['is_vatable'] ?? false;
+        $stockId    = $this->cart[$cartKey]['stock_id'] ?? null;
 
         // Check against available stock
         if ($stockId) {
@@ -219,7 +246,10 @@ new class extends Component {
                 $availableQuantity = $stock->quantity;
 
                 // Adjust for other quantities of the same stock in cart (optional)
-                $otherQuantity = collect($this->cart)->except($cartKey)->where('stock_id', $stockId)->sum('quantity');
+                $otherQuantity = collect($this->cart)
+                    ->except($cartKey)
+                    ->where('stock_id', $stockId)
+                    ->sum('quantity');
 
                 $remainingStock = $availableQuantity - $otherQuantity;
 
@@ -228,7 +258,7 @@ new class extends Component {
                     $stockNumber = $stock->stock_number ?? 'N/A';
 
                     flash()->warning("Only {$remainingStock} available for {$productName} (Stock #: {$stockNumber}). Quantity has been adjusted.");
-
+                    
                     $quantity = $remainingStock;
                     $this->cart[$cartKey]['quantity'] = $quantity;
                 }
@@ -250,9 +280,9 @@ new class extends Component {
         $this->recalculateTotals();
     }
 
-    public function removeFromCart($productId)
+    public function removeFromCart($productKey)
     {
-        unset($this->cart[$productId]);
+        unset($this->cart[$productKey]);
         $this->recalculateTotals();
     }
 
@@ -278,7 +308,7 @@ new class extends Component {
         $this->subtotal = collect($this->cart)->sum('total');
         $this->tax = collect($this->cart)->sum('vat_tax');
         $this->total_vat = $this->tax;
-
+        
         $discountAmount = $this->getTotalDiscountProperty();
         $this->total = floatval(sprintf('%.2f', $this->subtotal - $discountAmount));
     }
@@ -301,12 +331,12 @@ new class extends Component {
 
     public function getSubtotalProperty()
     {
-        return (float) collect($this->cart)->sum('total');
+        return (float)collect($this->cart)->sum('total');
     }
 
     public function getTotalDiscountProperty()
     {
-        $discount = (float) $this->discount;
+        $discount = (float)$this->discount;
         $baseTotal = $this->getSubtotalProperty();
 
         if ($this->discount_type === 'percentage') {
@@ -317,20 +347,13 @@ new class extends Component {
 
         return $this->total_discount;
     }
-
+    
     public function getTotalProperty()
     {
         $baseTotal = $this->getSubtotalProperty();
         $discountAmount = $this->getTotalDiscountProperty();
-
+        
         return floatval(sprintf('%.2f', $baseTotal - $discountAmount));
-    }
-
-    public function getProfitEstimateProperty()
-    {
-        return collect($this->cart)->sum(function ($item) {
-            return ($item['price'] - $item['cost']) * $item['quantity'];
-        });
     }
 
     public function backToStep1()
@@ -368,7 +391,7 @@ new class extends Component {
             $this->selectedProducts = array_diff($this->selectedProducts, [$productId]);
         } else {
             $this->selectedProducts[] = $productId;
-            $this->productQuantities[$productId] = 1;
+            $this->productQuantities[$productId] = 1; // Default quantity
         }
     }
 
@@ -437,36 +460,7 @@ new class extends Component {
         }
     }
 
-    public function generateInvoiceNumber()
-    {
-        $lastInvoice = Invoice::latest()->first();
-        $number = $lastInvoice ? (int) str_replace($this->invoice_prefix, '', $lastInvoice->invoice_number) + 1 : 1;
-        return $this->invoice_prefix . str_pad($number, 6, '0', STR_PAD_LEFT);
-    }
-
-    public function resetForm()
-    {
-        $this->resetExcept('invoice_prefix', 'currentStep');
-
-        $this->customer_id = null;
-        $this->cart = [];
-        $this->subtotal = 0;
-        $this->total_discount = 0;
-        $this->tax = 0;
-        $this->total = 0;
-        $this->invoice_status = 'unpaid';
-        $this->payment_terms = '';
-        $this->payment_method = '';
-        $this->due_date = now()->addDays(7)->format('Y-m-d');
-        $this->invoice_date = now()->format('Y-m-d');
-        $this->notes = '';
-        $this->assigned_agent = null;
-        $this->invoice = null;
-        $this->showPrintPreview = false;
-        $this->isLoading = false;
-    }
-
-    public function submitInvoice()
+    public function updateInvoice()
     {
         $this->isLoading = true;
 
@@ -486,36 +480,61 @@ new class extends Component {
         try {
             DB::beginTransaction();
 
-            $invoice = Invoice::create([
-                'invoice_number' => $this->generateInvoiceNumber(),
+            // First, restore stock quantities from the original invoice items
+            foreach ($this->invoice->items as $item) {
+                if ($item->stock_id) {
+                    $stock = Stock::find($item->stock_id);
+                    if ($stock) {
+                        $stock->increment('quantity', $item->quantity);
+                    }
+                }
+
+                $product = Product::find($item->product_id);
+                if ($product && $product->track_stock) {
+                    $product->increment('stock_quantity', $item->quantity);
+                }
+            }
+
+            // Delete all existing invoice items
+            $this->invoice->items()->delete();
+
+            // Update the invoice
+            $this->invoice->update([
                 'customer_id' => $this->customer_id,
                 'total_amount' => $this->subtotal,
                 'discount' => $this->total_discount,
                 'tax' => $this->tax,
                 'grand_total' => $this->total,
                 'status' => $this->invoice_status,
-                'payment_terms' => $this->payment_terms,
                 'payment_method' => $this->payment_method,
                 'due_date' => $this->due_date,
                 'issued_date' => $this->invoice_date,
                 'notes' => $this->notes,
-                'created_by' => auth()->id(),
                 'agent_id' => $this->assigned_agent,
+                'payment_terms' => $this->payment_terms,
+                'terms_conditions' => $this->terms_conditions,
             ]);
 
+            // Add new invoice items
             foreach ($this->cart as $item) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'stock_id' => $item['stock_id'] ?? null,
+                $invoiceItem = [
+                    'invoice_id' => $this->invoice->id,
+                    'product_id' => $item['id'],
                     'product_name' => $item['name'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'subtotal' => $item['price'] * $item['quantity'],
                     'total' => $item['total'],
-                    'discount' => $item['discount'] ?? 0,
                     'tax' => $item['vat_tax'] ?? 0,
-                ]);
+                ];
 
+                if (isset($item['stock_id'])) {
+                    $invoiceItem['stock_id'] = $item['stock_id'];
+                }
+
+                InvoiceItem::create($invoiceItem);
+
+                // Update product stock if stock_id exists
                 if (isset($item['stock_id'])) {
                     $stock = Stock::find($item['stock_id']);
                     if ($stock) {
@@ -523,97 +542,51 @@ new class extends Component {
                     }
                 }
 
+                // Update product stock quantity if tracking is enabled
                 $product = Product::find($item['id']);
                 if ($product && $product->track_stock) {
                     $product->decrement('stock_quantity', $item['quantity']);
                 }
             }
 
-            // If agent_id is set, create agent commission
-            if (!empty($this->assigned_agent)) {
-                \App\Models\AgentCommission::create([
-                    'agent_id' => $this->assigned_agent,
-                    'invoice_id' => $invoice->id,
-                    'commission_amount' => $invoice->grand_total * 0.05, // Example: 5% commission
-                    'status' => 'pending',
-                    'notes' => 'Auto-generated commission for invoice #' . $invoice->invoice_number,
-                ]);
-            }
-
-            // --- Journal Entry Creation ---
-            $journalEntry = JournalEntry::create([
-                'journal_no' => 'JE-' . now()->format('YmdHis'),
-                'journal_date' => now(),
-                'reference_type' => Invoice::class,
-                'reference_id' => $invoice->id,
-                'description' => 'Invoice #' . $invoice->invoice_number . ' for Customer ' . $invoice->customer->name,
-                'status' => 'posted',
-            ]);
-            $accounts = ChartOfAccount::whereIn('code', [1100, 4000, 2100])->pluck('id', 'code');
-
-            $journalEntry->lines()->create([
-                'account_id' => $accounts[1100],
-                'debit' => $invoice->grand_total,
-                'credit' => 0,
-                'memo' => 'Accounts Receivable for Invoice #' . $invoice->invoice_number,
-            ]);
-
-            $journalEntry->lines()->create([
-                'account_id' => $accounts[4000],
-                'debit' => 0,
-                'credit' => $invoice->total_amount,
-                'memo' => 'Sales Revenue for Invoice #' . $invoice->invoice_number,
-            ]);
-
-            if ($invoice->tax > 0) {
-                $journalEntry->lines()->create([
-                    'account_id' => $accounts[2100],
-                    'debit' => 0,
-                    'credit' => $invoice->tax,
-                    'memo' => 'VAT Payable for Invoice #' . $invoice->invoice_number,
-                ]);
-            }
-
-            // --- End Journal Entry Creation ---
-
             DB::commit();
 
-            $this->invoice = $invoice;
-
-            $this->dispatch('invoice-created');
-
+            // Reset form
+            $this->dispatch('invoice-updated');
+            
             if (!$this->showPrintPreview) {
-                $this->resetForm();
-                $this->due_date = now()->addDays(7)->format('Y-m-d');
-                $this->invoice_date = now()->format('Y-m-d');
-                flash()->success('Invoice created successfully!');
+                flash()->success('Invoice updated successfully!');
                 return redirect()->route('invoicing');
             } else {
-                flash()->success('Invoice created successfully!');
-                return $invoice;
+                flash()->success('Invoice updated successfully!');
+                return $this->invoice->id;
             }
+
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->invoice = null;
-            $this->showPrintPreview = false;
-            flash()->error('Error creating invoice: ' . $e->getMessage());
-            logger()->error('Invoice creation error: ' . $e->getMessage());
-            return null;
+            $this->dispatch('notify', type: 'error', message: 'Error updating invoice: ' . $e->getMessage());
+            logger()->error('Invoice update error: ' . $e->getMessage());
         } finally {
             $this->isLoading = false;
         }
     }
 
-    public function print()
+    public function updatingSearchProduct()
+    {
+        $this->loadStocks();
+    }
+
+    public function updateAndPrint()
     {
         try {
             $this->isLoading = true;
             $this->showPrintPreview = true;
+            
+            $updatedInvoice = $this->submitInvoice();
+            
+            if ($updatedInvoice) {
 
-            $createdInvoice = $this->submitInvoice();
-
-            if ($createdInvoice) {
-                $this->invoice = Invoice::with(['customer', 'agent', 'items'])->find($createdInvoice->id);
+                $this->invoice = Invoice::with(['customer', 'agent', 'items'])->find($updatedInvoice->id);
 
                 if ($this->invoice) {
                     usleep(100000);
@@ -639,7 +612,7 @@ new class extends Component {
     {
         $this->loadStocks();
     }
-
+    
     public function downloadPDF()
     {
         if (!$this->invoice) {
@@ -657,6 +630,7 @@ new class extends Component {
 
     public function streamPDF()
     {
+
         $this->loadingPDFPreview = true;
         $this->dispatch('pdf-loading-started');
 
@@ -669,18 +643,14 @@ new class extends Component {
         ]);
 
         $this->loadingPDFPreview = false;
-        $this->dispatch('pdf-generation-complete');
+        $this->dispatch('pdf-generation-complete'); 
 
-        return response()->streamDownload(
-            function () use ($pdf) {
-                echo $pdf->stream();
-            },
-            'invoice-preview-' . $this->invoice->invoice_number . '.pdf',
-            [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="invoice-preview-' . $this->invoice->invoice_number . '.pdf"',
-            ],
-        );
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'invoice-preview-' . $this->invoice->invoice_number . '.pdf', [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="invoice-preview-' . $this->invoice->invoice_number . '.pdf"'
+        ]);
     }
 
     public function closePrintPreview()
@@ -689,7 +659,8 @@ new class extends Component {
         $this->resetForm();
         $this->currentStep = 1;
     }
-}; ?>
+};
+?>
 
 <div>
     <div>
@@ -705,15 +676,14 @@ new class extends Component {
                     <div class="space-y-2">
                         <div @class([
                             'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
+                            'bg-(--color-accent-muted) dark:bg-blue-900 text-(--color-accent) dark:text-blue-100' =>
                                 $currentStep === 1,
                             'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
                                 $currentStep !== 1,
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' =>
-                                    $currentStep === 1,
+                                'bg-(--color-accent) text-white' => $currentStep === 1,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 1,
                             ])>1</div>
@@ -725,15 +695,14 @@ new class extends Component {
 
                         <div @class([
                             'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
+                            'bg-(--color-accent-muted) dark:bg-blue-900 text-(--color-accent) dark:text-blue-100' =>
                                 $currentStep === 2,
                             'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
                                 $currentStep !== 2,
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' =>
-                                    $currentStep === 2,
+                                'bg-(--color-accent) text-white' => $currentStep === 2,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 2,
                             ])>2</div>
@@ -745,15 +714,14 @@ new class extends Component {
 
                         <div @class([
                             'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
+                            'bg-(--color-accent-muted) dark:bg-blue-900 text-(--color-accent) dark:text-blue-100' =>
                                 $currentStep === 3,
                             'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
                                 $currentStep !== 3,
                         ])>
                             <div @class([
                                 'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' =>
-                                    $currentStep === 3,
+                                'bg-(--color-accent) text-white' => $currentStep === 3,
                                 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
                                     $currentStep !== 3,
                             ])>3</div>
@@ -765,12 +733,10 @@ new class extends Component {
                     </div>
                 </div>
 
-                <div class="md:col-span-3 bg-white dark:bg-(--color-accent-1-dark)">
+                <div class="md:col-span-3 bg-white dark:bg-gray-800">
                     @include('livewire.invoicing.views.step-1-customer-information')
                     @include('livewire.invoicing.views.step-2-add-products')
-                    @include('livewire.invoicing.views.step-3-review-invoice', [
-                        'isEditing' => isset($invoice),
-                    ])
+                    @include('livewire.invoicing.views.step-3-review-invoice',['isEditing' => isset($invoice)])
                 </div>
             </div>
         </div>
