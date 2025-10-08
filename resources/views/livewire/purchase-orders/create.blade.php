@@ -7,7 +7,7 @@ use App\Models\Supplier;
 new class extends Component {
     public $currentStep = 1;
 
-    public $order_type = '';
+    public $order_type = 'stock';
     public $supplier_id = '';
     public $supplierSearch = '';
     public $showSupplierDropdown = false;
@@ -33,22 +33,31 @@ new class extends Component {
         'product_id' => '',
         'quantity' => 1,
         'price' => 0,
+        'uom' => '',
+        'strength' => '',
     ];
 
     public $remarks = '';
     public $payment_terms = '';
-
+    public $expected_delivery_date = '';
     // --- Supplier logic ---
     public function getSupplierSuggestionsProperty()
     {
-        if (strlen($this->supplierSearch) < 2) return collect();
-        return Supplier::where('name', 'like', '%' . $this->supplierSearch . '%')
-            ->orWhere('trade_name', 'like', '%' . $this->supplierSearch . '%')
+        // if (strlen($this->supplierSearch) < 2) {
+        //     return collect();
+        // }
+        // Always show suggestions, even if search is empty
+        return Supplier::when($this->supplierSearch, function ($q) {
+            $q->where('name', 'like', '%' . $this->supplierSearch . '%')->orWhere('trade_name', 'like', '%' . $this->supplierSearch . '%');
+        })
             ->orderBy('name')
             ->limit(10)
             ->get();
     }
-
+    public function getSelectedSupplierProperty()
+    {
+        return $this->supplier_id ? \App\Models\Supplier::find($this->supplier_id) : null;
+    }
     public function selectSupplier($id)
     {
         $this->supplier_id = $id;
@@ -87,7 +96,9 @@ new class extends Component {
     // --- Product logic ---
     public function getProductSuggestionsProperty()
     {
-        if (strlen($this->productSearch) < 2) return collect();
+        // if (strlen($this->productSearch) < 2) {
+        //     return collect();
+        // }
         return Product::where('name', 'like', '%' . $this->productSearch . '%')
             ->orderBy('name')
             ->limit(10)
@@ -137,7 +148,6 @@ new class extends Component {
             'description' => '',
         ];
     }
-
     public function addItem()
     {
         if (empty($this->itemInput['product_id'])) {
@@ -148,16 +158,19 @@ new class extends Component {
             'product_id' => $this->itemInput['product_id'],
             'quantity' => $this->itemInput['quantity'],
             'price' => $this->itemInput['price'],
+            'uom' => $this->itemInput['uom'],
+            'strength' => $this->itemInput['strength'],
         ];
         $this->itemInput = [
             'product_id' => '',
             'quantity' => 1,
             'price' => 0,
+            'uom' => '',
+            'strength' => '',
         ];
         $this->productSearch = '';
         $this->showProductDropdown = false;
     }
-
     public function removeItem($index)
     {
         unset($this->items[$index]);
@@ -167,8 +180,8 @@ new class extends Component {
     public function nextStep()
     {
         if ($this->currentStep === 1) {
-            if (empty($this->order_type) || empty($this->supplier_id)) {
-                session()->flash('error', 'Please select an order type and supplier.');
+            if (empty($this->order_type) || empty($this->supplier_id) || empty($this->expected_delivery_date)) {
+                session()->flash('error', 'Please select an order type, supplier, and expected delivery date.');
                 return;
             }
         }
@@ -186,10 +199,19 @@ new class extends Component {
         $this->currentStep--;
     }
 
+    public function with(): array
+    {
+        return [
+            // ...other variables...
+            'selectedSupplier' => $this->selectedSupplier,
+        ];
+    }
+
     public function submit()
     {
         $this->validate([
             'order_type' => 'required|in:stock,others',
+            'expected_delivery_date' => 'required|date|after_or_equal:today',
             'supplier_id' => 'required|exists:suppliers,id',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -241,7 +263,9 @@ new class extends Component {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <a href="{{ route('purchase-orders') }}" class="ml-1 text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 md:ml-2">Purchase Orders</a>
+                        <a href="{{ route('purchase-orders') }}"
+                            class="ml-1 text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 md:ml-2">Purchase
+                            Orders</a>
                     </div>
                 <li aria-current="page">
                     <div class="flex items-center">
@@ -268,395 +292,519 @@ new class extends Component {
     </div>
 
     <form wire:submit.prevent="submit">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <!-- Stepper Sidebar -->
-        <div class="md:col-span-1">
-            <div class="space-y-2">
-                <div @class([
-                    'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                    'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' => $currentStep === 1,
-                    'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' => $currentStep !== 1,
-                ])>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <!-- Stepper Sidebar -->
+            <div class="md:col-span-1">
+                <div class="space-y-2">
                     <div @class([
-                        'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                        'bg-blue-600 text-white' => $currentStep === 1,
-                        'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' => $currentStep !== 1,
-                    ])>1</div>
-                    <div>
-                        <div class="font-medium">Order Type & Supplier</div>
-                        <div class="text-xs">Selection</div>
+                        'flex items-center gap-2 p-3 rounded-lg transition-colors',
+                        'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' =>
+                            $currentStep === 1,
+                        'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
+                            $currentStep !== 1,
+                    ])>
+                        <div @class([
+                            'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
+                            'bg-blue-600 text-white' => $currentStep === 1,
+                            'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
+                                $currentStep !== 1,
+                        ])>1</div>
+                        <div>
+                            <div class="font-medium">Order Type & Supplier</div>
+                            <div class="text-xs">Selection</div>
+                        </div>
+                    </div>
+                    <div @class([
+                        'flex items-center gap-2 p-3 rounded-lg transition-colors',
+                        'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' =>
+                            $currentStep === 2,
+                        'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
+                            $currentStep !== 2,
+                    ])>
+                        <div @class([
+                            'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
+                            'bg-blue-600 text-white' => $currentStep === 2,
+                            'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
+                                $currentStep !== 2,
+                        ])>2</div>
+                        <div>
+                            <div class="font-medium">Products</div>
+                            <div class="text-xs">Add Items</div>
+                        </div>
+                    </div>
+                    <div @class([
+                        'flex items-center gap-2 p-3 rounded-lg transition-colors',
+                        'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' =>
+                            $currentStep === 3,
+                        'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
+                            $currentStep !== 3,
+                    ])>
+                        <div @class([
+                            'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
+                            'bg-blue-600 text-white' => $currentStep === 3,
+                            'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
+                                $currentStep !== 3,
+                        ])>3</div>
+                        <div>
+                            <div class="font-medium">Review</div>
+                            <div class="text-xs">& Payment</div>
+                        </div>
                     </div>
                 </div>
-                <div @class([
-                    'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                    'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' => $currentStep === 2,
-                    'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' => $currentStep !== 2,
-                ])>
-                    <div @class([
-                        'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                        'bg-blue-600 text-white' => $currentStep === 2,
-                        'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' => $currentStep !== 2,
-                    ])>2</div>
-                    <div>
-                        <div class="font-medium">Products</div>
-                        <div class="text-xs">Add Items</div>
+                @if ($currentStep > 1)
+                    <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <h3 class="text-sm font-medium mb-2">Order Summary</h3>
+                        @php
+                            $vatRate = 0.12;
+                            $vatableTotal = collect($items)->sum(function ($item) {
+                                $product = \App\Models\Product::find($item['product_id']);
+                                return $product && $product->is_vatable ? $item['price'] * $item['quantity'] : 0;
+                            });
+                            $vat = $vatableTotal * $vatRate;
+                            $subtotal = collect($items)->sum(fn($i) => $i['price'] * $i['quantity']);
+                            $grandTotal = $subtotal + $vat;
+                        @endphp
+
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-300">Subtotal:</span>
+                                <span>₱{{ number_format($subtotal, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-300">VAT (12%):</span>
+                                <span>₱{{ number_format($vat, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-gray-700 dark:text-gray-100">Grand Total:</span>
+                                <span>₱{{ number_format($grandTotal, 2) }}</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div @class([
-                    'flex items-center gap-2 p-3 rounded-lg transition-colors',
-                    'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' => $currentStep === 3,
-                    'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' => $currentStep !== 3,
-                ])>
-                    <div @class([
-                        'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-                        'bg-blue-600 text-white' => $currentStep === 3,
-                        'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' => $currentStep !== 3,
-                    ])>3</div>
-                    <div>
-                        <div class="font-medium">Review</div>
-                        <div class="text-xs">& Payment</div>
-                    </div>
-                </div>
+                @endif
             </div>
-            @if ($currentStep > 1)
-                <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h3 class="text-sm font-medium mb-2">Order Summary</h3>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600 dark:text-gray-300">Items:</span>
-                            <span>{{ count($items) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600 dark:text-gray-300">Total Cost:</span>
-                            <span>₱{{ number_format(collect($items)->sum(fn($i) => $i['price'] * $i['quantity']), 2) }}</span>
-                        </div>
+
+            <!-- Main Content -->
+            <div class="md:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                @if (session('error'))
+                    <div class="mb-4 p-3 rounded bg-red-100 text-red-700 border border-red-300">
+                        {{ session('error') }}
                     </div>
-                </div>
-            @endif
-        </div>
+                @endif
+                @if ($currentStep === 1)
+                    <div>
+                        <h2 class="text-lg font-semibold mb-4">Step 1: Choose Order Type & Supplier</h2>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Order
+                            Type</label>
+                        <select wire:model="order_type"
+                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
+                            <option value="">Select Type</option>
+                            <option value="stock">Stock</option>
+                            <option value="others">Others</option>
+                        </select>
 
-        <!-- Main Content -->
-        <div class="md:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            @if ($currentStep === 1)
-                <div>
-                    <h2 class="text-lg font-semibold mb-4">Step 1: Choose Order Type & Supplier</h2>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Order Type</label>
-                    <select wire:model="order_type"
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
-                        <option value="">Select Type</option>
-                        <option value="stock">Stock</option>
-                        <option value="others">Others</option>
-                    </select>
-
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 mt-4">Supplier</label>
-                    <div class="relative mb-4">
-                        <input wire:model.live="supplierSearch"
-                            type="text"
-                            placeholder="Type supplier name..."
-                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"
-                            wire:focus="showSupplierDropdown = true"
-                            wire:keydown.escape="showSupplierDropdown = false"
-                            autocomplete="off"
-                        >
-                        @if ($showSupplierDropdown && strlen($supplierSearch) > 1)
-                            <ul class="absolute z-10 bg-white border rounded shadow mb-2 w-full max-h-48 overflow-auto">
-                                @forelse ($this->supplierSuggestions as $supplier)
-                                    <li class="px-4 py-2 text-gray-500 hover:bg-blue-100 cursor-pointer"
-                                        wire:click.prevent="selectSupplier({{ $supplier->id }})">
-                                        {{ $supplier->trade_name }}
-                                    </li>
-                                @empty
-                                    <li class="px-4 py-2 text-gray-500">No suppliers found.</li>
-                                @endforelse
-                                <li class="px-4 py-2 text-blue-600 hover:bg-blue-50 cursor-pointer"
-                                    wire:click.prevent="showAddSupplier">
-                                    + Add New Supplier
-                                </li>
-                            </ul>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 mt-4">Expected
+                            Delivery Date</label>
+                        <input wire:model="expected_delivery_date" type="date"
+                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
+                        <label
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 mt-4">Supplier</label>
+                        <div class="relative mb-4">
+                            <div class="relative mb-4">
+                                <input wire:model.live="supplierSearch" type="text"
+                                    placeholder="Type supplier name..."
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"
+                                    @focus="$wire.showSupplierDropdown = true"
+                                    @blur="setTimeout(() => $wire.showSupplierDropdown = false, 200)"
+                                    wire:keydown.escape="showSupplierDropdown = false" autocomplete="off">
+                                @if ($showSupplierDropdown)
+                                    <ul
+                                        class="absolute z-10 bg-white border rounded shadow mb-2 w-full max-h-48 overflow-auto">
+                                        @forelse ($this->supplierSuggestions as $supplier)
+                                            <li class="px-4 py-2 text-gray-500 hover:bg-blue-100 cursor-pointer"
+                                                wire:click.prevent="selectSupplier({{ $supplier->id }})">
+                                                {{ $supplier->trade_name }}
+                                            </li>
+                                        @empty
+                                            <li class="px-4 py-2 text-gray-500">No suppliers found.</li>
+                                        @endforelse
+                                        <li class="px-4 py-2 text-blue-600 hover:bg-blue-50 cursor-pointer"
+                                            wire:click.prevent="showAddSupplier">
+                                            + Add New Supplier
+                                        </li>
+                                    </ul>
+                                @endif
+                            </div>
+                        </div>
+                        @if ($selectedSupplier)
+                            <div
+                                class="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                                <div class="font-semibold text-gray-700 dark:text-gray-200 mb-2">Supplier Info</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">
+                                    <div><span class="font-medium">Company:</span> {{ $selectedSupplier->trade_name }}
+                                    </div>
+                                    <div><span class="font-medium">Contact:</span> {{ $selectedSupplier->name }}</div>
+                                    <div><span class="font-medium">Phone:</span>
+                                        {{ $selectedSupplier->contact_number ?? '—' }}</div>
+                                    <div><span class="font-medium">Email:</span> {{ $selectedSupplier->email ?? '—' }}
+                                    </div>
+                                    <div><span class="font-medium">Address:</span>
+                                        {{ $selectedSupplier->address ?? '—' }}</div>
+                                </div>
+                            </div>
                         @endif
-                    </div>
-                    @if ($showAddSupplierForm)
-                        <div class="space-y-4 mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                            <h3 class="text-md font-medium">New Supplier Details</h3>
+                        @if ($showAddSupplierForm)
+                            <div class="space-y-4 mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h3 class="text-md font-medium">New Supplier Details</h3>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Name (Contact Person) <span class="text-red-500">*</span>
-                                    </label>
-                                    <input wire:model="newSupplier.name" type="text"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
-                                    @error('newSupplier.name')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Name (Contact Person) <span class="text-red-500">*</span>
+                                        </label>
+                                        <input wire:model="newSupplier.name" type="text"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                        @error('newSupplier.name')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Trade Name (Company) <span class="text-red-500">*</span>
+                                        </label>
+                                        <input wire:model="newSupplier.trade_name" type="text"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                        @error('newSupplier.trade_name')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Contact Number
+                                        </label>
+                                        <input wire:model="newSupplier.contact_number" type="text"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                        @error('newSupplier.contact_number')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Email
+                                        </label>
+                                        <input wire:model="newSupplier.email" type="email"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                        @error('newSupplier.email')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Address <span class="text-red-500">*</span>
+                                        </label>
+                                        <textarea wire:model="newSupplier.address" rows="2"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200"></textarea>
+                                        @error('newSupplier.address')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Trade Name (Company) <span class="text-red-500">*</span>
-                                    </label>
-                                    <input wire:model="newSupplier.trade_name" type="text"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
-                                    @error('newSupplier.trade_name')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Contact Number
-                                    </label>
-                                    <input wire:model="newSupplier.contact_number" type="text"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
-                                    @error('newSupplier.contact_number')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Email
-                                    </label>
-                                    <input wire:model="newSupplier.email" type="email"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
-                                    @error('newSupplier.email')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
-                                </div>
-
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Address <span class="text-red-500">*</span>
-                                    </label>
-                                    <textarea wire:model="newSupplier.address" rows="2"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200"></textarea>
-                                    @error('newSupplier.address')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
+                                <div class="flex justify-between pt-4">
+                                    <button wire:click="$set('showAddSupplierForm', false)" type="button"
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button type="button" wire:click="saveSupplier"
+                                        class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors">
+                                        Save Supplier
+                                    </button>
                                 </div>
                             </div>
-
-                            <div class="flex justify-between pt-4">
-                                <button wire:click="$set('showAddSupplierForm', false)" type="button"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-                                    Cancel
-                                </button>
-                                <button type="button" wire:click="saveSupplier"
-                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors">
-                                    Save Supplier
-                                </button>
-                            </div>
-                        </div>
-                    @endif
-                    <div class="flex justify-end mt-6">
-                        <button type="button"
-                            wire:click="nextStep"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                            :disabled="!order_type || !supplier_id">
-                            Continue to Products
-                        </button>
-                    </div>
-                </div>
-            @elseif ($currentStep === 2)
-                <div>
-                    <h2 class="text-lg font-semibold mb-4">Step 2: Add Products</h2>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Product</label>
-                    <div class="relative mb-4">
-                        <input wire:model.live="productSearch"
-                            type="text"
-                            placeholder="Type product name..."
-                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"
-                            wire:focus="showProductDropdown = true"
-                            wire:keydown.escape="showProductDropdown = false"
-                            autocomplete="off"
-                        >
-                        @if ($showProductDropdown && strlen($productSearch) > 1)
-                            <ul class="absolute z-10 bg-white border rounded shadow mb-2 w-full max-h-48 overflow-auto">
-                                @forelse ($this->productSuggestions as $product)
-                                    <li class="px-4 py-2 text-gray-500 hover:bg-blue-100 cursor-pointer"
-                                        wire:click.prevent="selectProduct({{ $product->id }})">
-                                        {{ $product->name }}
-                                    </li>
-                                @empty
-                                    <li class="px-4 py-2 text-gray-500">No products found.</li>
-                                @endforelse
-                                <li class="px-4 py-2 text-blue-600 hover:bg-blue-50 cursor-pointer"
-                                    wire:click.prevent="showAddProduct">
-                                    + Add New Product
-                                </li>
-                            </ul>
                         @endif
+                        <div class="flex justify-end mt-6">
+                            <button type="button" wire:click="nextStep"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                :disabled="!order_type || !supplier_id">
+                                Continue to Products
+                            </button>
+                        </div>
                     </div>
-                    @if ($showAddProductForm)
-                        <div class="space-y-4 mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 mt-2">
-                            <h3 class="text-md font-medium">New Product Details</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Product Code <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" wire:model="newProduct.product_code"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1">
-                                    @error('newProduct.product_code')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
+                @elseif ($currentStep === 2)
+                    <div>
+                        <h2 class="text-lg font-semibold mb-4">Step 2: Select Products</h2>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search
+                            Product</label>
+                        <div class="relative mb-4">
+                            <input wire:model.live="productSearch" type="text" placeholder="Type product name..."
+                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"
+                                wire:focus="showProductDropdown = true"
+                                wire:keydown.escape="showProductDropdown = false" autocomplete="off">
+                            @if ($showProductDropdown)
+                                <ul
+                                    class="absolute z-10 bg-white border rounded shadow mb-2 w-full max-h-48 overflow-auto">
+                                    @forelse ($this->productSuggestions as $product)
+                                        <li class="px-4 py-2 text-gray-500 hover:bg-blue-100 cursor-pointer"
+                                            wire:click.prevent="selectProduct({{ $product->id }})">
+                                            {{ $product->name }}
+                                        </li>
+                                    @empty
+                                        <li class="px-4 py-2 text-gray-500">No products found.</li>
+                                    @endforelse
+                                    <li class="px-4 py-2 text-blue-600 hover:bg-blue-50 cursor-pointer"
+                                        wire:click.prevent="showAddProduct">
+                                        + Add New Product
+                                    </li>
+                                </ul>
+                            @endif
+                        </div>
+                        @if ($showAddProductForm)
+                            <div
+                                class="space-y-4 mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 mt-2">
+                                <h3 class="text-md font-medium">New Product Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Product Code <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" wire:model="newProduct.product_code"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1">
+                                        @error('newProduct.product_code')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Product Name <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" wire:model="newProduct.name"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1">
+                                        @error('newProduct.name')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Description
+                                        </label>
+                                        <textarea wire:model="newProduct.description" rows="2"
+                                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1"></textarea>
+                                        @error('newProduct.description')
+                                            <span
+                                                class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                        @enderror
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Product Name <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" wire:model="newProduct.name"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1">
-                                    @error('newProduct.name')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Description
-                                    </label>
-                                    <textarea wire:model="newProduct.description" rows="2"
-                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200 mb-1"></textarea>
-                                    @error('newProduct.description')
-                                        <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
-                                    @enderror
+                                <div class="flex justify-between pt-4">
+                                    <button wire:click="$set('showAddProductForm', false)" type="button"
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button type="button" wire:click="saveProduct"
+                                        class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-colors">
+                                        Save Product
+                                    </button>
                                 </div>
                             </div>
-                            <div class="flex justify-between pt-4">
-                                <button wire:click="$set('showAddProductForm', false)" type="button"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-                                    Cancel
-                                </button>
-                                <button type="button" wire:click="saveProduct"
-                                    class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-colors">
-                                    Save Product
-                                </button>
+                        @endif
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantity</label>
+                                <input wire:model="itemInput.quantity" type="number" min="1"
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price</label>
+                                <input wire:model="itemInput.price" type="number" min="0" step="0.01"
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
                             </div>
                         </div>
-                    @endif
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantity</label>
-                            <input wire:model="itemInput.quantity" type="number" min="1"
-                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">UOM</label>
+                                <input wire:model="itemInput.uom" type="text"
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"
+                                    placeholder="e.g. box, bottle, kg">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Strength</label>
+                                <input wire:model="itemInput.strength" type="text"
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"
+                                    placeholder="e.g. 500mg, 10%">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price</label>
-                            <input wire:model="itemInput.price" type="number" min="0" step="0.01"
-                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
+                        <div class="flex justify-end mb-6">
+                            <button wire:click="addItem" type="button"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                @if (empty($itemInput['product_id'])) disabled @endif>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Item
+                            </button>
+                        </div>
+                        @if (count($items) > 0)
+                            <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                        <thead class="bg-gray-50 dark:bg-gray-700">
+                                            <tr>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Product</th>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Qty</th>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    UOM</th>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Strength</th>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    VATable</th>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Price</th>
+                                                <th class="px-4 py-3"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody
+                                            class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                            @foreach ($items as $idx => $item)
+                                                @php
+                                                    $product = \App\Models\Product::find($item['product_id']);
+                                                @endphp
+                                                <tr>
+                                                    <td class="px-4 py-3">{{ $product->name ?? '' }}</td>
+                                                    <td class="px-4 py-3">{{ $item['quantity'] }}</td>
+                                                    <td class="px-4 py-3">{{ $item['uom'] ?? '' }}</td>
+                                                    <td class="px-4 py-3">{{ $item['strength'] ?? '' }}</td>
+                                                    <td class="px-4 py-3">
+                                                        @if ($product && $product->is_vatable)
+                                                            <span
+                                                                class="px-2 py-1 rounded bg-green-100 text-green-800 text-xs">Yes</span>
+                                                        @else
+                                                            <span
+                                                                class="px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs">No</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="px-4 py-3">₱{{ number_format($item['price'], 2) }}</td>
+                                                    <td class="px-4 py-3">
+                                                        <button wire:click="removeItem({{ $idx }})"
+                                                            type="button"
+                                                            class="text-red-600 hover:text-red-900">Remove</button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+                        <div class="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <button wire:click="previousStep" type="button"
+                                class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                Back
+                            </button>
+                            <button wire:click="nextStep" type="button"
+                                class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors  disabled:opacity-50 disabled:cursor-not-allowed"
+                                @if (count($items) === 0) disabled hidden @endif>
+                                Review & Payment
+                            </button>
                         </div>
                     </div>
-                    <div class="flex justify-end mb-6">
-                        <button wire:click="addItem" type="button"
-                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                            Add Item
-                        </button>
-                    </div>
-                    @if (count($items) > 0)
+                @elseif ($currentStep === 3)
+                    <div>
+                        <h2 class="text-lg font-semibold mb-4">Step 3: Review & Payment</h2>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order
+                                Type</label>
+                            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                {{ ucfirst($order_type) }}
+                            </div>
+                        </div>
+
                         <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                     <thead class="bg-gray-50 dark:bg-gray-700">
                                         <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Qty</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
-                                            <th class="px-4 py-3"></th>
+                                            <th
+                                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Product</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Qty</th>
+                                            <th
+                                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Price</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                        @foreach ($items as $idx => $item)
+                                    <tbody
+                                        class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                        @foreach ($items as $item)
                                             <tr>
                                                 <td class="px-4 py-3">
                                                     {{ \App\Models\Product::find($item['product_id'])->name ?? '' }}
                                                 </td>
                                                 <td class="px-4 py-3">{{ $item['quantity'] }}</td>
                                                 <td class="px-4 py-3">₱{{ number_format($item['price'], 2) }}</td>
-                                                <td class="px-4 py-3">
-                                                    <button wire:click="removeItem({{ $idx }})" type="button"
-                                                        class="text-red-600 hover:text-red-900">Remove</button>
-                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                    @endif
-                    <div class="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <button wire:click="previousStep" type="button"
-                            class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors">
-                            Back
-                        </button>
-                        <button wire:click="nextStep" type="button"
-                            class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
-                            @if(count($items) === 0) disabled @endif>
-                            Review & Payment
-                        </button>
-                    </div>
-                </div>
-            @elseif ($currentStep === 3)
-                <div>
-                    <h2 class="text-lg font-semibold mb-4">Step 3: Review & Payment</h2>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order Type</label>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            {{ ucfirst($order_type) }}
+                        <div class="mb-4">
+                            <label
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remarks</label>
+                            <textarea wire:model="remarks" rows="2"
+                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment
+                                Terms</label>
+                            <select wire:model="payment_terms"
+                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
+                                <option value="">Select Payment Terms</option>
+                                <option value="net 15">Net 15</option>
+                                <option value="net 30">Net 30</option>
+                                <option value="net 60">Net 60</option>
+                                <option value="50% downpayment">50% Downpayment</option>
+                                <option value="installments">Installments</option>
+                                <option value="upon delivery">Upon Delivery</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <button wire:click="previousStep" type="button"
+                                class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                Back
+                            </button>
+                            <button type="submit"
+                                class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-colors">
+                                Submit
+                            </button>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remarks</label>
-                        <textarea wire:model="remarks" rows="2"
-                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Terms</label>
-                        <select wire:model="payment_terms"
-                            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
-                            <option value="">Select Payment Terms</option>
-                            <option value="net 15">Net 15</option>
-                            <option value="net 30">Net 30</option>
-                            <option value="net 60">Net 60</option>
-                            <option value="50% downpayment">50% Downpayment</option>
-                            <option value="installments">Installments</option>
-                            <option value="upon delivery">Upon Delivery</option>
-                        </select>
-                    </div>
-                    <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Qty</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @foreach ($items as $item)
-                                        <tr>
-                                            <td class="px-4 py-3">{{ \App\Models\Product::find($item['product_id'])->name ?? '' }}</td>
-                                            <td class="px-4 py-3">{{ $item['quantity'] }}</td>
-                                            <td class="px-4 py-3">₱{{ number_format($item['price'], 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <button wire:click="previousStep" type="button"
-                            class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors">
-                            Back
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-colors">
-                            Submit
-                        </button>
-                    </div>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
-    </div>
     </form>
 </div>

@@ -247,74 +247,84 @@ new class extends Component {
     }
 };
 ?>
+
 <div>
-    <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
-         <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
-           Receive Stock
-        </h3>
-    </div>
-    <div class="bg-white dark:bg-(--color-accent-dark) p-8 sm:p-10">
-        <div class="flex flex-col space-x-4 mb-4">
-            <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
-                <div class="bg-(--color-accent) h-2 rounded-full transition-all duration-500" 
-                    style="width: {{ min(100, ($currentStep / 3) * 100) }}%">
-                </div>
-            </div>
-        
-            <div class="flex flex-col sm:flex-row items-stretch gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
-                <button wire:click="goToStep(1)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base shadow
-                    {{ $currentStep === 1 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
-                    <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                            {{ $currentStep === 1 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
-                            1
-                        </div>
-                        <div>
-                            <span class="{{ $currentStep === 1 ? 'font-bold' : 'font-medium' }}">
-                                Product Info
-                            </span>
-                        </div>
-                    </div>
-                </button>
-
-                <button wire:click="goToStep(2)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow w-full
-                    {{ $currentStep === 2 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
-                    <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                            {{ $currentStep === 2 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
-                            2
-                        </div>
-                        <div>
-                            <span class="{{ $currentStep === 2 ? 'font-bold' : 'font-medium' }}">
-                                Stock Info
-                            </span>
-                        </div>
-                    </div>
-                </button>
-
-                <button wire:click="goToStep(3)" 
-                    class="flex-1 px-6 py-3 rounded-sm text-base transition-all duration-300 shadow w-full
-                    {{ $currentStep === 3 ? 'bg-(--color-accent) text-white dark:bg-blue-500' : 'bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-700' }}">
-                    <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white border text-sm
-                            {{ $currentStep === 3 ? 'font-bold text-(--color-accent) dark:text-(--color-accent-3-dark)' : 'font-medium text-gray-900' }}">
-                            3
-                        </div>
-                        <div>
-                            <span class="{{ $currentStep === 3 ? 'font-bold' : 'font-medium' }}">
-                                Additional Details
-                            </span>
-                        </div>
-                    </div>
-                </button>
-            </div>
+    <div>
+        <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
+            <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
+                Receive Stock
+            </h3>
         </div>
 
-        @include('livewire.stocks.views.step-1-product-information')
-        @include('livewire.stocks.views.step-2-stock-information')
-        @include('livewire.stocks.views.step-3-additional-details')
+        <div class="bg-white dark:bg-(--color-accent-dark) p-8 sm:p-10">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="md:col-span-1">
+                    <div class="space-y-2">
+                        <div @class([
+                            'flex items-center gap-2 p-3 rounded-lg transition-colors',
+                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
+                                $currentStep === 1,
+                            'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
+                                $currentStep !== 1,
+                        ])>
+                            <div @class([
+                                'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 1,
+                                'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
+                                    $currentStep !== 1,
+                            ])>1</div>
+                            <div>
+                                <div class="font-bold">Product</div>
+                                <div class="text-xs">Information</div>
+                            </div>
+                        </div>
 
+                        <div @class([
+                            'flex items-center gap-2 p-3 rounded-lg transition-colors',
+                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
+                                $currentStep === 2,
+                            'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
+                                $currentStep !== 2,
+                        ])>
+                            <div @class([
+                                'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 2,
+                                'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
+                                    $currentStep !== 2,
+                            ])>2</div>
+                            <div>
+                                <div class="font-bold">Stock</div>
+                                <div class="text-xs">Information</div>
+                            </div>
+                        </div>
+
+                        <div @class([
+                            'flex items-center gap-2 p-3 rounded-lg transition-colors',
+                            'bg-(--color-accent-muted) dark:bg-(--color-accent-3-dark) text-(--color-accent) dark:text-(--color-accent-1-dark)' =>
+                                $currentStep === 3,
+                            'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' =>
+                                $currentStep !== 3,
+                        ])>
+                            <div @class([
+                                'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
+                                'bg-(--color-accent) text-white dark:text-(--color-accent-3-dark)' => $currentStep === 3,
+                                'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300' =>
+                                    $currentStep !== 3,
+                            ])>3</div>
+                            <div>
+                                <div class="font-bold">Additional Details</div>
+                                <div class="text-xs">Review & Finalize</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-3 bg-white dark:bg-(--color-accent-1-dark)">
+                     @include('livewire.stocks.views.step-1-product-information')
+                    @include('livewire.stocks.views.step-2-stock-information')
+                    @include('livewire.stocks.views.step-3-additional-details')
+                </div>
+            </div>
+        </div>
     </div>
 </div>

@@ -13,7 +13,7 @@
             </div>
         </div>
 
-        <div class="space-y-8 px-6">
+        <div class="space-y-8 md:px-6">
             <div>
                 <div class="flex items-center mb-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Find Existing Customer</h3>
@@ -191,11 +191,11 @@
             </div>
         </div>
 
-        <div class="px-6">
+        <div class="md:px-6">
             @include('livewire.invoicing.views.add-new-customer')
         </div>
 
-       <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700 px-6">
+       <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700 md:px-6">
             <div class="text-sm text-center sm:text-left text-gray-500 dark:text-gray-400">
                 <span> Step 1 of 3 - Customer Selection</span>
             </div>

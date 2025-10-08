@@ -40,7 +40,7 @@
                     </tr>
                 @else
                     @foreach ($rows as $rowIndex => $row)
-                        <tr class="border-b-1">
+                        <tr class="border-b-1 dark:border-white">
                          @foreach ($row as $colIndex => $cell)
                                 @php
                                     $statusIndex = array_search('Status', $headers);
