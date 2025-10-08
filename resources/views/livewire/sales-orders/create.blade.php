@@ -5,6 +5,7 @@ use Livewire\WithFileUploads;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Invoice;
+use App\Models\SalesOrder;
 use App\Models\Stock;
 use App\Models\Agent;
 use App\Models\AgentCommission;
@@ -66,10 +67,18 @@ new class extends Component {
     public $invoice_prefix = 'INV';
     public $invoice_date;
     public $invoice_status;
-    public $terms_conditions = 'Payment due within 7 days. Late payments subject to 1.5% monthly interest.';
+    public $terms_conditions = "All sales are subject to the following terms and conditions:
+1. Prices, discounts, and VAT are subject to change until order confirmation.
+2. Payment terms as agreed and stated in this Sales Order.
+3. Delivery dates are estimates and subject to stock availability.
+4. Goods delivered are non-returnable unless defective or not as ordered.
+5. Any claims must be made within 3 days of delivery.
+6. Ownership transfers upon full payment.
+7. The company reserves the right to cancel orders due to unforeseen circumstances.
+8. Other terms as may be agreed in writing.";
     public $payment_terms = '';
     public $assigned_agent = '';
-
+    public $partial_payment_amount = null;
     // UI State
     public $showProductModal = false;
     public $selectedProducts = [];
@@ -85,6 +94,8 @@ new class extends Component {
     public $showPrintPreview = false;
     public $loadingPDFPreview = false;
     public $invoice = null;
+    public $order_date;
+    public $requested_delivery_date;
 
     public function mount()
     {
@@ -92,7 +103,7 @@ new class extends Component {
         $this->due_date = now()->addDays(7)->format('Y-m-d');
         $this->invoice_date = now()->format('Y-m-d');
         $this->invoice_prefix = config('invoicing.prefix', 'INV');
-        $this->loadStocks();
+        $this->loadProducts();
     }
 
     // ========== STEP 1 METHODS ==========
@@ -136,30 +147,68 @@ new class extends Component {
 
     // ========== STEP 2 METHODS ==========
 
-    public function loadStocks()
+    // public function loadStocks()
+    // {
+    //     $this->products = Stock::with(['product'])
+    //         ->whereHas('product', function ($query) {
+    //             $query->when($this->searchProduct, function ($query) {
+    //                 $query->where(function ($q) {
+    //                     $q->where('name', 'like', '%' . $this->searchProduct . '%')
+    //                         ->orWhere('product_code', 'like', '%' . $this->searchProduct . '%')
+    //                         ->orWhere('description', 'like', '%' . $this->searchProduct . '%');
+    //                 });
+    //             });
+    //         })
+    //         ->orderByRaw(
+    //             "
+    //     CASE
+    //         WHEN expiration_date < CURDATE() THEN 1
+    //         WHEN expiration_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 2
+    //         ELSE 3
+    //     END, expiration_date ASC
+    // ",
+    //         )
+    //         ->limit(10)
+    //         ->get();
+    // }
+
+    public function loadProducts()
     {
-        $this->products = Stock::with(['product'])
-            ->whereHas('product', function ($query) {
-                $query->when($this->searchProduct, function ($query) {
-                    $query->where(function ($q) {
-                        $q->where('name', 'like', '%' . $this->searchProduct . '%')
-                            ->orWhere('product_code', 'like', '%' . $this->searchProduct . '%')
-                            ->orWhere('description', 'like', '%' . $this->searchProduct . '%');
-                    });
+        $this->products = Product::query()
+            ->when($this->searchProduct, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'like', '%' . $this->searchProduct . '%')
+                        ->orWhere('product_code', 'like', '%' . $this->searchProduct . '%')
+                        ->orWhere('description', 'like', '%' . $this->searchProduct . '%');
                 });
             })
-            ->orderByRaw(
-                "
-        CASE
-            WHEN expiration_date < CURDATE() THEN 1
-            WHEN expiration_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 2
-            ELSE 3
-        END, expiration_date ASC
-    ",
-            )
-            ->limit(10)
+            ->orderBy('name')
+            ->limit(20)
             ->get();
     }
+
+    // public function addToCart($productId)
+    // {
+    //     $product = Product::findOrFail($productId);
+
+    //     if (isset($this->cart[$productId])) {
+    //         $this->cart[$productId]['quantity'] += 1;
+    //     } else {
+    //         $this->cart[$productId] = [
+    //             'id' => $product->id,
+    //             'name' => $product->name,
+    //             'code' => $product->product_code,
+    //             'price' => $product->selling_price,
+    //             'cost' => $product->cost_price,
+    //             'is_vatable' => (bool) ($product->is_vatable ?? 0),
+    //             'vat_tax' => 0,
+    //             'quantity' => 1,
+    //             'total' => 0,
+    //         ];
+    //     }
+
+    //     $this->updateCartItem($productId);
+    // }
 
     public function addToCart($productId)
     {
@@ -171,6 +220,9 @@ new class extends Component {
             $this->cart[$productId] = [
                 'id' => $product->id,
                 'name' => $product->name,
+                'strength' => $product->strength ?? '',
+                'unit' => $product->unit->name ?? '',
+                'type' => $product->type->name ?? '',
                 'code' => $product->product_code,
                 'price' => $product->selling_price,
                 'cost' => $product->cost_price,
@@ -224,7 +276,7 @@ new class extends Component {
                 $remainingStock = $availableQuantity - $otherQuantity;
 
                 if ($quantity > $remainingStock) {
-                    $productName = $stock->product->name ?? 'Unknown';
+                    $productName = $product->name ?? 'Unknown';
                     $stockNumber = $stock->stock_number ?? 'N/A';
 
                     flash()->warning("Only {$remainingStock} available for {$productName} (Stock #: {$stockNumber}). Quantity has been adjusted.");
@@ -264,11 +316,11 @@ new class extends Component {
             $isVatable = $item['is_vatable'] ?? false;
 
             $subtotal = $quantity * $unitPrice;
-
             if ($isVatable) {
-                $vat = $subtotal * 0.12;
+                // VAT-inclusive: extract VAT from total
+                $vat = ($subtotal / 1.12) * 0.12;
                 $this->cart[$cartKey]['vat_tax'] = round($vat, 2);
-                $this->cart[$cartKey]['total'] = round($subtotal + $vat, 2);
+                $this->cart[$cartKey]['total'] = round($subtotal, 2); // No extra VAT added
             } else {
                 $this->cart[$cartKey]['vat_tax'] = 0;
                 $this->cart[$cartKey]['total'] = round($subtotal, 2);
@@ -340,6 +392,10 @@ new class extends Component {
 
     public function goToStep3()
     {
+        if (empty($this->cart) || count($this->cart) < 1) {
+            flash()->error('No products selected. Please add at least one product to continue.');
+            return;
+        }
         $this->validate(['cart' => 'required|array|min:1']);
         $this->currentStep = 3;
     }
@@ -380,7 +436,7 @@ new class extends Component {
         foreach ($this->selectedProducts as $stockId) {
             $stock = Stock::with('product')->find($stockId);
 
-            if ($stock && $stock->product) {
+            if ($stock && $product) {
                 $quantityToAdd = $this->productQuantities[$stockId] ?? 1;
                 $availableQuantity = $stock->quantity - collect($this->cart)->where('stock_id', $stockId)->sum('quantity');
 
@@ -389,7 +445,7 @@ new class extends Component {
                 }
 
                 if ($quantityToAdd > $availableQuantity) {
-                    $skippedMessages[] = "❌ {$stock->product->name} (Stock #: {$stock->stock_number}) - Available: {$availableQuantity}";
+                    $skippedMessages[] = "❌ {$product->name} (Stock #: {$stock->stock_number}) - Available: {$availableQuantity}";
                     continue;
                 }
 
@@ -399,13 +455,13 @@ new class extends Component {
                     $this->cart[$cartKey]['quantity'] += $quantityToAdd;
                 } else {
                     $this->cart[$cartKey] = [
-                        'id' => $stock->product->id,
+                        'id' => $product->id,
                         'stock_id' => $stock->id,
-                        'name' => $stock->product->name,
-                        'code' => $stock->product->product_code,
-                        'price' => $stock->selling_price ?? $stock->product->selling_price,
-                        'cost' => $stock->capital_price ?? $stock->product->cost_price,
-                        'is_vatable' => (bool) ($stock->product->is_vatable ?? 0),
+                        'name' => $product->name,
+                        'code' => $product->product_code,
+                        'price' => $stock->selling_price ?? $product->selling_price,
+                        'cost' => $stock->capital_price ?? $product->cost_price,
+                        'is_vatable' => (bool) ($product->is_vatable ?? 0),
                         'vat_tax' => 0,
                         'quantity' => $quantityToAdd,
                         'available_quantity' => $availableQuantity,
@@ -464,6 +520,87 @@ new class extends Component {
         $this->invoice = null;
         $this->showPrintPreview = false;
         $this->isLoading = false;
+    }
+
+    public function submitSalesOrder()
+    {
+        $this->isLoading = true;
+
+        $validated = $this->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'order_date' => 'required|date',
+            'requested_delivery_date' => 'nullable|date|after_or_equal:order_date',
+            'assigned_agent' => 'required|integer|exists:agents,id',
+            'payment_terms' => 'required|string',
+            'payment_method' => 'required|string|in:cash,credit_card,bank_transfer,paypal,other',
+            'discount' => 'nullable|numeric|min:0|max:1000000',
+            'tax' => 'nullable|numeric|min:0|max:1000000',
+            'tax_rate' => 'nullable|numeric|between:0,100',
+            'notes' => 'nullable|string|max:1000',
+            'terms_conditions' => 'nullable|string|max:2000',
+            'cart' => 'required|array|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $salesOrder = \App\Models\SalesOrder::create([
+                'order_number' => $this->generateSalesOrderNumber(),
+                'customer_id' => $this->customer_id,
+                'order_date' => $this->order_date ?? now()->format('Y-m-d'),
+                'requested_delivery_date' => $this->requested_delivery_date ?? null,
+                'status' => 'quotation',
+                'payment_terms' => $this->payment_terms,
+                'payment_method' => $this->payment_method,
+                'discount' => $this->total_discount,
+                'tax' => $this->tax,
+                'tax_rate' => $this->tax_rate,
+                'subtotal' => $this->subtotal,
+                'grand_total' => $this->total,
+                'notes' => $this->notes,
+                'terms_conditions' => $this->terms_conditions,
+                'agent_id' => $this->assigned_agent,
+            ]);
+
+            foreach ($this->cart as $item) {
+                \App\Models\SalesOrderItem::create([
+                    'sales_order_id' => $salesOrder->id,
+                    'product_id' => $item['id'],
+                    'name' => $item['name'],
+                    'strength' => $item['strength'] ?? '',
+                    'unit' => $item['unit'] ?? '',
+                    'type' => $item['type'] ?? '',
+                    'code' => $item['code'] ?? '',
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'discount' => $item['discount'] ?? 0,
+                    'vat' => $item['vat_tax'] ?? 0,
+                    'tax_rate' => $item['is_vatable'] ? 12 : 0,
+                    'total' => $item['total'],
+                ]);
+            }
+
+            DB::commit();
+
+            $this->dispatch('sales-order-created');
+            $this->resetForm();
+            flash()->success('Sales Order created successfully!');
+            return redirect()->route('sales-orders');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            flash()->error('Error creating sales order: ' . $e->getMessage());
+            logger()->error('Sales order creation error: ' . $e->getMessage());
+            return null;
+        } finally {
+            $this->isLoading = false;
+        }
+    }
+    public function generateSalesOrderNumber()
+    {
+        $lastOrder = \App\Models\SalesOrder::latest('id')->first();
+        $number = $lastOrder ? (int) preg_replace('/\D/', '', $lastOrder->order_number) + 1 : 1;
+        $prefix = config('sales_orders.prefix', 'SO');
+        return $prefix . str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function submitInvoice()
@@ -625,7 +762,7 @@ new class extends Component {
                 }
             } else {
                 $this->showPrintPreview = false;
-                flash()->error('Failed to create invoice. Please check your data and try again.');
+                flash()->error('Failed to Create Sales Order. Please check your data and try again.');
             }
         } catch (\Exception $e) {
             $this->showPrintPreview = false;
@@ -637,7 +774,7 @@ new class extends Component {
 
     public function updatedSearchProduct()
     {
-        $this->loadStocks();
+        $this->loadProducts();
     }
 
     public function downloadPDF()
@@ -695,12 +832,12 @@ new class extends Component {
     <div>
         <div class="bg-gray-50 p-6 flex items-center rounded-t-lg dark:bg-(--color-accent-4-dark)">
             <h3 class="font-bold text-lg lg:text-xl text-(--color-accent) dark:text-white">
-                Create Invoice
+                Create Sales Order
             </h3>
         </div>
 
         <div class="bg-white dark:bg-(--color-accent-dark) p-8 sm:p-10">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
                 <div class="md:col-span-1">
                     <div class="space-y-2">
                         <div @class([
@@ -765,10 +902,204 @@ new class extends Component {
                     </div>
                 </div>
 
-                <div class="md:col-span-3 bg-white dark:bg-(--color-accent-1-dark)">
-                    @include('livewire.invoicing.views.step-1-customer-information')
-                    @include('livewire.invoicing.views.step-2-add-products')
-                    @include('livewire.invoicing.views.step-3-review-invoice', [
+                <div class="md:col-span-4 bg-white dark:bg-(--color-accent-1-dark)">
+                    @include('livewire.sales-orders.views.step-1-customer-information')
+                    {{-- @include('livewire.invoicing.views.step-2-add-products') --}}
+
+                    @if ($currentStep === 2)
+                        <div>
+                            <!-- Product Search and Add -->
+                            <div class="mb-6">
+                                <h1 class="font-bold text-lg md:text-xl text-(--color-accent) dark:text-white">
+                                    Step 3: Review Sales Order
+                                </h1>
+                                <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                                    Review all details before creating the sales order
+                                </span>
+                            </div>
+                            <div class="mb-4 flex flex-col md:flex-row md:items-end gap-4">
+
+                                <div class="w-full md:w-2/3">
+                                    <label
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search
+                                        Product</label>
+                                    <input type="text" wire:model.debounce.400ms="searchProduct"
+                                        placeholder="Search by name, code, or description"
+                                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition duration-200">
+                                </div>
+                            </div>
+
+                            <!-- Product List -->
+                            <div class="mb-6">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Product</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Code</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Price</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Available Qty</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($products as $product)
+                                            <tr>
+                                                <td class="px-4 py-2">
+                                                    {{ $product->name }}
+                                                    @if ($product->strength || $product->unit?->name || $product->type?->name)
+                                                        <span class="ml-1 text-xs text-gray-500">
+                                                            @if ($product->strength)
+                                                                {{ $product->strength }}
+                                                            @endif
+                                                            @if ($product->unit?->name)
+                                                                ({{ $product->unit->name }})
+                                                            @endif
+                                                            @if ($product->type?->name)
+                                                                <span class="ml-1">{{ $product->type->name }}</span>
+                                                            @endif
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-2">{{ $product->product_code }}</td>
+                                                <td class="px-4 py-2">₱{{ number_format($product->selling_price, 2) }}
+                                                </td>
+                                                <td class="px-4 py-2">{{ $product->available_qty }}</td>
+                                                <td class="px-4 py-2">
+                                                    <flux:tooltip content="Add to Cart" placement="top">
+                                                        <flux:button wire:click="addToCart({{ $product->id }})"
+                                                            icon="plus" icon:variant="micro" variant="primary"
+                                                            color="blue" class="gap-1 cursor-pointer">
+                                                            Add
+                                                        </flux:button>
+                                                    </flux:tooltip>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="px-4 py-2 text-center text-gray-500">No
+                                                    products found.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Cart Table -->
+                            <div class="mb-6">
+                                <h4 class="font-semibold mb-2">Selected Products</h4>
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Code</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Product</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Price</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Order Qty</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Available Qty</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Backorder</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                VAT (12%)</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Line Total</th>
+                                            <th class="px-4 py-2"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($cart as $item)
+                                            @php
+                                                $product = \App\Models\Product::find($item['id']);
+                                                $availableQty = $product?->available_qty ?? 0;
+                                                $orderQty = $item['quantity'];
+                                                $backorder = max(0, $orderQty - $availableQty);
+                                            @endphp
+                                            <tr>
+                                                <td class="px-4 py-2">{{ $item['code'] }}</td>
+                                                <td class="px-4 py-2">
+                                                    {{ $item['name'] }}
+                                                    @if ($item['unit'] || $item['type'])
+                                                        <span class="ml-1 text-xs text-gray-500">
+                                                            @if ($item['strength'])
+                                                                ({{ $item['strength'] }})
+                                                            @endif
+                                                            @if ($item['unit'])
+                                                                ({{ $item['unit'] }})
+                                                            @endif
+                                                            @if ($item['type'])
+                                                                <span class="ml-1">{{ $item['type'] }}</span>
+                                                            @endif
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-2">
+                                                    ₱{{ number_format($item['price'], 2) }}
+                                                    @if ($item['is_vatable'])
+                                                        <span class="text-xs text-gray-500">(VAT Inclusive)</span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-2">
+                                                    <input type="number" min="1"
+                                                        wire:model.lazy="cart.{{ $item['id'] }}.quantity"
+                                                        class="w-16 rounded border border-gray-300 dark:border-gray-600 px-2 py-1 text-sm"
+                                                        wire:change="updateCartItem({{ $item['id'] }})">
+                                                </td>
+                                                <td class="px-4 py-2">{{ $availableQty }}</td>
+                                                <td class="px-4 py-2">
+                                                    @if ($backorder > 0)
+                                                        <span
+                                                            class="text-red-600 font-semibold">{{ $backorder }}</span>
+                                                    @else
+                                                        <span class="text-green-600">0</span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-2">
+                                                    @if ($item['is_vatable'])
+                                                        ₱{{ number_format($item['vat_tax'], 2) }}
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-2">₱{{ number_format($item['total'], 2) }}</td>
+                                                <td class="px-4 py-2">
+                                                    <flux:tooltip content="Remove from Cart" placement="top">
+                                                        <flux:button wire:click="removeFromCart({{ $item['id'] }})"
+                                                            icon="trash" icon:variant="micro" variant="danger"
+                                                            color="red" class="gap-1 cursor-pointer">
+                                                            Remove
+                                                        </flux:button>
+                                                    </flux:tooltip>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="9" class="px-4 py-2 text-center text-gray-500">No
+                                                    products in cart.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex justify-between mt-4">
+                                <button type="button" wire:click="backToStep1"
+                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded cursor-pointer hover:bg-gray-300">Back</button>
+                                <button type="button" wire:click="goToStep3"
+                                    class="px-4 py-2 bg-blue-600 text-white cursor-pointer rounded hover:bg-blue-700">Next</button>
+                            </div>
+                        </div>
+                    @endif
+
+
+                    @include('livewire.sales-orders.views.step-3-review-invoice', [
                         'isEditing' => isset($invoice),
                     ])
                 </div>

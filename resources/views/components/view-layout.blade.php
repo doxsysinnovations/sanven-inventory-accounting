@@ -59,7 +59,7 @@
 
             <div class="px-10 pt-4 pb-10 overflow-auto">
                 <div class="flex flex-col gap-4 my-5">
-                    <div class="flex flex-col sm:flex-row gap-4">
+                    {{-- <div class="flex flex-col sm:flex-row gap-4">
                         <div class="flex items-center gap-2 w-full sm:w-auto">
                             <label for="perPage" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Per Page:</label>
                             <flux:select wire:model.live="perPage" id="perPage" class="flex-1 sm:flex-none">
@@ -98,7 +98,7 @@
                                 </flux:select>
                             </div>
                         @endif
-                    </div>
+                    </div> --}}
 
                     @if($withPaymentMethodFilter || $withStatusFilter || $withSearch || $withDateFilter)
                         <div class="flex flex-col sm:flex-row gap-4 sm:justify-between">

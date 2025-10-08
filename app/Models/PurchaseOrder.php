@@ -10,12 +10,12 @@ class PurchaseOrder extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'po_number', 
-        'purchaser_id', 
+        'po_number',
+        'purchaser_id',
         'supplier_id',
-        'order_type', 
-        'status', 
-        'remarks', 
+        'order_type',
+        'status',
+        'remarks',
         'payment_terms'
     ];
 
@@ -37,5 +37,9 @@ class PurchaseOrder extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
+    }
+    public function approved_by_user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'approved_by');
     }
 }
