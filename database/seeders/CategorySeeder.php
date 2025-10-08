@@ -23,8 +23,8 @@ class CategorySeeder extends Seeder
                 'slug' => 'orals',
             ],
             [
-                'name' => 'MULTINATIONAL-NATIONAL PRODUCTS',
-                'slug' => 'multinational-national-products',
+                'name' => 'MULTI-NATIONAL PRODUCTS',
+                'slug' => 'multi-national-products',
             ],
             [
                 'name' => 'MEDICAL SUPPLIES',

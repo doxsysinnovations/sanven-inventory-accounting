@@ -25,6 +25,8 @@ new class extends Component {
     public $image;
     public $is_vatable;
 
+    public $volume_weight;
+
     public $productTypes = [];
     public $units = [];
     public $brands = [];
@@ -43,6 +45,7 @@ new class extends Component {
         'category' => 'required',
         'quantity_per_piece' => 'required|integer|min:1',
         'low_stock_value' => 'required|integer|min:0',
+        'volume_weight' => 'nullable|string|max:255',
     ];
 
     public function mount($id)
@@ -59,16 +62,17 @@ new class extends Component {
         $this->category = $this->product->category_id;
         $this->quantity_per_piece = $this->product->quantity_per_piece;
         $this->low_stock_value = $this->product->low_stock_value;
+        $this->volume_weight = $this->product->volume_weight;
 
         // Fill additional details from first stock (optional)
-        $stock = $this->product->stocks->first();
-        if ($stock) {
-            $this->supplier = $stock->supplier_id;
-            $this->capital_price = $stock->capital_price;
-            $this->selling_price = $stock->selling_price;
-            $this->quantity = $stock->quantity;
-            $this->expiration_date = \Carbon\Carbon::parse($stock->expiration_date)->format('Y-m-d');
-        }
+        // $stock = $this->product->stocks->first();
+        // if ($stock) {
+        //     $this->supplier = $stock->supplier_id;
+        //     $this->capital_price = $stock->capital_price;
+        //     $this->selling_price = $stock->selling_price;
+        //     $this->quantity = $stock->quantity;
+        //     $this->expiration_date = \Carbon\Carbon::parse($stock->expiration_date)->format('Y-m-d');
+        // }
 
         $this->loadDropdownData();
     }
@@ -121,6 +125,7 @@ new class extends Component {
             'category_id' => $this->category,
             'quantity_per_piece' => $this->quantity_per_piece,
             'low_stock_value' => $this->low_stock_value,
+            'volume_weight' => $this->volume_weight,
         ]);
 
         if ($this->image) {
@@ -128,16 +133,16 @@ new class extends Component {
             $this->product->addMedia($this->image)->toMediaCollection('product-image');
         }
 
-        $stock = $this->product->stocks()->firstOrNew([]);
-        $stock->fill([
-            'stock_number' => $stock->stock_number,
-            'supplier_id' => $this->supplier,
-            'quantity' => $this->quantity,
-            'capital_price' => $this->capital_price,
-            'selling_price' => $this->selling_price,
-            'expiration_date' => $this->expiration_date,
-        ]);
-        $stock->save();
+        // $stock = $this->product->stocks()->firstOrNew([]);
+        // $stock->fill([
+        //     'stock_number' => $stock->stock_number,
+        //     'supplier_id' => $this->supplier,
+        //     'quantity' => $this->quantity,
+        //     'capital_price' => $this->capital_price,
+        //     'selling_price' => $this->selling_price,
+        //     'expiration_date' => $this->expiration_date,
+        // ]);
+        // $stock->save();
 
         flash()->success('Product updated successfully!');
 

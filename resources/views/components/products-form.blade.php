@@ -4,7 +4,7 @@
     'categories' => [],
     'types' => [],
     'units' => [],
-    'suppliers' => []
+    'suppliers' => [],
 ])
 
 <div>
@@ -62,6 +62,11 @@
                         </flux:select>
                     </div>
                     <div>
+                        <flux:input wire:model="volume_weight" :label="__('Volume / Weight')" type="text"
+                            placeholder="e.g., 500ml or 20g"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                    </div>
+                    <div>
                         <flux:select wire:model.live="unit" :label="__('Unit')" size="md">
                             <flux:select.option value="">Choose unit...</flux:select.option>
                             @foreach ($units as $unit)
@@ -70,12 +75,14 @@
                         </flux:select>
                     </div>
                     <div>
-                        <flux:select wire:model="supplier" :label="__('Supplier')" size="md">
-                            <flux:select.option value="">Choose supplier...</flux:select.option>
-                            @foreach ($suppliers as $supplier)
-                                <flux:select.option value="{{ $supplier->id }}">{{ $supplier->name }}</flux:select.option>
-                            @endforeach
-                        </flux:select>
+                        <flux:input wire:model="quantity_per_piece" :label="__('Quantity Per Piece')" type="number"
+                            placeholder="Enter quantity per piece" min="1"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
+                    </div>
+                    <div>
+                        <flux:input wire:model="low_stock_value" :label="__('Low Stock Alert')" type="number"
+                            placeholder="Enter low stock threshold" min="0"
+                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                     </div>
                     <div class="flex flex-col">
                         <label class="block text-sm font-medium text-zinc-800/700 dark:text-gray-300 mb-2">
@@ -169,24 +176,38 @@
                 </div>
             </div>
 
+            @unless($isEditing)
             <div class="mb-8">
                 <h1 class="font-bold sm:text-base md:text-lg lg:text-xl mb-4">
                     Inventory & Pricing
                 </h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Switch Button -->
+                <div class="mb-4 flex items-center" x-data>
+                    <label for="showInitialStock" class="mr-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Add Initial Stock to Product
+                    </label>
+
+                    <label for="showInitialStock" class="relative inline-flex items-center cursor-pointer">
+                        <input id="showInitialStock" type="checkbox" wire:model="showInitialStock" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500 dark:bg-gray-700 dark:peer-focus:ring-blue-400 transition"></div>
+                        <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white border border-gray-300 rounded-full transition-transform duration-200 peer-checked:translate-x-full dark:border-gray-600"></div>
+                    </label>
+                </div>
+
+                <!-- Initial Inventory & Pricing Section -->
+                <div x-data x-show="$wire.showInitialStock" x-cloak class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <flux:select wire:model="supplier" :label="__('Supplier')" size="md">
+                            <flux:select.option value="">Choose supplier...</flux:select.option>
+                            @foreach ($suppliers as $supplier)
+                                <flux:select.option value="{{ $supplier->id }}">{{ $supplier->name }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    </div>
                     <div>
                         <flux:input wire:model="quantity" :label="__('Initial Stock')" type="number" min="0"
                             placeholder="Enter initial stock"
-                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                    </div>
-                    <div>
-                        <flux:input wire:model="quantity_per_piece" :label="__('Quantity Per Piece')" type="number"
-                            placeholder="Enter quantity per piece" min="1"
-                            class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
-                    </div>
-                    <div>
-                        <flux:input wire:model="low_stock_value" :label="__('Low Stock Alert')" type="number"
-                            placeholder="Enter low stock threshold" min="0"
                             class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                     </div>
                     <div>
@@ -204,7 +225,10 @@
                             class="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" />
                     </div>
                 </div>
+
             </div>
+            @endunless
+
         </div>
         <div class="bg-gray-50 rounded-b-lg dark:bg-(--color-accent-4-dark) p-8 sm:px-6 sm:flex sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0 flex flex-col sm:flex-row">
             <flux:button class="sm:w-auto" variant="danger" wire:click="cancel">Cancel</flux:button>
