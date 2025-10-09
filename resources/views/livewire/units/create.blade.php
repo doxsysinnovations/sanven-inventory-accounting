@@ -17,6 +17,7 @@ new class extends Component {
 
     public $name;
     public $code;
+    public $description;
 
     public function rules()
     {
@@ -32,8 +33,8 @@ new class extends Component {
             'name.required' => 'Please enter the unit name.',
             'name.string' => 'Name should only contain letters and spaces.',
             'name.max' => 'Name is too long.',
-            'code.required' => 'Please enter the unit code.', 
-            'code.unique' => 'This code already exists.',  
+            'code.required' => 'Please enter the unit code.',
+            'code.unique' => 'This code already exists.',
         ];
     }
 
@@ -51,12 +52,14 @@ new class extends Component {
             $this->unit->update([
                 'name' => $this->name,
                 'code' => $this->code,
+                'description' => $this->description,
             ]);
             flash()->success('Unit updated successfully!');
         } else {
             Unit::create([
                 'name' => $this->name,
                 'code' => $this->code,
+                'description' => $this->description,
             ]);
             flash()->success('Unit created successfully!');
         }
@@ -82,19 +85,21 @@ new class extends Component {
     {
         return Unit::query()
             ->where('name', 'like', '%' . $this->search . '%')
+            ->orWhere('code', 'like', '%' . $this->search . '%')
+            ->orWhere('description', 'like', '%' . $this->search . '%')
             ->paginate(10);
     }
 
     public function cancel()
     {
-        $this->resetForm();    
+        $this->resetForm();
     }
 };
 
 ?>
 
 <div>
-    <x-units-form 
+    <x-units-form
         :is-editing="false"
     />
 </div>

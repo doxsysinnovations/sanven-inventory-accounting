@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Unit extends Model implements HasMedia
 {
     use SoftDeletes, LogsActivity, InteractsWithMedia;
-    protected $fillable = ['code', 'name'];
+    protected $fillable = ['code', 'name', 'description'];
 
     public function getActivitylogOptions(): LogOptions
     {
