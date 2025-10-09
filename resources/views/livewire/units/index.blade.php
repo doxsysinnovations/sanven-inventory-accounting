@@ -18,12 +18,12 @@ new class extends Component {
 
     public $name;
 
-    public function mount() 
+    public function mount()
     {
         $this->perPage = session('perPage', 10);
     }
 
-    public function updatedPerPage($value) 
+    public function updatedPerPage($value)
     {
         session(['perPage' => $value]);
         $this->resetPage();
@@ -103,6 +103,8 @@ new class extends Component {
     {
         return Unit::query()
             ->where('name', 'like', '%' . $this->search . '%')
+            ->orWhere('code', 'like', '%' . $this->search . '%')
+            ->orWhere('description', 'like', '%' . $this->search . '%')
             ->paginate($this->perPage);
     }
 };
@@ -126,10 +128,11 @@ new class extends Component {
             </svg>
         </x-slot:emptyIcon>
         <x-list-table
-            :headers="['Code', 'Name', 'Actions']"
+            :headers="['Code', 'Name', 'Description', 'Actions']"
             :rows="$units->map(fn($unit) => [
                 $unit->code,
                 $unit->name,
+                $unit->description,
                 'actions-placeholder',
                 '__model' => $unit
             ])"
@@ -142,7 +145,7 @@ new class extends Component {
     </x-view-layout>
 
     @if ($confirmingDelete)
-        <x-delete-modal 
+        <x-delete-modal
             title="Delete Unit"
             message="Are you sure you want to delete this unit? This action cannot be undone."
             onCancel="$set('confirmingDelete', false)"

@@ -15,19 +15,24 @@ new class extends Component {
     public $confirmingDelete = false;
     public $unitToDelete;
 
+    public $code;
     public $name;
+    public $description;
 
-    public function mount(Unit $unit) 
+    public function mount(Unit $unit)
     {
         $this->isEditing = true;
         $this->resetValidation();
         $this->unit = $unit;
+        $this->code = $unit->code;
         $this->name = $unit->name;
+        $this->description = $unit->description;
     }
 
     public function rules()
     {
         return [
+            'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
         ];
     }
@@ -52,7 +57,7 @@ new class extends Component {
         $this->validate();
 
         if ($this->isEditing) {
-            $this->unit->update(['name' => $this->name]);
+            $this->unit->update(['name' => $this->name, 'description' => $this->description]);
             flash()->success('Unit updated successfully!');
         } else {
             Unit::create(['name' => $this->name]);
@@ -85,14 +90,15 @@ new class extends Component {
 
     public function cancel()
     {
-        $this->resetForm();    
+        $this->resetForm();
+        return redirect()->route('units');
     }
 };
 
 ?>
 
 <div>
-    <x-units-form 
+    <x-units-form
         :is-editing="true"
     />
 </div>
