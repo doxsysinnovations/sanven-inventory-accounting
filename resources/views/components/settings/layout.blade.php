@@ -1,0 +1,30 @@
+<div class="flex items-start max-md:flex-col bg-white dark:bg-(--color-accent-dark) p-8 sm:p-10 w-full">
+    <div class="mr-10 w-full pb-4 md:w-[220px]">
+        <flux:navlist>
+            <flux:navlist.item :href="route('settings.profile')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
+            <flux:navlist.item :href="route('settings.password')" wire:navigate>{{ __('Password') }}</flux:navlist.item>
+            <flux:navlist.item :href="route('settings.appearance')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
+            @if(auth()->user()->hasRole('superadmin'))
+                <flux:navlist.item :href="route('settings.admin-panel')" wire:navigate>{{ __('Admin Panel') }}</flux:navlist.item>
+            @endif
+            @can('settings.2fa-config')
+                <flux:navlist.item :href="route('settings.2fa-config')" wire:navigate>{{ __('2FA Config') }}</flux:navlist.item>
+            @endcan
+            @can('settings.seeders')
+                <flux:navlist.item :href="route('settings.seeders')" wire:navigate>{{ __('Seeders') }}</flux:navlist.item>
+            @endcan
+
+        </flux:navlist>
+    </div>
+
+    <flux:separator class="md:hidden" />
+
+    <div class="flex-1 self-stretch max-md:pt-6">
+        <flux:heading>{{ $heading ?? '' }}</flux:heading>
+        <flux:subheading>{{ $subheading ?? '' }}</flux:subheading>
+
+        <div class="mt-5 w-full max-w-xl">
+            {{ $slot }}
+        </div>
+    </div>
+</div>
