@@ -22,7 +22,8 @@ class DatabaseSeeder extends Seeder
             SupplierSeeder::class,
             ProductTypeSeeder::class,
             UnitSeeder::class,
-            BrandSeeder::class
+            BrandSeeder::class,
+            ChartOfAccountsSeeder::class
         ]);
     }
 }

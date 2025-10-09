@@ -23,5 +23,10 @@ class DeliveryNoteItem extends Model
     {
         return $this->hasMany(DeliveryNoteItemBatch::class);
     }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }
 

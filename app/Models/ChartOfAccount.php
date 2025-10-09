@@ -42,6 +42,7 @@ class ChartOfAccount extends Model
             ? $debits - $credits
             : $credits - $debits;
     }
+
     public function getTrialBalanceAttribute()
     {
         $balance = $this->balance;

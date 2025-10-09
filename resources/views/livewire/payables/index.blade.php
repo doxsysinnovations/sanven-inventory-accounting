@@ -299,35 +299,6 @@ new class extends Component {
 ?>
 
 <div>
-    <!-- Breadcrumb -->
-    <div class="mb-4">
-        <nav class="flex" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        <svg class="w-3 h-3 mr-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z" />
-                        </svg>
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Payables</span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
-
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
@@ -480,10 +451,10 @@ new class extends Component {
 
         <!-- Total -->
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg 
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg
                bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
             <div
-                class="relative h-14 w-14 rounded-full border-2 border-gray-500 bg-gray-50 dark:bg-blue-900/20 
+                class="relative h-14 w-14 rounded-full border-2 border-gray-500 bg-gray-50 dark:bg-blue-900/20
                    text-gray-500 flex justify-center items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor" stroke-width="2">
@@ -503,10 +474,10 @@ new class extends Component {
         </div>
 
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg 
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg
        bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
             <div
-                class="shrink-0 relative h-14 w-14 rounded-full border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 
+                class="shrink-0 relative h-14 w-14 rounded-full border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20
            text-blue-500 flex justify-center items-center">
                 <!-- Approved Icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -528,10 +499,10 @@ new class extends Component {
 
         <!-- Paid Card -->
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg 
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg
        bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
             <div
-                class="relative h-14 w-14 rounded-full border-2 border-green-500 bg-green-50 dark:bg-green-900/20 
+                class="relative h-14 w-14 rounded-full border-2 border-green-500 bg-green-50 dark:bg-green-900/20
            text-green-500 flex justify-center items-center">
                 <!-- Paid Icon: Cash or Dollar Sign -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -553,10 +524,10 @@ new class extends Component {
 
         <!-- Pending -->
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg 
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg
                bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
             <div
-                class="relative h-14 w-14 rounded-full border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 
+                class="relative h-14 w-14 rounded-full border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20
                    text-yellow-500 flex justify-center items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor" stroke-width="2">
@@ -575,10 +546,10 @@ new class extends Component {
 
         <!-- Cancelled -->
         <div
-            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg 
+            class="flex gap-3 items-center sm:w-3/12 w-full cursor-pointer p-5 rounded-lg
                bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
             <div
-                class="relative h-14 w-14 rounded-full border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 
+                class="relative h-14 w-14 rounded-full border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20
                    text-purple-500 flex justify-center items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor" stroke-width="2">
@@ -747,8 +718,8 @@ new class extends Component {
 
                                     <flux:modal.trigger name="view-payable-{{ $payable->id }}">
                                         <button
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 
-        hover:text-blue-800 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400
+        hover:text-blue-800 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/30
         rounded cursor-pointer transition">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1"
                                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -840,7 +811,7 @@ new class extends Component {
                                     {{-- Approve --}}
                                     @if ($payable->status === 'pending')
                                         <button wire:click="approve({{ $payable->id }})"
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400
         hover:text-green-800 dark:hover:text-green-200 hover:bg-green-50 dark:hover:bg-green-900/30
         rounded cursor-pointer transition">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1"
@@ -855,7 +826,7 @@ new class extends Component {
                                     {{-- Pay Now --}}
                                     @if ($payable->status === 'approved')
                                         <button wire:click="markAsPaid({{ $payable->id }})"
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400
                    hover:text-indigo-800 dark:hover:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30
                    rounded cursor-pointer transition">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1"
@@ -870,8 +841,8 @@ new class extends Component {
                                     {{-- Receipt --}}
                                     {{-- @if ($payable->status === 'paid')
                                         <a href="{{ route('payables.receipt', $payable->id) }}"
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 
-                   hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300
+                   hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800
                    rounded cursor-pointer transition">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1"
                                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -370,36 +370,6 @@ new class extends Component {
 }; ?>
 
 <div>
-    <!-- Breadcrumb -->
-    <div class="mb-4">
-        <nav class="flex" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        <svg class="w-3 h-3 mr-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z" />
-                        </svg>
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span
-                            class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">Receivables</span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
-
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
@@ -602,7 +572,7 @@ new class extends Component {
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                 Status</th>
                             <th
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                 Action</th>
                         </tr>
                     </thead>
@@ -664,7 +634,6 @@ new class extends Component {
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-left">
                                     <span @class([
-
                                         'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
                                         'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' => in_array(
                                             $status,
@@ -682,10 +651,10 @@ new class extends Component {
                                         {{ $status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <flux:dropdown>
-                                        <flux:button class="cursor-pointer hover:bg-gray-50 hover:shadow-md"
-                                            icon:trailing="chevron-down">Actions</flux:button>
+                                        <flux:button class="cursor-pointer" icon="ellipsis-vertical" variant="ghost"
+                                            size="sm" />
                                         <flux:menu>
                                             <flux:modal.trigger name="view-invoice-{{ $invoice->id ?? '' }}">
                                                 <flux:menu.item icon="eye"
@@ -770,14 +739,7 @@ new class extends Component {
 
                                             <!-- Invoice Details -->
                                             <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                                {{-- <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">BILL FROM</h4>
-                    <p class="text-sm text-gray-900 dark:text-gray-100 font-medium">Your Company Name</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">123 Business Street</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">City, State 12345</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Phone: (123) 456-7890</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Email: billing@yourcompany.com</p>
-                </div> --}}
+
                                                 <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                                     <h4
                                                         class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
