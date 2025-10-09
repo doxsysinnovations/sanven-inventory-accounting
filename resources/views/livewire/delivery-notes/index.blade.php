@@ -86,39 +86,6 @@ new class extends Component {
 ?>
 
 <div>
-    <!-- Breadcrumb -->
-    <div class="mb-4">
-        <nav class="flex" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li class="inline-flex items-center">
-                    <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        <svg class="w-3 h-3 mr-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z" />
-                        </svg>
-                        Dashboard
-                    </a>
-                </li>
-                <li aria-current="page">
-                    <div class="flex items-center">
-                        <svg class="w-3 h-3 mx-1 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 6 10">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 9 4-4-4-4" />
-                        </svg>
-                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">
-                            Delivery Notes
-                        </span>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-    </div>
-
-
-
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
@@ -244,9 +211,8 @@ new class extends Component {
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         @if ($this->deliveryNotes->isEmpty())
             <div class="p-8 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -272,10 +238,12 @@ new class extends Component {
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DN #</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SO #</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivery Address</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivery Address
+                        </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="text-right px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -295,37 +263,28 @@ new class extends Component {
                                     {{ ucfirst($dn->status) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-    <div class="flex gap-2">
-        <a href="{{ route('delivery-notes.show', $dn->id) }}"
-           class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded text-xs font-medium transition"
-           title="View">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            View
-        </a>
-        <a href="{{ route('delivery-notes.print', $dn->id) }}"
-           class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded text-xs font-medium transition"
-           title="Print">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
-                <rect width="12" height="8" x="6" y="14" rx="2" />
-            </svg>
-            Print
-        </a>
-        <button wire:click="confirmDelete({{ $dn->id }})"
-            class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded text-xs font-medium transition"
-            title="Delete">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Delete
-        </button>
-    </div>
-</td>
+                            <td class="px-6 py-4 text-right">
+                                <flux:dropdown>
+                                    <flux:button class="cursor-pointer" icon="ellipsis-vertical" variant="ghost"
+                                        size="sm" />
+                                    <flux:menu>
+                                        <flux:menu.item href="{{ route('delivery-notes.show', $dn->id) }}"
+                                            icon="eye">
+                                            View
+                                        </flux:menu.item>
+
+                                        <flux:menu.item href="{{ route('delivery-notes.stream-pdf', $dn->id) }}"
+                                            icon="printer">
+                                            Print
+                                        </flux:menu.item>
+
+                                        <flux:menu.item wire:click="confirmDelete({{ $dn->id }})"
+                                            icon="trash" class="text-red-600">
+                                            Delete
+                                        </flux:menu.item>
+                                    </flux:menu>
+                                </flux:dropdown>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

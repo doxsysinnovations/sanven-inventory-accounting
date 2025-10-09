@@ -15,6 +15,7 @@ new class extends Component {
     public $email = '';
     public $phone = '';
     public $address = '';
+    public $type = 'Private'; // Default value
     public $activeTab = 'basic';
     public $customerInfo;
 
@@ -25,6 +26,7 @@ new class extends Component {
             'email' => $this->isEditing ? 'required|email|unique:customers,email,' . $this->customer->id : 'required|email|unique:customers,email',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
+            'type' => 'required|in:Private,Government',
         ];
     }
 
@@ -36,7 +38,7 @@ new class extends Component {
             'name.max' => 'Name is too long.',
 
             'email.required' => 'Please enter the customer\'s email address.',
-            'email.email' => 'That doesn’t look like a valid email. Please check it again.',
+            'email.email' => 'That doesn\'t look like a valid email. Please check it again.',
             'email.unique' => 'This email is already being used by another customer.',
 
             'phone.string' => 'Please enter a valid phone number.',
@@ -44,6 +46,9 @@ new class extends Component {
 
             'address.string' => 'Please enter a valid address.',
             'address.max' => 'The address is too long. Please shorten it.',
+
+            'type.required' => 'Please select a customer type.',
+            'type.in' => 'Customer type must be either Private or Government.',
         ];
     }
 
@@ -62,7 +67,8 @@ new class extends Component {
                 'name' => $this->name,
                 'email' => $this->email,
                 'phone' => $this->phone,
-                'address' => $this->address
+                'address' => $this->address,
+                'type' => $this->type
             ]);
             flash()->success('Customer updated successfully!');
         } else {
@@ -70,7 +76,8 @@ new class extends Component {
                 'name' => $this->name,
                 'email' => $this->email,
                 'phone' => $this->phone,
-                'address' => $this->address
+                'address' => $this->address,
+                'type' => $this->type
             ]);
             flash()->success('Customer created successfully!');
         }
@@ -84,6 +91,7 @@ new class extends Component {
         $this->email = '';
         $this->phone = '';
         $this->address = '';
+        $this->type = 'Private'; // Reset to default
         $this->customer = null;
         $this->resetValidation();
     }
@@ -101,10 +109,11 @@ new class extends Component {
         return Customer::query()
             ->where('name', 'like', '%' . $this->search . '%')
             ->orWhere('email', 'like', '%' . $this->search . '%')
+            ->orWhere('type', 'like', '%' . $this->search . '%')
             ->paginate(10);
     }
-    
-    public function cancel() 
+
+    public function cancel()
     {
         $this->resetForm();
     }
