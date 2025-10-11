@@ -111,7 +111,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
                 <div>
-                    <x-flux::input wire:model="order_date" type="date" label="Order Date" />
+                    <x-flux::input wire:model.live="order_date" type="date" label="Order Date" />
                 </div>
                 <div>
                     <x-flux::input wire:model="requested_delivery_date" type="date"

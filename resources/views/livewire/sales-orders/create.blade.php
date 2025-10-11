@@ -76,7 +76,7 @@ new class extends Component {
 6. Ownership transfers upon full payment.
 7. The company reserves the right to cancel orders due to unforeseen circumstances.
 8. Other terms as may be agreed in writing.";
-    public $payment_terms = '';
+    public $payment_terms = 'Cash';
     public $assigned_agent = '';
     public $partial_payment_amount = null;
     // UI State
@@ -104,8 +104,31 @@ new class extends Component {
         $this->invoice_date = now()->format('Y-m-d');
         $this->invoice_prefix = config('invoicing.prefix', 'INV');
         $this->loadProducts();
+
+        $this->order_date = now()->format('Y-m-d'); // now as default
+        $this->requested_delivery_date = $this->calculateDeliveryDate($this->order_date);
     }
 
+    public function calculateDeliveryDate($startDate)
+    {
+        $date = Carbon::parse($startDate);
+        $daysToAdd = 1;
+        $currentDay = 0;
+
+        while ($currentDay < $daysToAdd) {
+            $date->addDay();
+            if ($date->dayOfWeek !== Carbon::SUNDAY) {
+                $currentDay++;
+            }
+        }
+
+        return $date->format('Y-m-d');
+    }
+
+    public function updatedOrderDate()
+    {
+        $this->requested_delivery_date = $this->calculateDeliveryDate($this->order_date);
+    }
     // ========== STEP 1 METHODS ==========
     public function customers()
     {
@@ -530,7 +553,7 @@ new class extends Component {
             'customer_id' => 'required|exists:customers,id',
             'order_date' => 'required|date',
             'requested_delivery_date' => 'nullable|date|after_or_equal:order_date',
-            'assigned_agent' => 'required|integer|exists:agents,id',
+            'assigned_agent' => 'nullable|integer',
             'payment_terms' => 'required|string',
             'payment_method' => 'required|string|in:cash,credit_card,bank_transfer,paypal,other',
             'discount' => 'nullable|numeric|min:0|max:1000000',
@@ -547,7 +570,7 @@ new class extends Component {
             $salesOrder = \App\Models\SalesOrder::create([
                 'order_number' => $this->generateSalesOrderNumber(),
                 'customer_id' => $this->customer_id,
-                'order_date' => $this->order_date ?? now()->format('Y-m-d'),
+                'order_date' => $this->order_date,
                 'requested_delivery_date' => $this->requested_delivery_date ?? null,
                 'status' => 'quotation',
                 'payment_terms' => $this->payment_terms,
@@ -559,7 +582,7 @@ new class extends Component {
                 'grand_total' => $this->total,
                 'notes' => $this->notes,
                 'terms_conditions' => $this->terms_conditions,
-                'agent_id' => $this->assigned_agent,
+                'agent_id' => $this->assigned_agent ?: null, // Convert empty string to null
             ]);
 
             foreach ($this->cart as $item) {
@@ -595,6 +618,7 @@ new class extends Component {
             $this->isLoading = false;
         }
     }
+
     public function generateSalesOrderNumber()
     {
         $lastOrder = \App\Models\SalesOrder::latest('id')->first();
@@ -611,7 +635,7 @@ new class extends Component {
             'payment_method' => 'required|string|in:cash,credit_card,bank_transfer,paypal,other',
             'due_date' => 'required|date|after_or_equal:today',
             'invoice_date' => 'required|date',
-            'assigned_agent' => 'required|integer|exists:agents,id',
+            'assigned_agent' => 'nullable',
             'payment_terms' => 'required|string',
             'discount' => 'nullable|numeric|min:0|max:1000000',
             'tax' => 'nullable|numeric|min:0|max:1000000',
@@ -637,7 +661,7 @@ new class extends Component {
                 'issued_date' => $this->invoice_date,
                 'notes' => $this->notes,
                 'created_by' => auth()->id(),
-                'agent_id' => $this->assigned_agent,
+                'agent_id' => $this->assigned_agent ?? null,
             ]);
 
             foreach ($this->cart as $item) {
